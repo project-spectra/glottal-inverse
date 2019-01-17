@@ -3,7 +3,9 @@
 import numpy as np
 import scipy.integrate as integrate
 import scipy.optimize as optimize
+import scipy.signal as signal
 from math import pi
+from pprint import pprint
 
 # ---------
 # CONSTANTS
@@ -228,7 +230,7 @@ def amgif(me, pe, L, alpha, beta, tau, eps):
 # FORWARD SIMULATION
 
 
-def glottalSource(f, fs, T0, Ee, te, tp, ta, eps=1e-16):
+def glottalSource(f, fs, T0, Ee, te, tp, ta, tc, eps=1e-16):
     """
     Generator for the Liljencrants-Fant glottal source model
 
@@ -237,12 +239,13 @@ def glottalSource(f, fs, T0, Ee, te, tp, ta, eps=1e-16):
         fs (float): The sampling frequency used for proper normalization of the pulse amplitude.
         T0  (float): The fundamental period (the duration of the glottal cycle), 1/f0.
         Ee (float): The amplitude of the pulse (e.g. 1).
-        te, tp, ta, tc (float): Glottal shape parameter.
+        te, tp, ta (float): Glottal shape parameter.
         eps (float): The initial value for root finding.
     """
     Te = te * T0
     Tp = tp * T0
     Ta = ta * T0
+    Tc = tc * T0
 
     wg = pi / Tp
 
@@ -251,56 +254,72 @@ def glottalSource(f, fs, T0, Ee, te, tp, ta, eps=1e-16):
         part = np.exp(-e * (T0 - Te))
         return (1 - part - e * Ta, (T0 - Te) * part - Ta)
 
-    e = optimize.root_scalar(fb, x0=1/(Ta + eps), fprime=True)
+    e = optimize.root_scalar(fb, x0=1/(Ta + eps), fprime=True).root
 
     # a is expressed by another implicit equation
     A = (1 - np.exp(-e * (T0 - Te))) / (e**2 * Ta) - (T0 - Te) * np.exp(-e * (T0 - Te))
     cosWgTe = np.cos(wg * Te)
-    sinWgte = np.sin(wg * Te)
+    sinWgTe = np.sin(wg * Te)
 
     def fa(a):
         return (a**2 + wg**2) * sinWgTe * A + wg * np.exp(-a * Te) + a * sinWgTe - wg * cosWgTe
 
     x = np.array([0 if i is 0 else 10**i for i in range(10)])
-    idx = np.nonzero(np.diff(np.sign(x), 1))[0]
-    a = optimize.root_scalar(fa, x0=x[idx], x1=x[idx+1])
+    idx = np.nonzero(np.diff(np.sign(fa(x)), 1))[0][0]
+    a = optimize.root_scalar(fa, x0=x[idx], x1=x[idx+1]).root
 
     # E0 parameter
     E0 = -Ee / (np.exp(a * Te) * sinWgTe)
 
-    # LF spectrum formula
-    fp = -2j * pi * f
-    P1 = E0 * (1 / ((a - fp)**2 + wg**2))
-    P2 = wg + np.exp((a - fp) * Te) * ((a - fp) * sinWgTe - wg * cosWgTe)
-    P3 = Ee * (np.exp(-fp * Te) / ((e * Ta * fp) * (e + fp)))
-    P4 = e * (1 - e * Ta) * (1 - np.exp(-fp * (T0 - Te))) - e * Ta * fp
-    G = P1 * P2 + P3 * P4
+    T1 = np.arange(1 / fs, Te, step=1/fs)
+    T2 = np.arange(Te, Tc, step=1/fs)
 
-    # Fix the amplitude so as Ee is respected
-    G = fs * G  # The max frequency is assumed to be the band limit
+    # Differentiated
+    dOP = E0 * np.exp(a * T1) * np.sin(wg * T1)
+    dCP = (-Ee / (e * Ta)) * (np.exp(-e * (T2 - Te)) - np.exp(-e * (Tc - Te)))
+
+    G = np.concatenate((gOP, gCP))
 
     return G
+    # return lambda t: np.real(G * np.exp(t))
 
 
-def vocalTractFilter(formants):
+def vocalTractFilter(F, fs):
     """
     Generator for an all-pole vocal tract filter.
     """
-    pass
+    (F0, Bw0), *Ftail = F
+
+    result = np.array(signal.iirpeak(F0, F0/Bw0, fs))
+
+    for Fn, Bwn in Ftail:
+        result += np.array(signal.iirpeak(Fn, Fn/Bwn, fs))
+
+    return result
 
 
-def __main__():
+def main():
     # Testing parameters used in the original AM-GIF algorithm paper.
 
     fs = 16000
     tp = 0.47
     te = 0.65
     ta = 0.01
+    tc = 1
 
     f = 100
+    R = [(800, 80), (1150, 90), (2900, 120), (3900, 130), (4950, 140)]
 
-    G = glottalSource(f, fs, T0=1/f, Ee=1, te, tp, ta)
+    source = glottalSource(f, fs, 1/f, 1, te, tp, ta, tc)
 
-    F = vocalTractFilter()
+    filtr = vocalTractFilter(R, fs)
 
-    return G
+    return source, filtr
+
+
+if __name__ == '__main__':
+    source, filtr = main()
+
+    pprint(source)
+    pprint(filtr)
+
