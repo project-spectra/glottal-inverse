@@ -1,6 +1,9 @@
+#!/usr/bin/env python
+
 import numpy as np
 import scipy.integrate as integrate
-
+import scipy.optimize as optimize
+from math import pi
 
 # ---------
 # CONSTANTS
@@ -155,8 +158,8 @@ def recompose(x, basis):  # F⁻(f)
     return f
 
 
-# ---------
-# ALGORITHM
+# ----------------
+# AM-GIF ALGORITHM
 
 
 def converges(eps):
@@ -172,19 +175,19 @@ def converges(eps):
     return False
 
 
-def amgif(me, p0, L, alpha, beta, eps, tau):
+def amgif(me, pe, L, alpha, beta, tau, eps):
     """
     Computes the glottal source excitation and the vocal tract filter
     using the AM-GIF algorithm. (doi:10.1088/1361-6420/aa6eb8)
 
     Args:
         me (function): The measured speech signal data.
-        p0 (function): The characterizing function.
+        pe (function): The characterizing function.
         L (numpy.ndarray): The matrix operator to enforce filter shape.
         alpha (float): The regularization parameter for VTF estimation.
         beta (float): The regularization parameter for GS estimation.
-        eps (float): The error threshold to test for onvergence.
         tau (float): The scaling parameter.
+        eps (float): The error threshold to test for convergence.
 
     Returns:
         function,: The estimated vocal tract filter.
@@ -194,7 +197,7 @@ def amgif(me, p0, L, alpha, beta, eps, tau):
     C = buildOperatorC(basis)
 
     di = decompose(me)
-    yi = decompose(p0)
+    yi = decompose(pe)
 
     y = yi
 
@@ -221,5 +224,83 @@ def amgif(me, p0, L, alpha, beta, eps, tau):
     return f, p
 
 
-def __main__():
+# ------------------
+# FORWARD SIMULATION
+
+
+def glottalSource(f, fs, T0, Ee, te, tp, ta, eps=1e-16):
+    """
+    Generator for the Liljencrants-Fant glottal source model
+
+    Args:
+        f (float): The frequency values where the spectrum has to be estimated.
+        fs (float): The sampling frequency used for proper normalization of the pulse amplitude.
+        T0  (float): The fundamental period (the duration of the glottal cycle), 1/f0.
+        Ee (float): The amplitude of the pulse (e.g. 1).
+        te, tp, ta, tc (float): Glottal shape parameter.
+        eps (float): The initial value for root finding.
+    """
+    Te = te * T0
+    Tp = tp * T0
+    Ta = ta * T0
+
+    wg = pi / Tp
+
+    # e is expressed by an implicit equation
+    def fb(e):
+        part = np.exp(-e * (T0 - Te))
+        return (1 - part - e * Ta, (T0 - Te) * part - Ta)
+
+    e = optimize.root_scalar(fb, x0=1/(Ta + eps), fprime=True)
+
+    # a is expressed by another implicit equation
+    A = (1 - np.exp(-e * (T0 - Te))) / (e**2 * Ta) - (T0 - Te) * np.exp(-e * (T0 - Te))
+    cosWgTe = np.cos(wg * Te)
+    sinWgte = np.sin(wg * Te)
+
+    def fa(a):
+        return (a**2 + wg**2) * sinWgTe * A + wg * np.exp(-a * Te) + a * sinWgTe - wg * cosWgTe
+
+    x = np.array([0 if i is 0 else 10**i for i in range(10)])
+    idx = np.nonzero(np.diff(np.sign(x), 1))[0]
+    a = optimize.root_scalar(fa, x0=x[idx], x1=x[idx+1])
+
+    # E0 parameter
+    E0 = -Ee / (np.exp(a * Te) * sinWgTe)
+
+    # LF spectrum formula
+    fp = -2j * pi * f
+    P1 = E0 * (1 / ((a - fp)**2 + wg**2))
+    P2 = wg + np.exp((a - fp) * Te) * ((a - fp) * sinWgTe - wg * cosWgTe)
+    P3 = Ee * (np.exp(-fp * Te) / ((e * Ta * fp) * (e + fp)))
+    P4 = e * (1 - e * Ta) * (1 - np.exp(-fp * (T0 - Te))) - e * Ta * fp
+    G = P1 * P2 + P3 * P4
+
+    # Fix the amplitude so as Ee is respected
+    G = fs * G  # The max frequency is assumed to be the band limit
+
+    return G
+
+
+def vocalTractFilter(formants):
+    """
+    Generator for an all-pole vocal tract filter.
+    """
     pass
+
+
+def __main__():
+    # Testing parameters used in the original AM-GIF algorithm paper.
+
+    fs = 16000
+    tp = 0.47
+    te = 0.65
+    ta = 0.01
+
+    f = 100
+
+    G = glottalSource(f, fs, T0=1/f, Ee=1, te, tp, ta)
+
+    F = vocalTractFilter()
+
+    return G
