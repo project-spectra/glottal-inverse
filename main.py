@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
 import numpy as np
-import scipy.integrate as integrate
-import scipy.optimize as optimize
-import scipy.signal as signal
-from math import pi
+from scipy import integrate, interpolate, optimize, signal
+from scipy.io import wavfile
 from pprint import pprint
+from math import pi
+
+import matplotlib.pyplot as plt
 
 # ---------
 # CONSTANTS
@@ -230,7 +231,7 @@ def amgif(me, pe, L, alpha, beta, tau, eps):
 # FORWARD SIMULATION
 
 
-def glottalSource(f, fs, T0, Ee, te, tp, ta, tc, eps=1e-16):
+def glottalSource(f, fs, T0, Ee, te, tp, ta, eps=1e-16):
     """
     Generator for the Liljencrants-Fant glottal source model
 
@@ -239,13 +240,15 @@ def glottalSource(f, fs, T0, Ee, te, tp, ta, tc, eps=1e-16):
         fs (float): The sampling frequency used for proper normalization of the pulse amplitude.
         T0  (float): The fundamental period (the duration of the glottal cycle), 1/f0.
         Ee (float): The amplitude of the pulse (e.g. 1).
-        te, tp, ta (float): Glottal shape parameter.
+        te, tp, ta (float): Glottal shape parameters.
         eps (float): The initial value for root finding.
+
+    Returns:
+        function: The time-domain glottal flow function on [0, T0].
     """
     Te = te * T0
     Tp = tp * T0
     Ta = ta * T0
-    Tc = tc * T0
 
     wg = pi / Tp
 
@@ -272,16 +275,20 @@ def glottalSource(f, fs, T0, Ee, te, tp, ta, tc, eps=1e-16):
     E0 = -Ee / (np.exp(a * Te) * sinWgTe)
 
     T1 = np.arange(1 / fs, Te, step=1/fs)
-    T2 = np.arange(Te, Tc, step=1/fs)
+    T2 = np.arange(Te, T0, step=1/fs)
 
-    # Differentiated
+    # Derivate glottal flow
     dOP = E0 * np.exp(a * T1) * np.sin(wg * T1)
-    dCP = (-Ee / (e * Ta)) * (np.exp(-e * (T2 - Te)) - np.exp(-e * (Tc - Te)))
+    dCP = -Ee / (e * Ta) * (np.exp(-e * (T2 - Te)) - np.exp(-e * (T0 - Te)))
 
-    G = np.concatenate((gOP, gCP))
+    Tx = np.concatenate((T1, T2))
+    dG = np.concatenate((dOP, dCP))
 
-    return G
-    # return lambda t: np.real(G * np.exp(t))
+    # Interpolate with cubic spline to undiscretize
+    dG_inter = interpolate.splrep(Tx, dG, k=3, per=True)
+    G_inter = interpolate.splantider(dG_inter)
+
+    return lambda t: interpolate.splev(t % T0, G_inter)
 
 
 def vocalTractFilter(F, fs):
@@ -290,12 +297,16 @@ def vocalTractFilter(F, fs):
     """
     (F0, Bw0), *Ftail = F
 
-    result = np.array(signal.iirpeak(F0, F0/Bw0, fs))
+    bt, at = signal.iirpeak(F0, F0/Bw0, fs)
 
     for Fn, Bwn in Ftail:
-        result += np.array(signal.iirpeak(Fn, Fn/Bwn, fs))
+        b, a = signal.iirpeak(Fn, Fn/Bwn, fs)
 
-    return result
+        bt = np.polyadd(np.polymul(bt, a), np.polymul(b, at))
+        at = np.polymul(a, at)
+
+    return lambda x: signal.filtfilt(bt, at, x)
+    #return bt, at
 
 
 def main():
@@ -305,21 +316,34 @@ def main():
     tp = 0.47
     te = 0.65
     ta = 0.01
-    tc = 1
 
     f = 100
     R = [(800, 80), (1150, 90), (2900, 120), (3900, 130), (4950, 140)]
 
-    source = glottalSource(f, fs, 1/f, 1, te, tp, ta, tc)
+    source = glottalSource(f, fs, 1/f, 900, te, tp, ta)
 
     filtr = vocalTractFilter(R, fs)
 
-    return source, filtr
+    t = np.arange(0, 10, step=1/fs)
+
+    U = source(t)
+    V = filtr(U)
+
+    wavfile.write('synth_source.wav', fs, U)
+    wavfile.write('synth_speech.wav', fs, V)
+
+    if True:
+        plt.figure()
+        #plt.plot(t, filtr(t))
+        plt.plot(t, source(t), label='Source signal')
+        #plt.plot(t, filtr(source(t)), label='Speech signal')
+        plt.xlabel('Time (seconds)')
+        plt.ylabel('Relative amplitude')
+        plt.grid()
+        plt.legend()
+        plt.show()
 
 
 if __name__ == '__main__':
-    source, filtr = main()
-
-    pprint(source)
-    pprint(filtr)
+    main()
 
