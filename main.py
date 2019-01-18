@@ -347,11 +347,11 @@ def main():
     # Testing parameters used in the original AM-GIF algorithm paper.
 
     fs = 16000
-    tp = 0.3
+    tp = 0.4
     te = 0.65
-    ta = 0.01
+    ta = 0.03
 
-    f = 100
+    f = 125
     R = [(800, 80), (1150, 90), (2900, 120), (3900, 130), (4950, 140)]
 
     source = glottalSource(f, fs, 1/f, 900, te, tp, ta)
