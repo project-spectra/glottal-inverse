@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 from scipy import integrate, interpolate, optimize, signal
@@ -144,7 +144,7 @@ def decompose(f, basis):  # F(f)
     }
 
 
-def recompose(x, basis):  # F⁻(f)
+def recompose(x, basis):  # F-(f)
     """
     Recompose the function from a set of coordinates in that basis.
 
@@ -159,6 +159,34 @@ def recompose(x, basis):  # F⁻(f)
     def f(t):
         return sum([x[i] * phi(t) for i, phi in basis.items()])
     return f
+
+
+# --------------
+# SIGNAL FILTERS
+
+
+def parallel(x, y):
+    b0, a0 = x
+    b1, a1 = y
+
+    bt = np.polyadd(np.polymul(b0, a1), np.polymul(b1, a0))
+    at = np.polymul(a1, a0)
+
+    return bt, at
+
+
+def series(x, y):
+    b0, a0 = x
+    b1, a1 = y
+
+    bt = np.polymul(b0, b1)
+    at = np.polymul(a0, a1)
+
+    return bt, at
+
+
+def normalize(S):
+    return S / np.max(np.abs(S))
 
 
 # ----------------
@@ -274,8 +302,9 @@ def glottalSource(f, fs, T0, Ee, te, tp, ta, eps=1e-16):
     # E0 parameter
     E0 = -Ee / (np.exp(a * Te) * sinWgTe)
 
-    T1 = np.arange(1 / fs, Te, step=1/fs)
-    T2 = np.arange(Te, T0, step=1/fs)
+    step = 1 / fs
+    T1 = np.linspace(step, Te, num=(Te-step)/step, endpoint=False)
+    T2 = np.linspace(Te, T0, num=1+(T0-Te)/step)
 
     # Derivate glottal flow
     dOP = E0 * np.exp(a * T1) * np.sin(wg * T1)
@@ -291,21 +320,26 @@ def glottalSource(f, fs, T0, Ee, te, tp, ta, eps=1e-16):
     return lambda t: interpolate.splev(t % T0, G_inter)
 
 
-def vocalTractFilter(F, fs):
+def vocalTractFilter(F, fs, n):
     """
     Generator for an all-pole vocal tract filter.
     """
     (F0, Bw0), *Ftail = F
 
-    bt, at = signal.iirpeak(F0, F0/Bw0, fs)
+    # Parallel peaks
+    filtr = signal.iirpeak(F0, F0/Bw0, fs)
 
     for Fn, Bwn in Ftail:
-        b, a = signal.iirpeak(Fn, Fn/Bwn, fs)
+        filtr = parallel(filtr, signal.iirpeak(Fn, Fn/Bwn, fs))
 
-        bt = np.polyadd(np.polymul(bt, a), np.polymul(b, at))
-        at = np.polymul(a, at)
+    # Add a Butterworth filter to simulate the frequency slope
+    # This one is in series
+    # Order n => 20n dB/dec slope
+    filtr = series(filtr, signal.butter(n, 100, fs=fs))
 
-    return lambda x: signal.filtfilt(bt, at, x)
+    b, a = filtr
+
+    return lambda x: signal.filtfilt(b, a, x)
     #return bt, at
 
 
@@ -313,7 +347,7 @@ def main():
     # Testing parameters used in the original AM-GIF algorithm paper.
 
     fs = 16000
-    tp = 0.47
+    tp = 0.3
     te = 0.65
     ta = 0.01
 
@@ -322,25 +356,29 @@ def main():
 
     source = glottalSource(f, fs, 1/f, 900, te, tp, ta)
 
-    filtr = vocalTractFilter(R, fs)
+    filtr = vocalTractFilter(R, fs, 1)  # 20 dB/dec
 
-    t = np.arange(0, 10, step=1/fs)
+    t = np.linspace(0, 10, num=10*fs, endpoint=False)
 
-    U = source(t)
-    V = filtr(U)
+    U = normalize(source(t))
+    V = normalize(filtr(U))
 
     wavfile.write('synth_source.wav', fs, U)
     wavfile.write('synth_speech.wav', fs, V)
 
     if True:
         plt.figure()
-        #plt.plot(t, filtr(t))
-        plt.plot(t, source(t), label='Source signal')
-        #plt.plot(t, filtr(source(t)), label='Speech signal')
+
+        #plt.plot(t, filtr(t), label='Filter')
+        #plt.plot(t, U, label='Source signal')
+        #plt.plot(t, V, label='Speech signal')
+        #plt.legend()
+
+        f, t, Sxx = signal.spectrogram(V, fs, window='hamming', nfft=8192, nperseg=512)
+        plt.pcolormesh(t, f, Sxx)
+
         plt.xlabel('Time (seconds)')
-        plt.ylabel('Relative amplitude')
         plt.grid()
-        plt.legend()
         plt.show()
 
 
