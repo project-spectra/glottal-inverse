@@ -259,65 +259,73 @@ def amgif(me, pe, L, alpha, beta, tau, eps):
 # FORWARD SIMULATION
 
 
-def glottalSource(f, fs, T0, Ee, te, tp, ta, eps=1e-16):
+def Rpp_D(T0, Te, Ta):
+    return 1 - ((T0 - Te) / Ta) / (np.exp((T0 - Te) / Ta) - 1)
+
+
+def Rpp_Tx(T0, Te, Tp, Ta):
+    D = Rpp_D(T0, Te, Ta)
+    return Te * (1 - (.5 * Te**2 - Te * Tp) / (2 * Te**2 - 3 * Te * Tp + 6 * Ta * (Te - Tp) * D))
+
+
+def Rpp(K, T0, Te, Tp, Ta):
+    Tx = Rpp_Tx(T0, Te, Tp, Ta)
+    expT = np.exp(-(T0 - Te) / Ta)
+
+    def Uder(t):
+        if np.any([t < 0, t > T0]):
+            return Uder(t % T0)
+
+        return np.piecewise(t, [t <= Te, t > Te], [
+            lambda t: 4 * K * t * (Tp - t) * (Tx - t),
+            lambda t: Uder(Te) * (np.exp(-(t - Te) / Ta) - expT) / (1 - expT)
+        ])
+
+    def U(t):
+        if np.any([t < 0, t > T0]):
+            return U(t % T0)
+
+        return np.piecewise(t, [t <= Te, t > Te], [
+            lambda t: K * t**2 * (t**2 - 4 / 3 * t * (Tp + Tx) + 2 * Tp * Tx),
+            lambda t: U(Te) + Ta * Uder(Te) * (1 - np.exp(-(t - Te) / Ta) - ((t - Te) / Ta) * expT) / (1 - expT)
+        ])
+
+    return U, Uder
+
+
+def glottalSource(fs, E, T0, Oq, am, Qa):
     """
-    Generator for the Liljencrants-Fant glottal source model
+    Generator for the Rosenberg++ glottal source model
 
     Args:
-        f (float): The frequency values where the spectrum has to be estimated.
         fs (float): The sampling frequency used for proper normalization of the pulse amplitude.
-        T0  (float): The fundamental period (the duration of the glottal cycle), 1/f0.
-        Ee (float): The amplitude of the pulse (e.g. 1).
-        te, tp, ta (float): Glottal shape parameters.
-        eps (float): The initial value for root finding.
+        E (float): The amplitude of the pulse (e.g. 1).
+        T0 (float): The fundamental period (the duration of the glottal cycle), 1/f0.
+        Oq (float): The open quotient (ratio of the open phase over the glottal cycle).
+        am (float): The asymmetry coefficient.
+        Qa (float): The return quotient (Qa = 0 : abrupt closure).
 
     Returns:
-        function: The time-domain glottal flow function on [0, T0].
+        function: The time-domain glottal flow derivative function on [0, T0].
     """
-    Te = te * T0
-    Tp = tp * T0
-    Ta = ta * T0
 
-    wg = pi / Tp
+    # Find K, Te, Tp, Ta from these expressions:
+    #
+    # E = 4 * K * Te * (Tp - Te) * (Tx - Te)
+    # Oq = Te / T0
+    # am = Tp / Te
+    # Qa = Ta / ((1 - Oq) * T0)
 
-    # e is expressed by an implicit equation
-    def fb(e):
-        part = np.exp(-e * (T0 - Te))
-        return (1 - part - e * Ta, (T0 - Te) * part - Ta)
+    Te = Oq * T0
+    Tp = am * Te
+    Ta = Qa * (T0 - Te)
+    Tx = Rpp_Tx(T0, Te, Tp, Ta)
 
-    e = optimize.root_scalar(fb, x0=1/(Ta + eps), fprime=True).root
+    K = E / (4 * Te * (Tp - Te) * (Tx - Te))
 
-    # a is expressed by another implicit equation
-    A = (1 - np.exp(-e * (T0 - Te))) / (e**2 * Ta) - (T0 - Te) * np.exp(-e * (T0 - Te))
-    cosWgTe = np.cos(wg * Te)
-    sinWgTe = np.sin(wg * Te)
+    U, Uder = Rpp(K, T0, Te, Tp, Ta)
 
-    def fa(a):
-        return (a**2 + wg**2) * sinWgTe * A + wg * np.exp(-a * Te) + a * sinWgTe - wg * cosWgTe
-
-    x = np.array([0 if i is 0 else 10**i for i in range(10)])
-    idx = np.nonzero(np.diff(np.sign(fa(x)), 1))[0][0]
-    a = optimize.root_scalar(fa, x0=x[idx], x1=x[idx+1]).root
-
-    # E0 parameter
-    E0 = -Ee / (np.exp(a * Te) * sinWgTe)
-
-    step = 1 / fs
-    T1 = np.linspace(step, Te, num=(Te-step)/step, endpoint=False)
-    T2 = np.linspace(Te, T0, num=1+(T0-Te)/step)
-
-    # Derivate glottal flow
-    dOP = E0 * np.exp(a * T1) * np.sin(wg * T1)
-    dCP = -Ee / (e * Ta) * (np.exp(-e * (T2 - Te)) - np.exp(-e * (T0 - Te)))
-
-    Tx = np.concatenate((T1, T2))
-    dG = np.concatenate((dOP, dCP))
-
-    # Interpolate with cubic spline to undiscretize
-    dG_inter = interpolate.splrep(Tx, dG, k=3, per=True)
-    G_inter = interpolate.splantider(dG_inter)
-
-    return lambda t: interpolate.splev(t % T0, G_inter)
+    return Uder
 
 
 def vocalTractFilter(F, fs, n):
@@ -347,18 +355,20 @@ def main():
     # Testing parameters used in the original AM-GIF algorithm paper.
 
     fs = 16000
-    tp = 0.4
-    te = 0.65
-    ta = 0.03
+    E = 1
+    Oq = 0.1
+    am = 0.9
+    Qa = 0.07
 
     f = 125
     R = [(800, 80), (1150, 90), (2900, 120), (3900, 130), (4950, 140)]
 
-    source = glottalSource(f, fs, 1/f, 900, te, tp, ta)
+    source = glottalSource(fs, E, 1/f, Oq, am, Qa)
 
     filtr = vocalTractFilter(R, fs, 1)  # 20 dB/dec
 
-    t = np.linspace(0, 10, num=10*fs, endpoint=False)
+    length = 5
+    t = np.linspace(0, length, num=int(length*fs), endpoint=False)
 
     U = normalize(source(t))
     V = normalize(filtr(U))
@@ -370,14 +380,16 @@ def main():
         plt.figure()
 
         #plt.plot(t, filtr(t), label='Filter')
-        #plt.plot(t, U, label='Source signal')
-        #plt.plot(t, V, label='Speech signal')
-        #plt.legend()
+        plt.plot(t, U, label='Source signal')
+        plt.plot(t, V, label='Speech signal')
+        plt.legend()
 
-        f, t, Sxx = signal.spectrogram(V, fs, window='hamming', nfft=8192, nperseg=512)
-        plt.pcolormesh(t, f, Sxx)
+        #f, t, Sxx = signal.spectrogram(U, fs, window='hamming', nfft=8192, nperseg=512)
+        #plt.pcolormesh(t, f, Sxx)
 
+        plt.suptitle('Oq = {}'.format(Oq))
         plt.xlabel('Time (seconds)')
+        plt.xlim(0, 5/f)
         plt.grid()
         plt.show()
 
