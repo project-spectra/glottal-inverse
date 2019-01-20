@@ -6,8 +6,8 @@ from scipy.io import wavfile
 from pprint import pprint
 from math import pi
 
-import pyaudio
-import atexit
+import sounddevice as sd
+import threading
 
 import matplotlib.pyplot as plt
 
@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 tau = 1.2
 J = 8  # Maximum number of decompositions
 
+fs = 44100
+CHUNK = 4096
 
 # -------------
 # INITIAL STATE
@@ -168,26 +170,6 @@ def recompose(x, basis):  # F-(f)
 # SIGNAL FILTERS
 
 
-def parallel(x, y):
-    b0, a0 = x
-    b1, a1 = y
-
-    bt = np.polyadd(np.polymul(b0, a1), np.polymul(b1, a0))
-    at = np.polymul(a1, a0)
-
-    return bt, at
-
-
-def series(x, y):
-    b0, a0 = x
-    b1, a1 = y
-
-    bt = np.polymul(b0, b1)
-    at = np.polymul(a0, a1)
-
-    return bt, at
-
-
 def normalize(S):
     return S / np.max(np.abs(S))
 
@@ -327,7 +309,7 @@ def Rpp(E, T0, Oq, am, Qa):
     return U, Uder
 
 
-def VTF(formants, fs):
+def VTF(formants):
     """
     Generator for an all-pole vocal tract filter.
     """
@@ -347,63 +329,67 @@ def VTF(formants, fs):
 # REAL-TIME GENERATION
 
 
-def startPlayback(fs):
-    p = pyaudio.PyAudio()
-    stream = p.open(format=pyaudio.paFloat32,
-                    channels=1,
-                    rate=fs,
-                    output=True)
-    stream.start_stream()
-    def shutdown():
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
+def startPlayback():
+    event = threading.Event()
 
-    atexit.register(shutdown)
-    return stream
+    stream = sd.OutputStream(
+        samplerate=fs,
+        blocksize=CHUNK,
+        channels=1,
+        dtype='float32',
+        callback=callback,
+        finished_callback=event.set)
+
+    with stream:
+        stream.start()
+        event.wait()
 
 
-s_sourceArgs = None
+s_f0 = s_Oq = s_am = s_Qa = None
 s_formants = [None]
-s_source = None
-s_filter = None
-s_soszi = None
-def generateFrame(fs, targetLen=.5, **kwargs):
-    global s_sourceArgs, s_formants, s_source, s_filter, s_soszi
-
-    sourceArgs = {k: kwargs[k] for k in ('f0', 'Oq', 'am', 'Qa')}
-    formants = kwargs['formants']
-    f0 = kwargs['f0']
-    Oq = kwargs['Oq']
-    am = kwargs['am']
-    Qa = kwargs['Qa']
+s_source = s_filter = None
+s_soszi = s_lastF0 = None
+s_updated = False
+def updateArgs(*, f0, Oq, am, Qa, formants):
+    global s_f0, s_Oq, s_am, s_Qa, s_formants, s_updated
 
     T0 = 1 / f0
 
-    # Update source function if args changed
-    if sourceArgs != s_sourceArgs:
-        s_sourceArgs = sourceArgs
-        _, s_source = Rpp(1, T0, Oq, am, Qa)
+    # Update source function
+    if (s_f0, s_Oq, s_am, s_Qa) != (f0, Oq, am, Qa):
+        (s_f0, s_Oq, s_am, s_Qa) = (f0, Oq, am, Qa)
+        s_updated = True
 
-    # Update filter function if formants changed
+    # Update filter function
     if any([a != b for a, b in zip(formants, s_formants)]):
         s_formants = formants
-        s_filter = VTF(formants, fs)
-        s_soszi = signal.sosfilt_zi(s_filter)
+        s_updated = True
 
-    # Round the length to the fundamental period
-    realLen = np.round(targetLen / T0) * T0
-    t = np.linspace(0, realLen, num=int(realLen*fs)-1, endpoint=False)
 
-    # Generate the samples
+s_time = 0
+def callback(outdata, frames, time, status):
+    global s_time, s_updated, s_source, s_filter, s_soszi
+
+    if s_updated:
+        s_updated = False
+
+        lastT0 = 1 / (s_lastF0 if s_lastF0 else s_f0)
+        # Wait until the end of the cycle before updating anything
+        if s_time % lastT0 < 2 / fs:
+            s_time = 0
+
+            s_source = Rpp(1, 1/s_f0, s_Oq, s_am, s_Qa)[1]
+            s_filter = VTF(s_formants)
+            s_soszi = signal.sosfilt_zi(s_filter)
+
+    t0, s_time = s_time, s_time + frames / fs
+    t = np.linspace(t0, s_time, num=frames, endpoint=True)
+
+    # Generate samples
     U = s_source(t)
     V, s_soszi = signal.sosfilt(s_filter, U, zi=s_soszi)
 
-    # Realign the samples
-    lag = np.argmax(signal.correlate(U, V))
-    V = np.roll(V, shift=int(np.ceil(lag)))
-
-    return np.float32(normalize(V))
+    outdata[:,0] = np.float32(normalize(V))
 
 
 # ----------------
@@ -413,20 +399,17 @@ def generateFrame(fs, targetLen=.5, **kwargs):
 def main():
     # Testing parameters used in the original AM-GIF algorithm paper.
 
-    fs = 44100
+    f0 = 200
 
-    Oq = 0.9
-    am = 0.9
+    Oq = 0.6
+    am = 0.8
     Qa = 0.1
 
     R = [(650, 80), (1080, 90), (2650, 120), (2900, 130), (3250, 140)]
 
-    stream = startPlayback(fs)
+    updateArgs(f0=f0, Oq=Oq, am=am, Qa=Qa, formants=R)
 
-    for k in [0, 2, 4, 5, 7, 9, 11, 12]:
-        frame = generateFrame(fs, f0=(130.81*(2**(k/12))), Oq=(k/20)+.2, am=am, Qa=Qa, formants=R, targetLen=2)
-        stream.write(frame)
-
+    startPlayback()
 
     if False:
         NFFT = 1024
