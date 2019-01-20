@@ -6,6 +6,9 @@ from scipy.io import wavfile
 from pprint import pprint
 from math import pi
 
+import pyaudio
+import atexit
+
 import matplotlib.pyplot as plt
 
 # ---------
@@ -189,6 +192,10 @@ def normalize(S):
     return S / np.max(np.abs(S))
 
 
+def discretize(S):
+    return np.int16(normalize(S) * 32767)
+
+
 # ----------------
 # AM-GIF ALGORITHM
 
@@ -268,8 +275,35 @@ def Rpp_Tx(T0, Te, Tp, Ta):
     return Te * (1 - (.5 * Te**2 - Te * Tp) / (2 * Te**2 - 3 * Te * Tp + 6 * Ta * (Te - Tp) * D))
 
 
-def Rpp(K, T0, Te, Tp, Ta):
+def Rpp(E, T0, Oq, am, Qa):
+    """
+    Generator for the Rosenberg++ glottal source model
+
+    Args:
+        E (float): The amplitude of the pulse (e.g. 1).
+        T0 (float): The fundamental period (the duration of the glottal cycle), 1/f0.
+        Oq (float): The open quotient (ratio of the open phase over the glottal cycle).
+        am (float): The asymmetry coefficient.
+        Qa (float): The return quotient (Qa = 0 : abrupt closure).
+
+    Returns:
+        function: The time-domain glottal flow derivative function on [0, T0].
+    """
+
+    # Find K, Te, Tp, Ta from these expressions:
+    #
+    # E = 4 * K * Te * (Tp - Te) * (Tx - Te)
+    # Oq = Te / T0
+    # am = Tp / Te
+    # Qa = Ta / ((1 - Oq) * T0)
+
+    Te = Oq * T0
+    Tp = am * Te
+    Ta = Qa * (T0 - Te)
     Tx = Rpp_Tx(T0, Te, Tp, Ta)
+
+    K = -E / (4 * Te * (Tp - Te) * (Tx - Te))
+
     expT = np.exp(-(T0 - Te) / Ta)
 
     def Uder(t):
@@ -293,104 +327,140 @@ def Rpp(K, T0, Te, Tp, Ta):
     return U, Uder
 
 
-def glottalSource(fs, E, T0, Oq, am, Qa):
-    """
-    Generator for the Rosenberg++ glottal source model
-
-    Args:
-        fs (float): The sampling frequency used for proper normalization of the pulse amplitude.
-        E (float): The amplitude of the pulse (e.g. 1).
-        T0 (float): The fundamental period (the duration of the glottal cycle), 1/f0.
-        Oq (float): The open quotient (ratio of the open phase over the glottal cycle).
-        am (float): The asymmetry coefficient.
-        Qa (float): The return quotient (Qa = 0 : abrupt closure).
-
-    Returns:
-        function: The time-domain glottal flow derivative function on [0, T0].
-    """
-
-    # Find K, Te, Tp, Ta from these expressions:
-    #
-    # E = 4 * K * Te * (Tp - Te) * (Tx - Te)
-    # Oq = Te / T0
-    # am = Tp / Te
-    # Qa = Ta / ((1 - Oq) * T0)
-
-    Te = Oq * T0
-    Tp = am * Te
-    Ta = Qa * (T0 - Te)
-    Tx = Rpp_Tx(T0, Te, Tp, Ta)
-
-    K = E / (4 * Te * (Tp - Te) * (Tx - Te))
-
-    U, Uder = Rpp(K, T0, Te, Tp, Ta)
-
-    return Uder
-
-
-def vocalTractFilter(F, fs, n):
+def VTF(formants, fs):
     """
     Generator for an all-pole vocal tract filter.
     """
-    (F0, Bw0), *Ftail = F
+    F, Bw = np.transpose(formants)
 
-    # Parallel peaks
-    filtr = signal.iirpeak(F0, F0/Bw0, fs)
+    nsecs = len(F)
+    R = np.exp(-pi * Bw / fs)  # Pole radii
+    theta = 2 * pi * F / fs  # Pole angles
+    poles = R * np.exp(1j * theta)
 
-    for Fn, Bwn in Ftail:
-        filtr = parallel(filtr, signal.iirpeak(Fn, Fn/Bwn, fs))
+    poles = np.concatenate((poles, np.conj(poles)))
 
-    # Add a Butterworth filter to simulate the frequency slope
-    # This one is in series
-    # Order n => 20n dB/dec slope
-    filtr = series(filtr, signal.butter(n, 100, fs=fs))
+    return signal.zpk2sos([], poles, 1)
 
-    b, a = filtr
 
-    return lambda x: signal.filtfilt(b, a, x)
-    #return bt, at
+# --------------------
+# REAL-TIME GENERATION
+
+
+def startPlayback(fs):
+    p = pyaudio.PyAudio()
+    stream = p.open(format=pyaudio.paFloat32,
+                    channels=1,
+                    rate=fs,
+                    output=True)
+    stream.start_stream()
+    def shutdown():
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+    atexit.register(shutdown)
+    return stream
+
+
+s_sourceArgs = None
+s_formants = [None]
+s_source = None
+s_filter = None
+s_soszi = None
+def generateFrame(fs, targetLen=.5, **kwargs):
+    global s_sourceArgs, s_formants, s_source, s_filter, s_soszi
+
+    sourceArgs = {k: kwargs[k] for k in ('f0', 'Oq', 'am', 'Qa')}
+    formants = kwargs['formants']
+    f0 = kwargs['f0']
+    Oq = kwargs['Oq']
+    am = kwargs['am']
+    Qa = kwargs['Qa']
+
+    T0 = 1 / f0
+
+    # Update source function if args changed
+    if sourceArgs != s_sourceArgs:
+        s_sourceArgs = sourceArgs
+        _, s_source = Rpp(1, T0, Oq, am, Qa)
+
+    # Update filter function if formants changed
+    if any([a != b for a, b in zip(formants, s_formants)]):
+        s_formants = formants
+        s_filter = VTF(formants, fs)
+        s_soszi = signal.sosfilt_zi(s_filter)
+
+    # Round the length to the fundamental period
+    realLen = np.round(targetLen / T0) * T0
+    t = np.linspace(0, realLen, num=int(realLen*fs)-1, endpoint=False)
+
+    # Generate the samples
+    U = s_source(t)
+    V, s_soszi = signal.sosfilt(s_filter, U, zi=s_soszi)
+
+    # Realign the samples
+    lag = np.argmax(signal.correlate(U, V))
+    V = np.roll(V, shift=int(np.ceil(lag)))
+
+    return np.float32(normalize(V))
+
+
+# ----------------
+# MAIN ENTRY POINT
 
 
 def main():
     # Testing parameters used in the original AM-GIF algorithm paper.
 
-    fs = 16000
-    E = 1
-    Oq = 0.1
+    fs = 44100
+
+    Oq = 0.9
     am = 0.9
-    Qa = 0.07
+    Qa = 0.1
 
-    f = 125
-    R = [(800, 80), (1150, 90), (2900, 120), (3900, 130), (4950, 140)]
+    R = [(650, 80), (1080, 90), (2650, 120), (2900, 130), (3250, 140)]
 
-    source = glottalSource(fs, E, 1/f, Oq, am, Qa)
+    stream = startPlayback(fs)
 
-    filtr = vocalTractFilter(R, fs, 1)  # 20 dB/dec
+    for k in [0, 2, 4, 5, 7, 9, 11, 12]:
+        frame = generateFrame(fs, f0=(130.81*(2**(k/12))), Oq=(k/20)+.2, am=am, Qa=Qa, formants=R, targetLen=2)
+        stream.write(frame)
 
-    length = 5
-    t = np.linspace(0, length, num=int(length*fs), endpoint=False)
 
-    U = normalize(source(t))
-    V = normalize(filtr(U))
+    if False:
+        NFFT = 1024
 
-    wavfile.write('synth_source.wav', fs, U)
-    wavfile.write('synth_speech.wav', fs, V)
-
-    if True:
         plt.figure()
 
-        #plt.plot(t, filtr(t), label='Filter')
-        plt.plot(t, U, label='Source signal')
-        plt.plot(t, V, label='Speech signal')
+        plt.subplot(211)
+
+        plt.suptitle(r'$f_0={}\ Hz,\ O_q={},\ \alpha_m={},\ Q_a={}$'.format(f, Oq, am, Qa))
+        plt.plot(t, u, label='Glottal source')
+        plt.plot(t, v, label='Speech signal')
+        plt.xlim(0, 5/f)
+        plt.xticks(
+                [i/f for i in range(6)],
+                ['$0$' if i is 0 else '$T_0$' if i is 1 else '${}T_0$'.format(i) for i in range(6)]
+        )
+        plt.ylabel('Amplitude')
+        plt.grid()
         plt.legend()
 
-        #f, t, Sxx = signal.spectrogram(U, fs, window='hamming', nfft=8192, nperseg=512)
-        #plt.pcolormesh(t, f, Sxx)
+        plt.subplot(223)
 
-        plt.suptitle('Oq = {}'.format(Oq))
+        plt.specgram(u, Fs=fs, NFFT=1024, mode='magnitude', scale='linear')
         plt.xlabel('Time (seconds)')
-        plt.xlim(0, 5/f)
-        plt.grid()
+        plt.ylabel('Frequency (Hz)')
+        plt.ylim(0, 5000)
+
+        plt.subplot(224)
+
+        plt.specgram(v, Fs=fs, NFFT=1024, mode='magnitude', scale='linear')
+        plt.xlabel('Time (seconds)')
+        plt.ylim(0, 5000)
+        plt.yticks(())
+
         plt.show()
 
 
