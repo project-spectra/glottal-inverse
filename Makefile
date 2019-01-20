@@ -27,17 +27,12 @@
 TARGET := gif
 
 # Modify as necessary
-CFLAGS  +=
-LDFLAGS +=
+CXXFLAGS += 
+LDFLAGS += -lgsl -lcblas -lm
 
 SRC_DIR := src
 INC_DIR := inc
 BIN_DIR := bin
-
-# Test flags (ignore if no test)
-TEST_TARGET := tests
-TEST_DIR := tests  	    # Unique source dir, no intermediate files created
-TEST_FLAGS = $(CFLAGS)  # Expand to regular CFLAGS 
 
 # Hidden directories for intermediate files
 OBJ_DIR := .obj
@@ -49,18 +44,18 @@ endif
 
 ##--- Toolchain flags
 
-CFLAGS += -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaration -pipe -fPIC -fstack-protector-strong
+CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaration -pipe -fPIC -fstack-protector-strong
 
-CFLAGS_Debug  := -g -O2
+CXXFLAGS_Debug := -g -O2
 LDFLAGS_Debug := 
 
-CFLAGS_Release  := -O2 -Os -Ofast
+CXXFLAGS_Release := -O2 -Os -Ofast
 LDFLAGS_Release :=
 
-CFLAGS += $(CFLAGS_$(BUILD_TYPE))
+CXXFLAGS += $(CXXFLAGS_$(BUILD_TYPE))
 LDFLAGS += $(LDFLAGS_$(BUILD_TYPE))
 
-CFLAGS += -I$(INC_DIR)
+CXXFLAGS += -I$(INC_DIR)
 
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.Td
 
@@ -68,14 +63,14 @@ DEPFLAGS = -MT $@ -MMD -MP -MF $(DEP_DIR)/$*.Td
 
 # Compile source file $1 to object file $2
 define compile
-	$(CC) $(DEPFLAGS) $(CFLAGS) -c $1 -o $2
+	$(CXX) $(DEPFLAGS) $(CXXFLAGS) -c $1 -o $2
 	@mv -f $(DEP_DIR)/$*.Td $(DEP_DIR)/$*.d
 	@touch $@
 endef
 
 # Link object files $1 to binary $2
 define link
-	$(CC) $1 -o $2 $(LDFLAGS)
+	$(CXX) $1 -o $2 $(LDFLAGS)
 endef
 
 # Mirror directory structure from $1 to $2
@@ -94,14 +89,12 @@ $(shell $(call cpdirtree,$(SRC_DIR),$(OBJ_DIR)))
 $(shell $(call cpdirtree,$(SRC_DIR),$(DEP_DIR)))
 
 # List source file
-C_FILES := $(shell find $(SRC_DIR) -type f -iname "*.c")
+CXX_FILES := $(shell find $(SRC_DIR) -type f -iname "*.cpp")
 H_FILES := $(shell find $(INC_DIR) -type f -iname "*.h" 2>/dev/null)
 
-TEST_C_FILES := $(shell find $(TEST_DIR) -type f -iname "*.c" 2>/dev/null)
-
 # Map each source file to an object and a dependency file.
-O_FILES := $(C_FILES:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-D_FILES := $(C_FILES:$(SRC_DIR)/%.c=$(DEP_DIR)/%.d)
+O_FILES := $(CXX_FILES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+D_FILES := $(CXX_FILES:$(SRC_DIR)/%.cpp=$(DEP_DIR)/%.d)
 
 ##--- Phony make rules
 
@@ -117,15 +110,7 @@ clean:
 clean-dist: clean
 	-rm -f $(BIN_DIR)/$(TARGET)
 
-clean-test:
-	-rm -f $(BIN_DIR)/$(TEST_TARGET)
-
 re: clean-dist all
-
-test: $(TEST_TARGET)
-	$(BIN_DIR)/$(TEST_TARGET)
-
-$(TEST_TARGET): $(BIN_DIR)/$(TEST_TARGET)
 
 ##--- Building make rules
 
@@ -133,7 +118,7 @@ $(BIN_DIR)/$(TARGET): $(O_FILES)
 	@mkdir -p $(BIN_DIR)
 	$(call link,$+,$@)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(DEP_DIR)/%.d
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(DEP_DIR)/%.d
 	$(call compile,$<,$@)
 
 $(DEP_DIR)/%.d: ;
@@ -141,11 +126,3 @@ $(DEP_DIR)/%.d: ;
 
 -include $(D_FILES)
 
-##--- Building Test program
-
-$(BIN_DIR)/$(TEST_TARGET): $(TEST_C_FILES)
-ifeq ($(strip $(TEST_C_FILES)),)
-	$(error "No source files in $(TEST_DIR) directory")
-else
-	$(CC) $+ -o $@ $(TEST_FLAGS) -Icunit/include -Lcunit/lib -l:libcunit.a -lncurses
-endif
