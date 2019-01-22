@@ -1,11 +1,4 @@
-#include "constants.h"
 #include "linalg.h"
-
-
-struct projection_params {
-    const gsl_function *f;
-    const gsl_function *g;
-};
 
 
 double proj_int(double x, void *p) {
@@ -21,14 +14,13 @@ double proj_int(double x, void *p) {
 }
 
 
-double projection(const gsl_function *f, const gsl_function *g) {
-    projection_params params = {
-        .f = f,
-        .g = g,
-    };
+double projection(gsl_function *f, gsl_function *g) {
+    projection_params params;
+    params.f = f;
+    params.g = g;
 
     gsl_function A;
-    A.function = &proj_int;
+    A.function = proj_int;
     A.params = &params;
 
     return integrate(&A, 0, 1);

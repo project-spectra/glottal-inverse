@@ -1,4 +1,3 @@
-#include "constants.h"
 #include "linalg.h"
 
 

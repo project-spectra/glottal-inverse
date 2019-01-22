@@ -2,10 +2,11 @@
 #define CONSTANTS_H
 
 
-// Wavelet family level.
-#define J 8
+// Audio sample rate
+#define SAMPLE_RATE 44100
 
-// Basis scaling function factor.
+// Vector basis
+#define J 8
 #define TAU 1.2
 
 // Integration workspace size.
