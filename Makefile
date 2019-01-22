@@ -28,7 +28,7 @@ TARGET := gif
 
 # Modify as necessary
 CXXFLAGS += 
-LDFLAGS += -lgsl -lcblas -lm
+LDFLAGS += -lgsl -lcblas -lm -lportaudio
 
 SRC_DIR := src
 INC_DIR := inc
