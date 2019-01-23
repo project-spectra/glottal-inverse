@@ -2,7 +2,13 @@
 #define IAIF_H
 
 
-//gsl_function *
+#include <gsl/gsl_vector.h>
+
+#include "constants.h"
+#include "lpc.h"
+#include "filter.h"
+
+gsl_vector *computeIAIF(gsl_vector *x, size_t M);
 
 
 #endif // IAIF_H
