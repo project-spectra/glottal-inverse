@@ -2,6 +2,9 @@
 #include "linalg.h"
 
 
+static vector<mat_operator> C(computeC());
+
+
 bool convergesAMGIF() {
     return false;
 }
@@ -14,14 +17,11 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
         double beta,
         double tau
 ) {
-    vector<mat_operator> C;
     gsl_vector *di, *x, *yi, *y, *rhs;
     gsl_matrix *A, *B, *lhs;
     size_t length, mu;
 
     length = basis_length();
-
-    C = computeC();
 
     di = coords(me);
     yi = coords(pe);
