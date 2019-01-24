@@ -25,9 +25,10 @@ vector<mat_operator> computeC() {
     conv_params.f = &phi_p;
     conv_params.g = &phi_f;
 
+    C.reserve(length);
     for (mu = 0; mu < length; ++mu) {  
         C_mu = gsl_matrix_alloc(length, length);
-        C[mu] = mat_operator(C_mu, gsl_matrix_free);
+        C.push_back(mat_operator(C_mu, gsl_matrix_free));
 
         for (p = 0; p < length; ++p) {
             for (f = 0; f < length; ++f) {

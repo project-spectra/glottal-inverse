@@ -13,11 +13,13 @@ double conv_int(double x, void *p) {
 
 double convolute(double t, void *p) {
     auto params = static_cast<convolute_params *>(p);
-    params->t = t;
+
+    auto conv_params = new convolute_params(*params);
+    conv_params->t = t;
 
     gsl_function A;
     A.function = &conv_int;
-    A.params = params;
+    A.params = conv_params;
 
     return integrate(&A, 0, 1);
 }

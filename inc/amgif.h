@@ -18,6 +18,9 @@ using std::unique_ptr;
 // Smart pointer to matrix
 using mat_operator = unique_ptr<gsl_matrix, void(*)(gsl_matrix *)>;
 
+// Generate operator L
+mat_operator computeL();
+
 // Generate operator C
 vector<mat_operator> computeC();
 
@@ -25,7 +28,7 @@ vector<mat_operator> computeC();
 pair<gsl_vector *, gsl_vector *> computeAMGIF(
         gsl_function *me,
         gsl_function *pe,
-        mat_operator L,
+        mat_operator& L,
         double alpha,
         double beta,
         double tau,

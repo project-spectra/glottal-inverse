@@ -9,6 +9,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_multifit.h>
 #include <gsl/gsl_sf_trig.h>
+#include <gsl/gsl_blas.h>
 
 
 gsl_vector *hanning(size_t L);

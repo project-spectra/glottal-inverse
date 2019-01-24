@@ -2,16 +2,6 @@
 #include "filter.h"
 
 
-double squareSum(gsl_vector *x, size_t len) {
-    double s = 0.0;
-    
-    for (size_t i = 0; i < len; ++i) {
-        s = gsl_pow_2(gsl_vector_get(x, i));
-    }
-    
-    return s;
-}
-
 gsl_vector *lpcResidual(
     gsl_vector *x,
     size_t numSamples,
@@ -22,7 +12,6 @@ gsl_vector *lpcResidual(
     
     size_t start, n;
     gsl_vector *win, *A, *inv, *res;
-    double fact;
 
     res = gsl_vector_calloc(numSamples);
     
@@ -39,8 +28,7 @@ gsl_vector *lpcResidual(
         A = lpcCoeffs(&segX.vector, L, order);
 
         inv = filter_fir(A, order + 1, &segX.vector, L);
-        fact = sqrt(squareSum(&segX.vector, L) / squareSum(inv, L));
-        gsl_vector_scale(inv, 1. / fact);
+        gsl_vector_scale(inv, gsl_blas_dnrm2(inv) / gsl_blas_dnrm2(&segX.vector));
 
         gsl_vector_add(&segRes.vector, inv);
        

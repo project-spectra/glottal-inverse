@@ -24,7 +24,10 @@ double wavelet(size_t j, size_t l, double t) {
 }
 
 double scaling(double t) {
-    return TAU * t;
+    if (0 <= t && t < 1) {
+        return 1;
+    }
+    return 0;
 }
 
 size_t basis_index(size_t j, size_t l) {

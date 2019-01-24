@@ -4,7 +4,7 @@
 double integrate(const gsl_function *f, double a, double b) {
     double result, abserr;
     
-    auto work = gsl_integration_workspace_alloc(2000);
+    auto work = gsl_integration_workspace_alloc(INTEGRATE_WORK);
 
     gsl_integration_qag(
             f, a, b,
