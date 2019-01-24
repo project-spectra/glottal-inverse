@@ -1,19 +1,20 @@
 #include "linalg.h"
 
+#include <iostream>
 
 double integrate(const gsl_function *f, double a, double b) {
-    double result, abserr;
+    double result;
+    size_t neval;
     
-    auto work = gsl_integration_workspace_alloc(INTEGRATE_WORK);
+    static auto work = gsl_integration_romberg_alloc(INTEGRATE_WORK);
 
-    gsl_integration_qag(
+    gsl_integration_romberg(
             f, a, b,
             INTEGRATE_EPSABS, INTEGRATE_EPSREL,
-            INTEGRATE_WORK, GSL_INTEG_GAUSS21,
-            work, &result, &abserr
+            &result, &neval, work
     );
 
-    gsl_integration_workspace_free(work);
+    //gsl_integration_romberg_free(work);
 
     return result;
 }

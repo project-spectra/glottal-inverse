@@ -2,9 +2,6 @@
 #include "linalg.h"
 
 
-static vector<mat_operator> C(computeC());
-
-
 bool convergesAMGIF(gsl_vector *y, gsl_vector *yi, double eps) {
     // 2-norm distance
     gsl_vector *sub = gsl_vector_alloc(y->size);
@@ -27,6 +24,8 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
         double tau,
         double eps
 ) {
+    static vector<mat_operator> C(computeC());
+
     gsl_vector *di, *x, *yi, *y, *rhs;
     gsl_matrix *A, *B, *lhs;
     size_t length, mu;

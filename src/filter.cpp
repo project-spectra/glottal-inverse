@@ -15,11 +15,11 @@ gsl_vector *filter_iir(gsl_vector *b, size_t Nb, gsl_vector *a, size_t Na, gsl_v
     for (m = 0; m < M; ++m) {
         data = 0.0;
         
-        for (n = 0; n < Na && m - n > 0; ++n) {
+        for (n = 0; n < Nb && n <= m; ++n) {
             data += gsl_vector_get(b, n) * gsl_vector_get(x, m - n);
         }
         
-        for (n = 1; n < Nb && m - n > 0; ++n) {
+        for (n = 1; n < Na && n <= m; ++n) {
             data -= gsl_vector_get(a, n) * gsl_vector_get(y, m - n);
         }
 

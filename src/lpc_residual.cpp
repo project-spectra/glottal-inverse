@@ -25,7 +25,7 @@ gsl_vector *lpcResidual(
         
         gsl_vector_mul(&segX.vector, win);
         
-        A = lpcCoeffs(&segX.vector, L, order);
+        A = lpcCoeffs(&segX.vector, order);
 
         inv = filter_fir(A, order + 1, &segX.vector, L);
         gsl_vector_scale(inv, gsl_blas_dnrm2(inv) / gsl_blas_dnrm2(&segX.vector));

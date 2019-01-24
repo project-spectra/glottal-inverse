@@ -46,21 +46,21 @@ gsl_vector *computeIAIF(gsl_vector *x, size_t M) {
         // TODO: append preflt 
 
         auto xw = applyWindow(x, win);
-        auto Hg1 = lpcCoeffs(xw, M, 1);
+        auto Hg1 = lpcCoeffs(xw, 1);
         auto y = filter_fir(Hg1, 2, signal, M);
         
         auto yw = applyWindow(y, win);
-        auto Hvt1 = lpcCoeffs(yw, M, p_vt);
+        auto Hvt1 = lpcCoeffs(yw, p_vt);
         auto g1 = filter_fir(Hvt1, p_vt+1, signal, M);
         auto g1int = applyInt(g1, M);
 
         auto g1w = applyWindow(g1int, win);
-        auto Hg2 = lpcCoeffs(g1w, M, p_gl);
+        auto Hg2 = lpcCoeffs(g1w, p_gl);
         auto y2 = filter_fir(Hg2, p_gl+1, signal, M);
         auto y2int = applyInt(y2, M);
 
         auto y2w = applyWindow(y2int, win);
-        auto Hvt2 = lpcCoeffs(y2w, M, p_vt);
+        auto Hvt2 = lpcCoeffs(y2w, p_vt);
         auto dg = filter_fir(Hvt2, p_vt+1, signal, M);
         
         return dg;

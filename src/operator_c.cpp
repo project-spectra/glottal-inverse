@@ -28,7 +28,6 @@ vector<mat_operator> computeC() {
     C.reserve(length);
     for (mu = 0; mu < length; ++mu) {  
         C_mu = gsl_matrix_alloc(length, length);
-        C.push_back(mat_operator(C_mu, gsl_matrix_free));
 
         for (p = 0; p < length; ++p) {
             for (f = 0; f < length; ++f) {
@@ -36,6 +35,8 @@ vector<mat_operator> computeC() {
                 gsl_matrix_set(C_mu, p, f, data);
             }
         }
+        
+        C.push_back(mat_operator(C_mu, gsl_matrix_free));
     }
 
     return C;

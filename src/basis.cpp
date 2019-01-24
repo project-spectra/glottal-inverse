@@ -1,5 +1,5 @@
 #include "linalg.h"
-
+#include <iostream>
 /* Haar wavelet family */
 
 double wavelet_mother(double t) {

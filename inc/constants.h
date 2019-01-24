@@ -14,8 +14,8 @@
 
 // Integration workspace size.
 #define INTEGRATE_EPSABS 0
-#define INTEGRATE_EPSREL 1e-12
-#define INTEGRATE_WORK 2000
+#define INTEGRATE_EPSREL 1e-4
+#define INTEGRATE_WORK 10
 
 
 #endif // CONSTANTS_H
