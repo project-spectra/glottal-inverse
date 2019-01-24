@@ -1,21 +1,24 @@
 #include "amgif.h"
 #include "linalg.h"
 
+#include <iostream>
 
-bool convergesAMGIF(gsl_vector *y, gsl_vector *yi, double eps) {
-    // 2-norm distance
+
+double deviationAMGIF(gsl_vector *y, gsl_vector *yi) {
+    // 1-norm distance
     gsl_vector *sub = gsl_vector_alloc(y->size);
     gsl_vector_memcpy(sub, y);
     gsl_vector_sub(sub, yi);
     
-    double dist = gsl_blas_dnrm2(sub);
+    double dist = gsl_blas_dasum(sub);
 
     gsl_vector_free(sub);
-        
-    return (dist < eps);
+
+    return dist;
 }
 
 pair<gsl_vector *, gsl_vector*> computeAMGIF(
+        vector<mat_operator>& C,
         gsl_function *me,
         gsl_function *pe,
         mat_operator& L,
@@ -24,11 +27,10 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
         double tau,
         double eps
 ) {
-    static vector<mat_operator> C(computeC());
-
     gsl_vector *di, *x, *yi, *y, *rhs;
     gsl_matrix *A, *B, *lhs;
     size_t length, mu;
+    double err;
 
     length = basis_length();
 
@@ -49,8 +51,9 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
     auto yv = gsl_matrix_view_vector(y, length, 1);
     auto rhsv = gsl_matrix_view_vector(rhs, length, 1);
 
+    size_t iter = 1;
     do {
-        // Minimize for X
+        // Minimize for Y
 
         for (mu = 0; mu < length; ++mu) {
             auto row = gsl_matrix_submatrix(A, mu, 0, 1, length);
@@ -66,12 +69,13 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
         gsl_linalg_cholesky_decomp1(lhs);
         gsl_linalg_cholesky_solve(lhs, rhs, x);
 
-        // Minimize for Y
+        // Minimize for X
 
         for (mu = 0; mu < length; ++mu) {
-            auto row = gsl_matrix_submatrix(B, mu, 0, 1, length);
-            
-            gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, C[mu].get(), &xv.matrix, 0.0, &row.matrix);
+            auto row = gsl_matrix_row(B, mu);
+            auto rowT = gsl_matrix_view_vector(&row.vector, length, 1);
+
+            gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, C[mu].get(), &xv.matrix, 0.0, &rowT.matrix);
         }
         
         gsl_matrix_set_identity(lhs);
@@ -82,7 +86,15 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
 
         gsl_linalg_cholesky_decomp1(lhs);
         gsl_linalg_cholesky_solve(lhs, rhs, y);
-    } while (!convergesAMGIF(y, yi, eps));
+
+        err = deviationAMGIF(y, yi);
+
+        if (iter % 1000 == 0) {
+            std::cout << "  * Iteration " << iter << " with error " << err << std::endl;
+        }
+        
+        iter++;
+    } while (err > eps);
 
     gsl_matrix_free(A);
     gsl_matrix_free(B);

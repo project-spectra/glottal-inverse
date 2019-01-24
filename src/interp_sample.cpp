@@ -1,5 +1,6 @@
 #include "interp_sample.h"
 
+#include <iostream>
 
 struct interp_sample_params {
     gsl_interp *interp;
@@ -16,6 +17,11 @@ double interp_sample_eval(double t, void *p) {
     if (params->periodic) {
         // Shift the argument to keep it in the period.
         t -= params->period * floor(t / params->period);
+    } else {
+        // Check we're in the interpolated domain.
+        if (t < 0 || t > params->period) {
+            std::cerr << "Out of bounds interpolation" << std::endl;
+        }
     }
 
     return gsl_interp_eval(
@@ -37,10 +43,10 @@ void *interp_sample(gsl_vector *y, size_t M, bool periodic) {
     double *ya = y->data;
 
     for (size_t i = 0; i < M; ++i) {
-        xa[i] = (double) i / (double) SAMPLE_RATE;
+        xa[i] = (double) i / (double) (M - 1);
     }
 
-    interp = gsl_interp_alloc(gsl_interp_linear, M);
+    interp = gsl_interp_alloc(gsl_interp_steffen, M);
     gsl_interp_init(interp, xa, ya, M);
     accel = gsl_interp_accel_alloc();
     
@@ -50,7 +56,7 @@ void *interp_sample(gsl_vector *y, size_t M, bool periodic) {
     params->ya = ya;
     params->accel = accel;
     params->periodic = periodic;
-    params->period = xa[M - 1];
+    params->period = 1;
     
     return params;
 }

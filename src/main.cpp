@@ -41,18 +41,21 @@ int main() {
     
     std::cout << " ==== Recording ====" << std::endl;
     
-    signal(SIGINT, inthand);
-    
     gsl_vector *input;
     gsl_function me, pe;
 
     input = gsl_vector_alloc(numSamples);
     me.function = pe.function = interp_sample_eval;
 
+    std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
     mat_operator L(computeL());
 
+    std::cout << "- Computing operator C..." << std::endl;
+    vector<mat_operator> C(computeC());
+   
     while (!stop) {
+        std::cout << "- Processing one window..." << std::endl;
         // record a window
         recordWindow(stream);
 
@@ -61,6 +64,7 @@ int main() {
             gsl_vector_set(input, i, data.recordedSamples[i]);
         }
 
+        std::cout << "- Estimating with IAIF..." << std::endl;
         // get a first estimate with IAIF
         // undiscretize the glottal flow derivative estimate
         gsl_vector *pe_discr = computeIAIF(input, numSamples);
@@ -76,11 +80,14 @@ int main() {
         alpha = 0.9;
         beta = 1.2;
         tau = 0.8;
-        eps = 1e-6;
+        eps = 1e-3;
 
+        std::cout << "- Estimating with AM-GIF..." << std::endl;
         // estimate with AM-GIF
         gsl_vector *x, *y;
-        std::tie(x, y) = computeAMGIF(&me, &pe, L, alpha, beta, tau, eps);
+        std::tie(x, y) = computeAMGIF(C, &me, &pe, L, alpha, beta, tau, eps);
+
+        std::cout << std::endl;
     }
 
 
