@@ -17,8 +17,10 @@
 #include "constants.h"
 
 
-#define _PERSIST_SUBDIR(J) "J-" #J
-#define PERSIST_DIR "persistedOperatorC/" _PERSIST_SUBDIR(J)
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+#define PERSIST_DIR "persistedOperatorC/J-" STR(J)
 
 #define PERSIST_PATHLEN 64
 

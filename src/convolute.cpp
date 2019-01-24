@@ -1,5 +1,5 @@
 #include "linalg.h"
-
+#include <iostream>
 
 double conv_int(double s, void *p) {
     auto params = static_cast<convolute_params *>(p);
@@ -14,7 +14,9 @@ double conv_int(double s, void *p) {
 double convolute(double t, void *p) {
     auto params = static_cast<convolute_params *>(p);
 
-    auto conv_params = new convolute_params(*params);
+    auto conv_params = new convolute_params;
+    conv_params->f = params->f;
+    conv_params->g = params->g;
     conv_params->t = t;
 
     gsl_function A;

@@ -44,7 +44,7 @@ double basis_eval(double t, void *params) {
     }
 
     // Get the (j, l) indices
-    size_t j = floor(log2(t));
+    size_t j = floor(log2(index));
     size_t l = index - gsl_pow_uint(2, j);
 
     return wavelet(j, l, t);

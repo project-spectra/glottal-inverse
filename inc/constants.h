@@ -10,14 +10,13 @@
 
 // Vector basis
 #define J 4
-#define TAU 1.2
 
 // Integration workspace size.
 #define INTEGRATE_EPSABS 0
-#define INTEGRATE_EPSREL 1e-7
+#define INTEGRATE_EPSREL 1e-3
 #define INTEGRATE_WORK 10
 
 // Monte-Carlo integration calls.
-#define INTEGRATE_NCALLS 10000
+#define INTEGRATE_NCALLS 3000
 
 #endif // CONSTANTS_H

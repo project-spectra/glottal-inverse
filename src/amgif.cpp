@@ -2,10 +2,16 @@
 #include "linalg.h"
 
 #include <iostream>
+#include <chrono>
+
+
+using std::chrono::high_resolution_clock;
+using std::chrono::duration;
+using std::chrono::duration_cast;
 
 
 double deviationAMGIF(gsl_vector *y, gsl_vector *yi) {
-    // 1-norm distance
+    // 1-norm distance  
     gsl_vector *sub = gsl_vector_alloc(y->size);
     gsl_vector_memcpy(sub, y);
     gsl_vector_sub(sub, yi);
@@ -53,6 +59,8 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
 
     size_t iter = 1;
     do {
+        auto t1 = high_resolution_clock::now();
+
         // Minimize for Y
 
         for (mu = 0; mu < length; ++mu) {
@@ -87,14 +95,20 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
         gsl_linalg_cholesky_decomp1(lhs);
         gsl_linalg_cholesky_solve(lhs, rhs, y);
 
+        auto t2 = high_resolution_clock::now();
+
         err = deviationAMGIF(y, yi);
 
-        if (iter % 1000 == 0) {
-            std::cout << "  * Iteration " << iter << " with error " << err << std::endl;
+        if (iter % 100 == 0) {
+            auto dur = duration_cast<duration<double>>(t2 - t1);
+            std::cout << "  * Iteration " << iter << " with error " << err
+                      << " (" << dur.count() << ")" << std::endl;
         }
         
         iter++;
     } while (err > eps);
+
+    std::cout << "  * Converged in " << iter << " iterations with final error " << err << std::endl;
 
     gsl_matrix_free(A);
     gsl_matrix_free(B);
