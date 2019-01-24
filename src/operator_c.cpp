@@ -10,6 +10,8 @@ struct projconv_params {
 
 /* (t, s) */
 double projconv_eval(double *x, size_t dim, void *p) {
+    (void) dim;
+
     auto params = static_cast<projconv_params *>(p);
 
     double f = GSL_FN_EVAL(params->f, x[0] - x[1]);

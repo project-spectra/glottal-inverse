@@ -27,8 +27,8 @@
 TARGET := gif
 
 # Modify as necessary
-CXXFLAGS += #-ftree-vectorize 
-LDFLAGS += -lgsl -lcblas -lm -lportaudio
+CXXFLAGS += -ftree-vectorize 
+LDFLAGS += -lgsl -lcblas -lm -lportaudio -lstdc++fs
 
 SRC_DIR := src
 INC_DIR := inc

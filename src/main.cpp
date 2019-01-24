@@ -7,6 +7,7 @@
 #include "audio_in.h"
 #include "iaif.h"
 #include "amgif.h"
+#include "persist_c.h"
 #include "interp_sample.h"
 
 
@@ -52,8 +53,8 @@ int main() {
     mat_operator L(computeL());
 
     std::cout << "- Computing operator C..." << std::endl;
-    vector<mat_operator> C(computeC());
-   
+    vector<mat_operator> C(smartGetC());
+
     while (!stop) {
         std::cout << "- Processing one window..." << std::endl;
         // record a window
@@ -87,11 +88,16 @@ int main() {
         gsl_vector *x, *y;
         std::tie(x, y) = computeAMGIF(C, &me, &pe, L, alpha, beta, tau, eps);
 
+        free(pe_interp);
+        free(me_interp);
+
         std::cout << std::endl;
     }
 
 
     std::cout << " ==== Exiting safely ====" << std::endl;
+
+    gsl_vector_free(input);
 
 
     return EXIT_SUCCESS;

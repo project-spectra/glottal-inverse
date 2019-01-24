@@ -18,6 +18,6 @@
 #define INTEGRATE_WORK 10
 
 // Monte-Carlo integration calls.
-#define INTEGRATE_NCALLS 100000
+#define INTEGRATE_NCALLS 10000
 
 #endif // CONSTANTS_H
