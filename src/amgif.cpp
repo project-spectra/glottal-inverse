@@ -11,12 +11,12 @@ using std::chrono::duration_cast;
 
 
 double deviationAMGIF(gsl_vector *y, gsl_vector *yi) {
-    // 1-norm distance  
+    // 2-norm distance  
     gsl_vector *sub = gsl_vector_alloc(y->size);
     gsl_vector_memcpy(sub, y);
     gsl_vector_sub(sub, yi);
     
-    double dist = gsl_blas_dasum(sub);
+    double dist = gsl_blas_dnrm2(sub);
 
     gsl_vector_free(sub);
 
@@ -33,8 +33,9 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
         double tau,
         double eps
 ) {
-    gsl_vector *di, *x, *yi, *y, *rhs;
+    gsl_vector *di, *d, *x, *yi, *y, *rhs;
     gsl_matrix *A, *B, *lhs;
+    gsl_permutation *p;
     size_t length, mu;
     double err;
 
@@ -43,8 +44,10 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
     di = coords(me);
     yi = coords(pe);
 
+    d = gsl_vector_alloc(length);
     x = gsl_vector_alloc(length);
-    y = yi;
+    y = gsl_vector_alloc(length);
+    gsl_vector_memcpy(y, yi);
 
     A = gsl_matrix_alloc(length, length);
     B = gsl_matrix_alloc(length, length);
@@ -52,15 +55,16 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
     lhs = gsl_matrix_alloc(length, length);
     rhs = gsl_vector_alloc(length);
 
+    p = gsl_permutation_alloc(length);
+
     auto div = gsl_matrix_view_vector(di, length, 1);
+    auto dv = gsl_matrix_view_vector(d, length, 1);
     auto xv = gsl_matrix_view_vector(x, length, 1);
     auto yv = gsl_matrix_view_vector(y, length, 1);
     auto rhsv = gsl_matrix_view_vector(rhs, length, 1);
 
     size_t iter = 1;
     do {
-        auto t1 = high_resolution_clock::now();
-
         // Minimize for Y
 
         for (mu = 0; mu < length; ++mu) {
@@ -74,8 +78,8 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
 
         gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, A, &div.matrix, 0.0, &rhsv.matrix);
 
-        gsl_linalg_cholesky_decomp1(lhs);
-        gsl_linalg_cholesky_solve(lhs, rhs, x);
+        gsl_linalg_pcholesky_decomp(lhs, p);
+        gsl_linalg_pcholesky_solve(lhs, p, rhs, x);
 
         // Minimize for X
 
@@ -92,28 +96,30 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
         gsl_vector_memcpy(rhs, yi);
         gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, B, &div.matrix, tau, &rhsv.matrix);
 
-        gsl_linalg_cholesky_decomp1(lhs);
-        gsl_linalg_cholesky_solve(lhs, rhs, y);
+        gsl_linalg_pcholesky_decomp(lhs, p);
+        gsl_linalg_pcholesky_solve(lhs, p, rhs, y);
 
-        auto t2 = high_resolution_clock::now();
+        // Average the two for this estimation
+        gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, A, &xv.matrix, 0.0, &dv.matrix);
+        gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 0.5, B, &yv.matrix, 0.5, &dv.matrix);
 
-        err = deviationAMGIF(y, yi);
+        err = deviationAMGIF(d, di);
 
-        if (iter % 100 == 0) {
-            auto dur = duration_cast<duration<double>>(t2 - t1);
-            std::cout << "  * Iteration " << iter << " with error " << err
-                      << " (" << dur.count() << ")" << std::endl;
-        }
-        
+        //std::cout << "  * Iteration " << iter << " with error " << err << std::endl;
+
         iter++;
-    } while (err > eps);
+    } while (err > eps && iter <= MAX_ITER);
 
-    std::cout << "  * Converged in " << iter << " iterations with final error " << err << std::endl;
+    std::cout << "  * Converged in " << iter-1 << " iterations with final error " << err << std::endl;
 
     gsl_matrix_free(A);
     gsl_matrix_free(B);
     gsl_matrix_free(lhs);
     gsl_vector_free(rhs);
+    gsl_vector_free(di);
+    gsl_vector_free(yi);
+    gsl_vector_free(x);
+    gsl_permutation_free(p);
 
-    return pair<gsl_vector *, gsl_vector *>(x, y);
+    return pair<gsl_vector *, gsl_vector *>(d, y);
 }

@@ -58,6 +58,7 @@ int main() {
     while (!stop) {
         std::cout << "- Processing one window..." << std::endl;
         // record a window
+        data.frameIndex = 0;
         recordWindow(stream);
 
         // convert the data to doubles
@@ -78,10 +79,10 @@ int main() {
 
         // initialize AM-GIF parameters
         double alpha, beta, tau, eps;
-        alpha = 0.9;
-        beta = 1.2;
+        alpha = 2.3354;
+        beta = 0.54564;
         tau = 0.8;
-        eps = 1e-3;
+        eps = .01;
 
         std::cout << "- Estimating with AM-GIF..." << std::endl;
         // estimate with AM-GIF

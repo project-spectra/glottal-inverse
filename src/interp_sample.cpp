@@ -14,6 +14,9 @@ struct interp_sample_params {
 double interp_sample_eval(double t, void *p) {
     auto *params = static_cast<interp_sample_params *>(p);
 
+    // Rescale t from [0, 1] to [0, winlen]
+    t *= (WINDOW_LENGTH - 1. / SAMPLE_RATE);
+
     if (params->periodic) {
         // Shift the argument to keep it in the period.
         t -= params->period * floor(t / params->period);
@@ -43,7 +46,7 @@ void *interp_sample(gsl_vector *y, size_t M, bool periodic) {
     double *ya = y->data;
 
     for (size_t i = 0; i < M; ++i) {
-        xa[i] = (double) i / (double) (M - 1);
+        xa[i] = (double) i / (double) (SAMPLE_RATE);
     }
 
     interp = gsl_interp_alloc(gsl_interp_steffen, M);
@@ -56,7 +59,7 @@ void *interp_sample(gsl_vector *y, size_t M, bool periodic) {
     params->ya = ya;
     params->accel = accel;
     params->periodic = periodic;
-    params->period = 1;
+    params->period = xa[M - 1];
     
     return params;
 }
