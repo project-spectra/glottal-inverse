@@ -12,11 +12,11 @@ constexpr double besselCoeffs[][6] = {
     { 945, 945, 420, 105, 15, 1 }
 };
 
-static inline gsl_vector *applyBessel(gsl_vector *x, size_t n, size_t order) {
+static inline gsl_vector *applyBessel(gsl_vector *x, size_t order) {
     auto b = gsl_vector_const_view_array(besselCoeffs[order-1], 1);
     auto a = gsl_vector_const_view_array(besselCoeffs[order-1], order+1);
 
-    return filter_iir(&b.vector, 1, &a.vector, order+1, x, n);
+    return filter_iir(&b.vector, &a.vector, x);
 }
 
 

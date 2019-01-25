@@ -24,16 +24,18 @@ static gsl_vector *applyWindow(gsl_vector *x, gsl_vector *win) {
     return xw;
 }
 
-static inline gsl_vector *applyInt(gsl_vector *x, size_t n) {
+static inline gsl_vector *applyInt(gsl_vector *x) {
     static auto b = gsl_vector_const_view_array(intCoefs[0], 1);
     static auto a = gsl_vector_const_view_array(intCoefs[1], 2);
     
-    return filter_iir(&b.vector, 1, &a.vector, 2, x, n);
+    return filter_iir(&b.vector, &a.vector, x);
 }
 
 
-gsl_vector *computeIAIF(gsl_vector *x, size_t M) {
-    size_t preflt;
+gsl_vector *computeIAIF(gsl_vector *x) {
+    size_t M, preflt;
+
+    M = x->size;
 
     preflt = p_vt + 1;
 
@@ -47,21 +49,21 @@ gsl_vector *computeIAIF(gsl_vector *x, size_t M) {
 
         auto xw = applyWindow(x, win);
         auto Hg1 = lpcCoeffs(xw, 1);
-        auto y = filter_fir(Hg1, 2, signal, M);
-        
+        auto y = filter_fir(Hg1, signal);
+
         auto yw = applyWindow(y, win);
         auto Hvt1 = lpcCoeffs(yw, p_vt);
-        auto g1 = filter_fir(Hvt1, p_vt+1, signal, M);
-        auto g1int = applyInt(g1, M);
+        auto g1 = filter_fir(Hvt1, signal);
+        auto g1int = applyInt(g1);
 
         auto g1w = applyWindow(g1int, win);
         auto Hg2 = lpcCoeffs(g1w, p_gl);
-        auto y2 = filter_fir(Hg2, p_gl+1, signal, M);
-        auto y2int = applyInt(y2, M);
+        auto y2 = filter_fir(Hg2, signal);
+        auto y2int = applyInt(y2);
 
         auto y2w = applyWindow(y2int, win);
         auto Hvt2 = lpcCoeffs(y2w, p_vt);
-        auto dg = filter_fir(Hvt2, p_vt+1, signal, M);
+        auto dg = filter_fir(Hvt2, signal);
         
         return dg;
     }

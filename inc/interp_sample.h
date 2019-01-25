@@ -13,7 +13,7 @@
 
 double interp_sample_eval(double t, void *p);
 
-void *interp_sample(gsl_vector *y, size_t M, bool periodic);
+void *interp_sample(gsl_vector *y, bool periodic);
 
 
 #endif // INTERP_SAMPLE_H

@@ -36,7 +36,9 @@ double interp_sample_eval(double t, void *p) {
     );
 }
 
-void *interp_sample(gsl_vector *y, size_t M, bool periodic) {
+void *interp_sample(gsl_vector *y, bool periodic) {
+    const size_t M = y->size;
+
     interp_sample_params *params;
 
     gsl_interp *interp;

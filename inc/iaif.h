@@ -8,7 +8,7 @@
 #include "lpc.h"
 #include "filter.h"
 
-gsl_vector *computeIAIF(gsl_vector *x, size_t M);
+gsl_vector *computeIAIF(gsl_vector *x);
 
 
 #endif // IAIF_H

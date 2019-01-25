@@ -9,6 +9,7 @@
 #include "amgif.h"
 #include "persist_c.h"
 #include "interp_sample.h"
+#include "gnuplot.h"
 
 
 volatile sig_atomic_t stop;
@@ -66,15 +67,20 @@ int main() {
             gsl_vector_set(input, i, data.recordedSamples[i]);
         }
 
+        // normalize the data
+        double max = gsl_vector_get(input, gsl_blas_idamax(input));
+        gsl_vector_scale(input, 1. / abs(max));
+
         std::cout << "- Estimating with IAIF..." << std::endl;
         // get a first estimate with IAIF
         // undiscretize the glottal flow derivative estimate
-        gsl_vector *pe_discr = computeIAIF(input, numSamples);
-        void *pe_interp = interp_sample(pe_discr, numSamples, true);
+        gsl_vector *pe_discr = computeIAIF(input);
+        
+        void *pe_interp = interp_sample(pe_discr, true);
         pe.params = pe_interp;
 
         // undiscretize the input samples for AM-GIF
-        void *me_interp = interp_sample(input, numSamples, false);
+        void *me_interp = interp_sample(input, false);
         me.params = me_interp;
 
         // initialize AM-GIF parameters
@@ -86,11 +92,20 @@ int main() {
 
         std::cout << "- Estimating with AM-GIF..." << std::endl;
         // estimate with AM-GIF
-        gsl_vector *x, *y;
-        std::tie(x, y) = computeAMGIF(C, &me, &pe, L, alpha, beta, tau, eps);
+        gsl_vector *d, *y;
+        std::tie(d, y) = computeAMGIF(C, &me, &pe, L, alpha, beta, tau, eps);
+
+        gsl_function source, filter;
+        source.function = filter.function = coords_eval;
+        source.params = d;
+        filter.params = y;
+
+        writePlotData(&pe, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE);
 
         free(pe_interp);
         free(me_interp);
+        gsl_vector_free(d);
+        gsl_vector_free(y);
 
         std::cout << std::endl;
     }

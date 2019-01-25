@@ -27,7 +27,7 @@ gsl_vector *lpcResidual(
         
         A = lpcCoeffs(&segX.vector, order);
 
-        inv = filter_fir(A, order + 1, &segX.vector, L);
+        inv = filter_fir(A, &segX.vector);
         gsl_vector_scale(inv, gsl_blas_dnrm2(inv) / gsl_blas_dnrm2(&segX.vector));
 
         gsl_vector_add(&segRes.vector, inv);
@@ -37,10 +37,8 @@ gsl_vector *lpcResidual(
     }
   
     // Normalize amplitude
-    double min, max;
-    gsl_vector_minmax(res, &min, &max);
-    double amp = GSL_MAX_DBL(abs(min), abs(max));
-    gsl_vector_scale(res, 1 / amp);
+    double max = gsl_vector_get(res, gsl_blas_idamax(res));
+    gsl_vector_scale(res, 1. / abs(max));
 
     gsl_vector_free(win);
 

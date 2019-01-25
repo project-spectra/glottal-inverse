@@ -2,6 +2,74 @@
 
 
 gsl_vector *lpcCoeffs(gsl_vector *x, size_t order) {
+    const size_t n = x->size;
+    const size_t m = order + 1;
+
+    double aut[m + 1];
+    double lpc[m];
+
+    double err, eps;
+    int i, j;
+
+    for (j = m + 1; j >= 0; --j) {
+        double d = 0;
+        for (i = j; i < n; ++i) {
+            d += gsl_vector_get(x, i) * gsl_vector_get(x, i - j);
+        }
+        aut[j] = d;
+    }
+
+    err = aut[0] * (1. + 1e-10);
+    eps = 1e-9 * aut[0] + 1e-10;
+
+    for (i = 0; i < m; ++i) {
+        if (err < eps) {
+            break;
+        }
+
+        double r = -aut[i + 1];
+        
+        for (j = 0; j < i; ++j) {
+            r -= lpc[j] * aut[i - j];
+        }
+        r /= err;
+
+        lpc[i] = r;
+        for (j = 0; j < i / 2; ++j) {
+            double tmp = lpc[j];
+
+            lpc[j] += r * lpc[i - 1 - j];
+            lpc[i - 1 - j] += r * tmp;
+        }
+
+        if (i % 2 == 1) {
+            lpc[j] += lpc[j] * r;
+        };
+
+        err *= 1. - r * r;
+    }
+
+    // if err < eps before the end
+    for (j = i; j < m; ++j) {
+        lpc[j] = 0.;
+    }
+
+    double g = .99;
+    double damp = g;
+    for (j = 0; j < m; ++j) {
+        lpc[j] *= damp;
+        damp *= g;
+    }
+
+    gsl_vector *res = gsl_vector_alloc(m);
+    for (j = 0; j < m; ++j) {
+        gsl_vector_set(res, j, lpc[j]);
+    }
+
+    return res;
+}
+
+/*
     gsl_matrix *X, *cov;
     gsl_vector *a, *b;
     size_t m, p;
@@ -32,3 +100,4 @@ gsl_vector *lpcCoeffs(gsl_vector *x, size_t order) {
 
     return a;
 }
+*/
