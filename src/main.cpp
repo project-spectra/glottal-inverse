@@ -8,7 +8,6 @@
 #include "iaif.h"
 #include "amgif.h"
 #include "persist_c.h"
-#include "interp_sample.h"
 #include "gnuplot.h"
 
 
@@ -40,14 +39,18 @@ int main() {
         std::cerr << "Exiting with error..." << std::endl;
         return EXIT_FAILURE;
     }
-    
+
+    std::cout << " ==== Initializing ====" << std::endl;
+   
+    constructBasis();
+
     std::cout << " ==== Recording ====" << std::endl;
     
-    gsl_vector *input;
-    gsl_function me, pe;
+    gsl_vector *me, *pe, *g;
+    gsl_vector *d, *y;
+    gsl_vector *source, *filter;
 
-    input = gsl_vector_alloc(numSamples);
-    me.function = pe.function = interp_sample_eval;
+    me = gsl_vector_alloc(numSamples);
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
@@ -64,48 +67,46 @@ int main() {
 
         // convert the data to doubles
         for (size_t i = 0; i < numSamples; ++i) {
-            gsl_vector_set(input, i, data.recordedSamples[i]);
+            gsl_vector_set(me, i, data.recordedSamples[i]);
         }
 
         // normalize the data
-        double max = gsl_vector_get(input, gsl_blas_idamax(input));
-        gsl_vector_scale(input, 1. / abs(max));
+        normalize(me);
 
         std::cout << "- Estimating with IAIF..." << std::endl;
         // get a first estimate with IAIF
         // undiscretize the glottal flow derivative estimate
-        gsl_vector *pe_discr = computeIAIF(input);
-        
-        void *pe_interp = interp_sample(pe_discr, true);
-        pe.params = pe_interp;
+        std::tie(pe, g) = computeIAIF(me);
 
-        // undiscretize the input samples for AM-GIF
-        void *me_interp = interp_sample(input, false);
-        me.params = me_interp;
+        // normalize both
+        normalize(pe);
+        normalize(g);
 
         // initialize AM-GIF parameters
         double alpha, beta, tau, eps;
-        alpha = 2.3354;
-        beta = 0.54564;
-        tau = 0.8;
-        eps = .01;
+        alpha = 13.3354;
+        beta = 8.54564;
+        tau = 1.2;
+        eps = 1e-5;
 
         std::cout << "- Estimating with AM-GIF..." << std::endl;
         // estimate with AM-GIF
-        gsl_vector *d, *y;
-        std::tie(d, y) = computeAMGIF(C, &me, &pe, L, alpha, beta, tau, eps);
+        std::tie(d, y) = computeAMGIF(C, me, pe, L, alpha, beta, tau, eps);
 
-        gsl_function source, filter;
-        source.function = filter.function = coords_eval;
-        source.params = d;
-        filter.params = y;
+        source = uncoords(d);
+        filter = uncoords(y);
 
-        writePlotData(&pe, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE);
+        normalize(filter);
 
-        free(pe_interp);
-        free(me_interp);
+        writePlotData(filter, GNUPLOT_FILE_SOURCE_DERIV);
+        writePlotData(pe, GNUPLOT_FILE_SOURCE_FLOW);
+        
+        gsl_vector_free(pe);
+        gsl_vector_free(g);
         gsl_vector_free(d);
         gsl_vector_free(y);
+        gsl_vector_free(source);
+        gsl_vector_free(filter);
 
         std::cout << std::endl;
     }
@@ -113,7 +114,7 @@ int main() {
 
     std::cout << " ==== Exiting safely ====" << std::endl;
 
-    gsl_vector_free(input);
+    gsl_vector_free(me);
 
 
     return EXIT_SUCCESS;

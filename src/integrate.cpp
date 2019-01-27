@@ -1,19 +1,19 @@
 #include "linalg.h"
 
 #include <iostream>
+#include <algorithm>
 
-double integrate(const gsl_function *f, double a, double b) {
-    double result;
-    size_t neval;
 
-    static auto work = gsl_integration_romberg_alloc(INTEGRATE_WORK);
+// Discrete integration: Riemann sum
+double integrate(gsl_vector *f) {
+    static constexpr size_t length = WINDOW_LENGTH * SAMPLE_RATE;
+    static double unit[length];
+    static auto unitView = gsl_vector_view_array(unit, length);
 
-    gsl_integration_romberg(
-            f, a, b,
-            INTEGRATE_EPSABS, INTEGRATE_EPSREL,
-            &result, &neval, work
-    );
-   
-    return result;
+    double res;
+    
+    gsl_vector_set_all(&unitView.vector, 1.);
+    gsl_blas_ddot(&unitView.vector, f, &res);
+
+    return SAMPLE_PER * res;
 }
-

@@ -25,8 +25,8 @@ double deviationAMGIF(gsl_vector *y, gsl_vector *yi) {
 
 pair<gsl_vector *, gsl_vector*> computeAMGIF(
         vector<mat_operator>& C,
-        gsl_function *me,
-        gsl_function *pe,
+        gsl_vector *me,
+        gsl_vector *pe,
         mat_operator& L,
         double alpha,
         double beta,
@@ -37,9 +37,9 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
     gsl_matrix *A, *B, *lhs;
     gsl_permutation *p;
     size_t length, mu;
-    double err;
+    double merr, perr;
 
-    length = basis_length();
+    length = basisLength();
 
     di = coords(me);
     yi = coords(pe);
@@ -101,16 +101,19 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
 
         // Average the two for this estimation
         gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, A, &xv.matrix, 0.0, &dv.matrix);
-        gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 0.5, B, &yv.matrix, 0.5, &dv.matrix);
 
-        err = deviationAMGIF(d, di);
+        merr = deviationAMGIF(d, di);
+        perr = deviationAMGIF(y, yi);
 
-        //std::cout << "  * Iteration " << iter << " with error " << err << std::endl;
+        std::cout << "  * Iteration " << iter
+                  << " with errors " << merr << " and " << perr << std::endl;
 
         iter++;
-    } while (err > eps && iter <= MAX_ITER);
+    } while ((merr > eps || perr > eps) && iter <= MAX_ITER);
 
-    std::cout << "  * Converged in " << iter-1 << " iterations with final error " << err << std::endl;
+    std::cout << "  * Converged in " << iter-1
+              << " iterations with final errors "
+              << merr << " and " << perr << std::endl;
 
     gsl_matrix_free(A);
     gsl_matrix_free(B);

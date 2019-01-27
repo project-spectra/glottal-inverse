@@ -32,9 +32,11 @@ static inline gsl_vector *applyInt(gsl_vector *x) {
 }
 
 
-gsl_vector *computeIAIF(gsl_vector *x) {
+std::pair<gsl_vector *, gsl_vector *> computeIAIF(gsl_vector *x) {
+    gsl_vector *dg, *g;
     size_t M, preflt;
 
+    dg = g = nullptr;
     M = x->size;
 
     preflt = p_vt + 1;
@@ -63,10 +65,10 @@ gsl_vector *computeIAIF(gsl_vector *x) {
 
         auto y2w = applyWindow(y2int, win);
         auto Hvt2 = lpcCoeffs(y2w, p_vt);
-        auto dg = filter_fir(Hvt2, signal);
         
-        return dg;
+        dg = filter_fir(Hvt2, signal);
+        g = applyInt(dg);
     }
 
-    return nullptr;
+    return std::pair<gsl_vector *, gsl_vector *>(dg, g);
 }

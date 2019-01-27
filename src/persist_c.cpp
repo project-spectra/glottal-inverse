@@ -33,7 +33,7 @@ bool persistC(vector<mat_operator>& C) {
     char path[PERSIST_PATHLEN];
     FILE *f;
     
-    length = basis_length();
+    length = basisLength();
     
     for (i = 0; i < length; ++i) {
         snprintf(path, PERSIST_PATHLEN, "%s/%zu", PERSIST_DIR, i);
@@ -60,8 +60,8 @@ bool restoreC(vector<mat_operator>& C) {
     FILE *f;
     gsl_matrix *Ci;
     
-    length = basis_length();
-   
+    length = basisLength();
+
     C.reserve(length);
     for (i = 0; i < length; ++i) {
         snprintf(path, PERSIST_PATHLEN, "%s/%zu", PERSIST_DIR, i);

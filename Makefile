@@ -27,7 +27,7 @@
 TARGET := gif
 
 # Modify as necessary
-CXXFLAGS += #-ftree-vectorize -mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse 
+CXXFLAGS += -ftree-vectorize -mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse 
 LDFLAGS += -lgsl -lcblas -lm -lportaudio -lstdc++fs
 
 SRC_DIR := src

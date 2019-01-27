@@ -1,28 +1,33 @@
 #include "linalg.h"
 #include <iostream>
 
-double conv_int(double s, void *p) {
-    auto params = static_cast<convolute_params *>(p);
-    double f, g;
-    
-    f = GSL_FN_EVAL(params->f, params->t - s);
-    g = GSL_FN_EVAL(params->g, s);
-    
-    return f * g;
-}
 
-double convolute(double t, void *p) {
-    auto params = static_cast<convolute_params *>(p);
+gsl_vector *convolute(gsl_vector *f, gsl_vector *g) {
+    const size_t N = f->size;
 
-    auto conv_params = new convolute_params;
-    conv_params->f = params->f;
-    conv_params->g = params->g;
-    conv_params->t = t;
+    gsl_vector *conv, *u;
+    size_t k, s;
+    double data;
 
-    gsl_function A;
-    A.function = conv_int;
-    A.params = conv_params;
+    conv = gsl_vector_alloc(N);
+    u = gsl_vector_alloc(N);
 
-    return integrate(&A, 0, 1);
+    for (k = 0; k < N; ++k) {
+        for (s = 0; s < N; ++s) {
+            if (k-s >= 0 && k-s < N) {
+                data = gsl_vector_get(f, k - s);
+            } else {
+                data = 0.0;
+            }
+
+            gsl_vector_set(u, s, data);
+        }
+        
+        gsl_vector_mul(u, g);
+
+        gsl_vector_set(conv, k, integrate(u));
+    }
+
+    return conv;
 }
 

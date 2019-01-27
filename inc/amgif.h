@@ -29,8 +29,8 @@ vector<mat_operator> computeC();
 // Compute the AM-GIF estimates
 pair<gsl_vector *, gsl_vector *> computeAMGIF(
         vector<mat_operator>& C,
-        gsl_function *me,
-        gsl_function *pe,
+        gsl_vector *me,
+        gsl_vector *pe,
         mat_operator& L,
         double alpha,
         double beta,
