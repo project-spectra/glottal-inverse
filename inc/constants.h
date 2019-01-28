@@ -10,7 +10,7 @@
 #define WINDOW_LENGTH .06
 
 // Vector basis
-#define J 6
+#define J 8
 
 // AM-GIF max iter count
 #define MAX_ITER 3
