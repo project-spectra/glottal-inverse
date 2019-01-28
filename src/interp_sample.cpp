@@ -51,7 +51,11 @@ void *interp_sample(gsl_vector *y, bool periodic) {
         xa[i] = (double) i / (double) (SAMPLE_RATE);
     }
 
-    interp = gsl_interp_alloc(gsl_interp_steffen, M);
+    interp = gsl_interp_alloc(
+            periodic ? gsl_interp_akima_periodic
+                     : gsl_interp_akima,
+            M
+    );
     gsl_interp_init(interp, xa, ya, M);
     accel = gsl_interp_accel_alloc();
     

@@ -11,7 +11,7 @@ gsl_vector *lpcCoeffs(gsl_vector *x, size_t order) {
     double err, eps;
     int i, j;
 
-    for (j = m + 1; j >= 0; --j) {
+    for (j = m; j >= 0; --j) {
         double d = 0;
         for (i = j; i < n; ++i) {
             d += gsl_vector_get(x, i) * gsl_vector_get(x, i - j);

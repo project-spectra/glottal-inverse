@@ -27,7 +27,7 @@
 TARGET := gif
 
 # Modify as necessary
-CXXFLAGS += #-ftree-vectorize -mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse 
+CXXFLAGS += -ftree-vectorize -mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse 
 LDFLAGS += -lgsl -lcblas -lm -lportaudio -lstdc++fs
 
 SRC_DIR := src
@@ -49,7 +49,7 @@ CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaratio
 CXXFLAGS_Debug := -g -O2
 LDFLAGS_Debug := 
 
-CXXFLAGS_Release := -O2 -Os -Ofast
+CXXFLAGS_Release := -O3 -Os -Ofast
 LDFLAGS_Release :=
 
 CXXFLAGS += $(CXXFLAGS_$(BUILD_TYPE))

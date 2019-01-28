@@ -92,19 +92,20 @@ int main() {
 
         std::cout << "- Estimating with AM-GIF..." << std::endl;
         // estimate with AM-GIF
-        gsl_vector *d, *y;
-        std::tie(d, y) = computeAMGIF(C, &me, &pe, L, alpha, beta, tau, eps);
+        gsl_vector *x, *y;
+        std::tie(x, y) = computeAMGIF(C, &me, &pe, L, alpha, beta, tau, eps);
 
         gsl_function source, filter;
         source.function = filter.function = coords_eval;
-        source.params = d;
+        source.params = x;
         filter.params = y;
 
-        writePlotData(&pe, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE);
+        writePlotData(&pe, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE_FLOW);
+        writePlotData(&filter, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE_DERIV);
 
         free(pe_interp);
         free(me_interp);
-        gsl_vector_free(d);
+        gsl_vector_free(x);
         gsl_vector_free(y);
 
         std::cout << std::endl;

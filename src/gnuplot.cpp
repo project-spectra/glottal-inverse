@@ -17,7 +17,7 @@ void writePlotData(gsl_function *f, size_t num, const std::string& filename) {
         
         y = GSL_FN_EVAL(f, s);
 
-        out << t << " " << y << std::endl;
+        out << t << "," << y << std::endl;
     }
 
     out.close();
