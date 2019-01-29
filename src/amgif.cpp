@@ -39,7 +39,7 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
     size_t length, mu;
     double merr, perr;
 
-    length = basisLength();
+    length = 2 << J;
 
     di = coords(me);
     yi = coords(pe);

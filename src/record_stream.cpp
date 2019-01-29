@@ -8,12 +8,11 @@
 bool openStream(PaStream **stream, window_data *data) {
     PaStreamParameters inputParameters;
     PaError err = paNoError;
-    int totalFrames;
-    int numSamples;
+    size_t totalFrames;
+    size_t numSamples;
 
-    data->maxFrameIndex = totalFrames = WINDOW_LENGTH * SAMPLE_RATE;
+    numSamples = data->maxFrameIndex = totalFrames = 2 << J;
     data->frameIndex = 0;
-    numSamples = totalFrames * NUM_CHANNELS;
     // make sure the sample array is initialized
     data->recordedSamples = new sample[numSamples];
 
@@ -24,7 +23,7 @@ bool openStream(PaStream **stream, window_data *data) {
         std::cerr << "No default input device." << std::endl;
         return false;
     }
-    inputParameters.channelCount = NUM_CHANNELS;
+    inputParameters.channelCount = 1;
     inputParameters.sampleFormat = paFloat32;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = nullptr;

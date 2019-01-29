@@ -4,10 +4,7 @@
 
 // Audio sample rate
 #define SAMPLE_RATE 44100
-#define SAMPLE_PER (1. / (double) SAMPLE_RATE)
-#define NUM_CHANNELS 1
 #define FRAMES_PER_BUFFER 1024
-#define WINDOW_LENGTH .06
 
 // Vector basis
 #define J 8

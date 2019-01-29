@@ -25,7 +25,7 @@ int main() {
     PaStream *stream;
     window_data data;
 
-    constexpr size_t numSamples = WINDOW_LENGTH * SAMPLE_RATE * NUM_CHANNELS;
+    constexpr size_t numSamples = 2 << J;
 
     err = Pa_Initialize();
     if (err != paNoError) {
@@ -39,10 +39,6 @@ int main() {
         std::cerr << "Exiting with error..." << std::endl;
         return EXIT_FAILURE;
     }
-
-    std::cout << " ==== Initializing ====" << std::endl;
-   
-    constructBasis();
 
     std::cout << " ==== Recording ====" << std::endl;
     

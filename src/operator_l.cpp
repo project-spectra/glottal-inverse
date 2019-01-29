@@ -8,8 +8,8 @@ mat_operator computeL() {
     gsl_vector *H;
     size_t i, j, k;
 
-    constexpr size_t length = basisLength();
-    
+    constexpr size_t length = 2 << J;
+
     L = gsl_matrix_alloc(length, length);
     H = coords(basis(0));
 

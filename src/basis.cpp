@@ -1,69 +1,54 @@
 #include "linalg.h"
 #include <iostream>
+#include <memory>
 
-/* Haar wavelet family */
+/* Haar wavelets and wavelet workspace */
 
-static constexpr size_t NSAMPLES = WINDOW_LENGTH * SAMPLE_RATE;
+static auto haar = shared_ptr<gsl_wavelet>(
+        gsl_wavelet_alloc(gsl_wavelet_haar, 2),
+        gsl_wavelet_free
+);
 
-// wavelets
+static auto work = shared_ptr<gsl_wavelet_workspace>(
+        gsl_wavelet_workspace_alloc(2 << J),
+        gsl_wavelet_workspace_free
+);
 
-struct arrvec {
-    double data[NSAMPLES];
-    gsl_vector_view view;
-};
+/* Functions */
 
-static arrvec wavelets[basisLength()];
-
-static double motherWavelet(double t) {
-    if (0 <= t && t < .5) {
-        return 1.;
-    }
-    if (.5 <= t && t < 1) {
-        return -1.;
-    }
-    return 0.;
+static gsl_vector *transform(gsl_vector *x, gsl_wavelet_direction dir) {
+    gsl_vector *y = gsl_vector_alloc(2 << J);
+    gsl_vector_memcpy(y, x);
+    gsl_wavelet_transform(haar.get(), y->data, 1, 2 << J, dir, work.get());
+    return y;
 }
 
-void constructScaling(arrvec& y) {
-    size_t k;
-    for (k = 0; k < NSAMPLES; ++k) {
-        y.data[k] = 1.;
-    }
-    y.view = gsl_vector_view_array(y.data, NSAMPLES);
+gsl_vector *coords(gsl_vector *f) {
+    return transform(f, gsl_wavelet_forward);
 }
 
-void constructWavelet(size_t j, size_t l, arrvec& y) {
-    size_t k;
-    double a, b;
-
-    a = 2 << (j / 2);
-    b = 2 << j;
-    
-    for (k = 0; k < NSAMPLES; ++k) {
-        y.data[k] = a * motherWavelet(b * k / (double) NSAMPLES - l);
-    }
-    y.view = gsl_vector_view_array(y.data, NSAMPLES);
-}
-
-void constructBasis() {
-    constexpr size_t length = basisLength();
-
-    size_t index;
-
-    constructScaling(wavelets[0]);
-
-    for (index = 1; index < length; ++index) {
-        // Get the (j, l) indices
-        size_t j = floor(log2(index));
-        size_t l = index - gsl_pow_uint(2, j);
-
-        constructWavelet(j, l, wavelets[index]);
-    }
+gsl_vector *uncoords(gsl_vector *u) {
+    return transform(u, gsl_wavelet_backward);
 }
 
 gsl_vector *basis(size_t index) {
-    auto res = &wavelets[index].view.vector;
-
-    return res;
+    gsl_vector *u = gsl_vector_alloc(2 << J);
+    gsl_vector_set_basis(u, index);
+    return u;
 }
 
+gsl_vector *convolute(gsl_vector *f, gsl_vector *g) {
+    gsl_vector *u, *v, *w;
+    
+    u = coords(f);
+    v = coords(g);
+
+    gsl_vector_mul(u, v);
+
+    w = uncoords(u);
+
+    gsl_vector_free(u);
+    gsl_vector_free(v);
+
+    return w;
+}
