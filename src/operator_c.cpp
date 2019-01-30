@@ -12,17 +12,16 @@ using std::chrono::duration_cast;
 
 
 vector<mat_operator> computeC() {
-    auto C = vector<mat_operator>();
-
     size_t length, mu;
     gsl_spmatrix *C_mu;
 
     length = 2 << J;
-
-    C.reserve(length);
-    for (mu = 0; mu < length; ++mu) {
-        std::cout << "  * Computing C_mu for mu = " << mu << "..." << std::flush;
     
+    auto def = mat_operator(nullptr, gsl_spmatrix_free);
+    auto C = vector<mat_operator>(length, def);
+
+#pragma omp parallel for
+    for (mu = 0; mu < length; ++mu) { 
         auto t1 = high_resolution_clock::now(); 
 
         C_mu = smartGetC(mu);
@@ -30,10 +29,10 @@ vector<mat_operator> computeC() {
         auto t2 = high_resolution_clock::now();
         auto dur = duration_cast<duration<double>>(t2 - t1);
 
-        std::cout << "\r  * Computed C_mu for mu = " << mu
-                  << " in " << dur.count() << " seconds   " << std::endl;
+#pragma omp critical
+        std::cout << "  + mu = " << mu << " , " << dur.count() << " seconds" << std::endl;
 
-        C.push_back(mat_operator(C_mu, gsl_spmatrix_free));
+        C[mu] = mat_operator(C_mu, gsl_spmatrix_free);
     }
 
     return C;

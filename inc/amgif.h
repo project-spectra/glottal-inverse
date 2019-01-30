@@ -16,10 +16,10 @@
 
 using std::pair;
 using std::vector;
-using std::unique_ptr;
+using std::shared_ptr;
 
 // Smart pointer to matrix
-using mat_operator = unique_ptr<gsl_spmatrix, void(*)(gsl_spmatrix *)>;
+using mat_operator = shared_ptr<gsl_spmatrix>;
 
 // Generate operator L
 mat_operator computeL();
