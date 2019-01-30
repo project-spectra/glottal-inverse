@@ -4,13 +4,13 @@
 
 
 mat_operator computeL() {
-    gsl_matrix *L;
+    gsl_spmatrix *L;
     gsl_vector *H;
     size_t i, j, k;
 
     constexpr size_t length = 2 << J;
 
-    L = gsl_matrix_alloc(length, length);
+    L = gsl_spmatrix_alloc(length, length);
     H = coords(basis(0));
 
     double data;
@@ -20,12 +20,12 @@ mat_operator computeL() {
             k = abs((int) i - (int) j);
             if (k < length) {
                 data = gsl_vector_get(H, abs((int) i - (int) j));
-                gsl_matrix_set(L, i, j, data);
+                gsl_spmatrix_set(L, i, j, data);
             }
         } 
     }
 
     gsl_vector_free(H);
 
-    return mat_operator(L, gsl_matrix_free);
+    return mat_operator(L, gsl_spmatrix_free);
 }

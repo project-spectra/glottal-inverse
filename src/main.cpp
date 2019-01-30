@@ -7,6 +7,7 @@
 #include "audio_in.h"
 #include "iaif.h"
 #include "amgif.h"
+#include "linalg.h"
 #include "persist_c.h"
 #include "gnuplot.h"
 
@@ -53,7 +54,7 @@ int main() {
     mat_operator L(computeL());
 
     std::cout << "- Computing operator C..." << std::endl;
-    vector<mat_operator> C(smartGetC());
+    vector<mat_operator> C(computeC());
 
     while (!stop) {
         std::cout << "- Processing one window..." << std::endl;
