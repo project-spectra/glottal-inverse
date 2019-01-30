@@ -7,18 +7,10 @@
 #define FRAMES_PER_BUFFER 1024
 
 // Vector basis
-#define J 10
+#define J 8
 
 // AM-GIF max iter count
 #define MAX_ITER 3
-
-// Integration workspace size.
-#define INTEGRATE_EPSABS 0
-#define INTEGRATE_EPSREL 1e-6
-#define INTEGRATE_WORK 10
-
-// Monte-Carlo integration calls.
-#define INTEGRATE_NCALLS 5000
 
 // GNUPlot data exporting
 #define GNUPLOT_FILE_SOURCE_DERIV "est_source_deriv.dat"

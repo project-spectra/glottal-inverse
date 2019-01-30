@@ -12,8 +12,8 @@
     namespace fs = std::filesystem;
 #endif
 
-#include "linalg.h"
-#include "amgif.h"
+#include <gsl/gsl_spmatrix.h>
+
 #include "constants.h"
 
 
@@ -25,11 +25,7 @@
 #define PERSIST_PATHLEN 64
 
 
-vector<mat_operator> smartGetC();
-
-bool persistC(vector<mat_operator>& C);
-
-bool restoreC(vector<mat_operator>& C);
+gsl_spmatrix *smartGetC(size_t mu);
 
 
 #endif // PERSIST_C_H
