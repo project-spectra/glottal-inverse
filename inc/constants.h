@@ -7,7 +7,7 @@
 #define FRAMES_PER_BUFFER 1024
 
 // Vector basis
-#define J 8
+#define J 10
 
 // AM-GIF max iter count
 #define MAX_ITER 3
