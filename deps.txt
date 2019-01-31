@@ -1,0 +1,18 @@
+> should be already installed
+
+stdc++fs
+cmath
+openmp
+
+
+> should be in distribution repos
+
+libbz2-dev
+portaudio19-dev
+libatlas-dev
+
+
+> need to build manually
+
+gsl 2.5 (manual)
+

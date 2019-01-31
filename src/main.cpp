@@ -1,3 +1,5 @@
+#ifndef PRECOMP
+
 #include <iostream>
 #include <cstdlib>
 #include <csignal>
@@ -120,3 +122,5 @@ int main() {
 void terminate() {
     Pa_Terminate();
 }
+
+#endif // PRECOMP

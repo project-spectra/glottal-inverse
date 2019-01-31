@@ -25,7 +25,13 @@ using mat_operator = shared_ptr<gsl_spmatrix>;
 mat_operator computeL();
 
 // Generate operator C
-vector<mat_operator> computeC();
+#ifndef PRECOMP
+vector<mat_operator>
+#else
+void
+#endif
+computeC();
+
 void computeSingleC(gsl_spmatrix *C, size_t mu);
 
 // Compute the AM-GIF estimates

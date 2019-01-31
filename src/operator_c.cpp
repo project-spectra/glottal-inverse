@@ -11,14 +11,21 @@ using std::chrono::duration;
 using std::chrono::duration_cast;
 
 
-vector<mat_operator> computeC() {
+#ifndef PRECOMP
+vector<mat_operator>
+#else
+void
+#endif
+computeC() {
     size_t length, mu;
     gsl_spmatrix *C_mu;
 
     length = 2 << J;
-    
+   
+#ifndef PRECOMP
     auto def = mat_operator(nullptr);
     auto C = vector<mat_operator>(length, def);
+#endif
 
 #pragma omp parallel for
     for (mu = 0; mu < length; ++mu) { 
@@ -32,10 +39,16 @@ vector<mat_operator> computeC() {
 #pragma omp critical
         std::cout << "  + mu = " << mu << " , " << dur.count() << " seconds" << std::endl;
 
+#ifndef PRECOMP
         C[mu] = mat_operator(C_mu, gsl_spmatrix_free);
+#else
+        gsl_spmatrix_free(C_mu);
+#endif
     }
 
+#ifndef PRECOMP
     return C;
+#endif
 }
 
 void computeSingleC(gsl_spmatrix *C, size_t mu) {
