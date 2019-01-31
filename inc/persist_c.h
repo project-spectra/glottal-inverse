@@ -13,6 +13,7 @@
 #endif
 
 #include <gsl/gsl_spmatrix.h>
+#include <bzlib.h>
 
 #include "constants.h"
 
@@ -26,6 +27,10 @@
 
 
 gsl_spmatrix *smartGetC(size_t mu);
+
+gsl_spmatrix *bz2readC(FILE *f);
+
+void bz2writeC(FILE *f, gsl_spmatrix *C);
 
 
 #endif // PERSIST_C_H

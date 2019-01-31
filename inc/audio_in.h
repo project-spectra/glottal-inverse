@@ -3,6 +3,7 @@
 
 
 #include <portaudio.h>
+#include <stddef.h>
 
 typedef float sample;
 

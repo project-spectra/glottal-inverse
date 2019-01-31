@@ -9,7 +9,6 @@ plot_time() {
 
         set title "$1"
 
-        set xrange [0:0.06]
         set yrange [-1:1]
 
         bind all 'd' 'done = 1'

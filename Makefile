@@ -28,7 +28,7 @@ TARGET := gif
 
 # Modify as necessary
 CXXFLAGS += -fopenmp -ftree-vectorize -mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse 
-LDFLAGS += -fopenmp -lgsl -lcblas -lm -lportaudio -lstdc++fs
+LDFLAGS += -fopenmp -lgsl -lcblas -lm -lportaudio -lbz2 -lstdc++fs
 
 SRC_DIR := src
 INC_DIR := inc

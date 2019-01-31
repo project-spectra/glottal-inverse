@@ -17,7 +17,7 @@ vector<mat_operator> computeC() {
 
     length = 2 << J;
     
-    auto def = mat_operator(nullptr, gsl_spmatrix_free);
+    auto def = mat_operator(nullptr);
     auto C = vector<mat_operator>(length, def);
 
 #pragma omp parallel for

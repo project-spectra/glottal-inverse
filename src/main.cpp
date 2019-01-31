@@ -26,7 +26,7 @@ int main() {
     PaStream *stream;
     window_data data;
 
-    constexpr size_t numSamples = 2 << J;
+    constexpr size_t length = 2 << J;
 
     err = Pa_Initialize();
     if (err != paNoError) {
@@ -47,7 +47,7 @@ int main() {
     gsl_vector *d, *y;
     gsl_vector *source, *filter;
 
-    me = gsl_vector_alloc(numSamples);
+    me = gsl_vector_alloc(length);
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
@@ -63,7 +63,7 @@ int main() {
         recordWindow(stream);
 
         // convert the data to doubles
-        for (size_t i = 0; i < numSamples; ++i) {
+        for (size_t i = 0; i < length; ++i) {
             gsl_vector_set(me, i, data.recordedSamples[i]);
         }
 
