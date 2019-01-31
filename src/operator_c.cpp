@@ -18,7 +18,6 @@ void
 #endif
 computeC() {
     size_t length, mu;
-    gsl_spmatrix *C_mu;
 
     length = 2 << J;
    
@@ -27,16 +26,15 @@ computeC() {
     auto C = vector<mat_operator>(length, def);
 #endif
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(guided)
     for (mu = 0; mu < length; ++mu) { 
         auto t1 = high_resolution_clock::now(); 
 
-        C_mu = smartGetC(mu);
+        auto C_mu = smartGetC(mu);
 
         auto t2 = high_resolution_clock::now();
         auto dur = duration_cast<duration<double>>(t2 - t1);
 
-#pragma omp critical
         std::cout << "  + mu = " << mu << " , " << dur.count() << " seconds" << std::endl;
 
 #ifndef PRECOMP
@@ -57,9 +55,10 @@ void computeSingleC(gsl_spmatrix *C, size_t mu) {
     size_t p, f;
     double data;
 
+#pragma omp for schedule(guided) collapse(1)
     for (p = 0; p < length; ++p) {
         phi_p = basis(p);
-
+ 
         for (f = 0; f < length; ++f) {
             phi_f = basis(f);
 
