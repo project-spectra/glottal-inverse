@@ -17,13 +17,13 @@ vector<mat_operator>
 void
 #endif
 computeC() {
-    constexpr size_t length = 2 << J;
     size_t mu;
     gsl_spmatrix *C_mu;
 
     ComputeStatus toLoad, toStore;
    
 #ifndef PRECOMP
+    constexpr size_t length = 2 << J;
     auto def = mat_operator(nullptr);
     auto C = vector<mat_operator>(length, def);
 #endif
@@ -44,7 +44,7 @@ computeC() {
     std::cout << "  + Skipping already computed elements" << std::endl;
 #endif
 
-#pragma omp parallel for schedule(guided) private(mu, C_mu)
+#pragma omp parallel for schedule(dynamic, 4) private(mu, C_mu)
     for (auto it = toStore.cbegin(); it < toStore.cend(); ++it) {
         mu = it->first;
         
@@ -77,7 +77,7 @@ void computeSingleC(gsl_spmatrix *C, size_t mu) {
     size_t p, f;
     double data;
 
-#pragma omp for schedule(guided) collapse(1) private(phi_p, phi_f, inter, p, f, data)
+#pragma omp for schedule(dynamic, 4) collapse(1) private(phi_p, phi_f, inter, p, f, data)
     for (p = 0; p < length; ++p) {
         phi_p = basis(p);
  
