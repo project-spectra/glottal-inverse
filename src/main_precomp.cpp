@@ -11,11 +11,6 @@
 int main() {
     std::cout << "   -=- +   Computing operator C   + -=-" << std::endl;
 
-    int maxThreads;
-    
-    maxThreads = omp_get_max_threads();
-    omp_set_num_threads(maxThreads);
-
     computeC();
 
     return EXIT_SUCCESS;
