@@ -40,9 +40,11 @@ computeC() {
         
         C[mu] = mat_operator(C_mu, gsl_spmatrix_free);
     }
+#else
+    std::cout << "  + Skipping already computed elements" << std::endl;
 #endif
 
-#pragma omp parallel for schedule(guided) shared(toStore)
+#pragma omp parallel for schedule(guided)
     for (auto it = toStore.cbegin(); it < toStore.cend(); ++it) {
         mu = it->first;
         
