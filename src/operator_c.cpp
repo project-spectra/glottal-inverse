@@ -44,7 +44,7 @@ computeC() {
     std::cout << "  + Skipping already computed elements" << std::endl;
 #endif
 
-#pragma omp parallel for schedule(guided)
+#pragma omp parallel for schedule(guided) private(mu, C_mu)
     for (auto it = toStore.cbegin(); it < toStore.cend(); ++it) {
         mu = it->first;
         
