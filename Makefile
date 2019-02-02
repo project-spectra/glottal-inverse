@@ -39,7 +39,7 @@ OBJ_DIR := .obj
 DEP_DIR := .dep
 
 ifndef BUILD_TYPE
-	BUILD_TYPE := Debug
+	BUILD_TYPE := Release
 endif
 
 ##--- Toolchain flags
@@ -49,7 +49,7 @@ CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaratio
 CXXFLAGS_Debug := -g -O2
 LDFLAGS_Debug := 
 
-CXXFLAGS_Release := -O2 -Os -Ofast
+CXXFLAGS_Release := -O3 -Os -Ofast
 LDFLAGS_Release :=
 
 CXXFLAGS += $(CXXFLAGS_$(BUILD_TYPE))

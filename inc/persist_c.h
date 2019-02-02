@@ -12,6 +12,9 @@
     namespace fs = std::filesystem;
 #endif
 
+#include <string>
+#include <vector>
+
 #include <gsl/gsl_spmatrix.h>
 #include <bzlib.h>
 
@@ -26,7 +29,11 @@
 #define PERSIST_PATHLEN 64
 
 
-gsl_spmatrix *smartGetC(size_t mu);
+using ComputeStatus = std::vector<std::pair<size_t, std::string>>;
+
+void findComputeStatus(ComputeStatus& toLoad, ComputeStatus& toStore);
+
+gsl_spmatrix *smartGetC(size_t mu, const std::string& path, bool load);
 
 gsl_spmatrix *bz2readC(FILE *f);
 

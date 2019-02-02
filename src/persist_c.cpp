@@ -2,17 +2,34 @@
 #include "amgif.h"
 
 
-gsl_spmatrix *smartGetC(size_t mu) {
-    constexpr size_t length = 2 << J;
+void findComputeStatus(ComputeStatus& toLoad, ComputeStatus& toStore) {
     char path[PERSIST_PATHLEN];
+
+    bool dirExists = fs::is_directory(PERSIST_DIR);
+   
+    constexpr size_t length = 2 << J;
+    size_t mu;
+
+    for (mu = 0; mu < length; ++mu) {
+        snprintf(path, PERSIST_PATHLEN, "%s/%zu", PERSIST_DIR, mu);
+
+        if (dirExists && fs::exists(path) && fs::is_regular_file(path)) {
+            toLoad.push_back(std::make_pair(mu, path));
+        } else {
+            toStore.push_back(std::make_pair(mu, path));
+        }
+    }
+}
+
+
+gsl_spmatrix *smartGetC(size_t mu, const std::string& path, bool load) {
+    constexpr size_t length = 2 << J;
     FILE *f;
     gsl_spmatrix *C;
 
-    snprintf(path, PERSIST_PATHLEN, "%s/%zu", PERSIST_DIR, mu);
-
-    if (fs::is_directory(PERSIST_DIR) && fs::exists(path)) {
+    if (load) {
         // if the directory already exists, simply restore.
-        f = fopen(path, "rb");
+        f = fopen(path.c_str(), "rb");
         C = bz2readC(f);
         fclose(f);
     } else {
@@ -23,7 +40,7 @@ gsl_spmatrix *smartGetC(size_t mu) {
 
         computeSingleC(C, mu);
 
-        f = fopen(path, "wb");
+        f = fopen(path.c_str(), "wb");
         bz2writeC(f, C);
         fclose(f);
     }

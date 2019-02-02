@@ -17,27 +17,47 @@ vector<mat_operator>
 void
 #endif
 computeC() {
-    size_t length, mu;
+    constexpr size_t length = 2 << J;
+    size_t mu;
+    gsl_spmatrix *C_mu;
 
-    length = 2 << J;
+    ComputeStatus toLoad, toStore;
    
 #ifndef PRECOMP
     auto def = mat_operator(nullptr);
     auto C = vector<mat_operator>(length, def);
 #endif
 
-#pragma omp parallel for schedule(guided)
-    for (mu = 0; mu < length; ++mu) { 
+    findComputeStatus(toLoad, toStore);
+
+#ifndef PRECOMP
+    for (auto it = toLoad.cbegin(); it < toLoad.cend(); ++it) {
+        mu = it->first;
+        
+        C_mu = smartGetC(mu, it->second, true); // load
+
+        std::cout << "  + mu = " << mu << " (precomputed)" << std::endl;
+        
+        C[mu] = mat_operator(C_mu, gsl_spmatrix_free);
+    }
+#endif
+
+#pragma omp parallel for schedule(guided) shared(toStore)
+    for (auto it = toStore.cbegin(); it < toStore.cend(); ++it) {
+        mu = it->first;
+        
         auto t1 = high_resolution_clock::now(); 
 
-        auto C_mu = smartGetC(mu);
+        C_mu = smartGetC(mu, it->second, false); // load
 
         auto t2 = high_resolution_clock::now();
         auto dur = duration_cast<duration<double>>(t2 - t1);
 
+#pragma omp critical
         std::cout << "  + mu = " << mu << " , " << dur.count() << " seconds" << std::endl;
 
 #ifndef PRECOMP
+#pragma omp critical
         C[mu] = mat_operator(C_mu, gsl_spmatrix_free);
 #else
         gsl_spmatrix_free(C_mu);
@@ -55,7 +75,7 @@ void computeSingleC(gsl_spmatrix *C, size_t mu) {
     size_t p, f;
     double data;
 
-#pragma omp for schedule(guided) collapse(1)
+#pragma omp for schedule(guided) collapse(1) private(phi_p, phi_f, inter, p, f, data)
     for (p = 0; p < length; ++p) {
         phi_p = basis(p);
  
