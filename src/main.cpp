@@ -100,13 +100,10 @@ int main() {
         source.params = x;
         filter.params = y;
 
-        writePlotData(&pe, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE_FLOW);
-        writePlotData(&filter, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE_DERIV);
+        writePlotData(&filter, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE_FLOW);
 
         free(pe_interp);
         free(me_interp);
-        gsl_vector_free(x);
-        gsl_vector_free(y);
 
         std::cout << std::endl;
     }

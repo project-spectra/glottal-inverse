@@ -6,10 +6,10 @@
 #define SAMPLE_RATE 48000
 #define NUM_CHANNELS 1
 #define FRAMES_PER_BUFFER 1024
-#define WINDOW_LENGTH .5
+#define WINDOW_LENGTH .04
 
 // Vector basis
-#define J 7
+#define J 6
 
 // AM-GIF max iter count
 #define MAX_ITER 1
