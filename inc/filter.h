@@ -4,9 +4,9 @@
 
 #include <gsl/gsl_vector.h>
 
-gsl_vector *filter_fir(gsl_vector *b, gsl_vector *x);
+void filter_fir(gsl_vector *b, gsl_vector *x, gsl_vector *y);
 
-gsl_vector *filter_iir(gsl_vector *b, gsl_vector *a, gsl_vector *x);
+void filter_iir(gsl_vector *b, gsl_vector *a, gsl_vector *x);
 
 
 #endif // FILTER_H

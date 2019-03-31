@@ -1,3 +1,5 @@
+#ifndef PRECOMP
+
 #include <iostream>
 #include <cstdlib>
 #include <csignal>
@@ -7,8 +9,8 @@
 #include "audio_in.h"
 #include "iaif.h"
 #include "amgif.h"
+#include "linalg.h"
 #include "persist_c.h"
-#include "interp_sample.h"
 #include "gnuplot.h"
 
 
@@ -24,9 +26,11 @@ void inthand(int signum) {
 int main() {
     PaError err;
     PaStream *stream;
-    window_data data;
-
-    constexpr size_t numSamples = WINDOW_LENGTH * SAMPLE_RATE * NUM_CHANNELS;
+    window_data *data;
+  
+    data = static_cast<window_data *>(malloc(
+        sizeof(window_data) + WINDOW_LENGTH * sizeof(sample)
+    ));
 
     err = Pa_Initialize();
     if (err != paNoError) {
@@ -36,18 +40,17 @@ int main() {
 
     std::atexit(terminate);
 
-    if (!openStream(&stream, &data)) {
+    if (!openStream(&stream, data)) {
         std::cerr << "Exiting with error..." << std::endl;
         return EXIT_FAILURE;
     }
     
     std::cout << " ==== Recording ====" << std::endl;
-    
-    gsl_vector *input;
-    gsl_function me, pe;
+   
+    gsl_vector *me, *dg, *g;
+    gsl_vector *source, *filter;
 
-    input = gsl_vector_alloc(numSamples);
-    me.function = pe.function = interp_sample_eval;
+    me = gsl_vector_alloc(WINDOW_LENGTH);
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
@@ -58,61 +61,53 @@ int main() {
 
     while (!stop) {
         std::cout << "- Processing one window..." << std::endl;
+
         // record a window
-        data.frameIndex = 0;
+        data->frameIndex = 0;
         recordWindow(stream);
 
         // convert the data to doubles
-        for (size_t i = 0; i < numSamples; ++i) {
-            gsl_vector_set(input, i, data.recordedSamples[i]);
+        for (size_t i = 0; i < WINDOW_LENGTH; ++i) {
+            gsl_vector_set(me, i, data->recordedSamples[i]);
         }
 
         // normalize the data
-        double max = gsl_vector_get(input, gsl_blas_idamax(input));
-        gsl_vector_scale(input, 1. / abs(max));
+        double max = gsl_vector_get(me, gsl_blas_idamax(me));
+        gsl_vector_scale(me, 1. / abs(max));
 
         std::cout << "- Estimating with IAIF..." << std::endl;
+
         // get a first estimate with IAIF
-        // undiscretize the glottal flow derivative estimate
-        gsl_vector *pe_discr = computeIAIF(input);
+        std::tie(dg, g) = computeIAIF(me);
         
-        void *pe_interp = interp_sample(pe_discr, true);
-        pe.params = pe_interp;
-
-        // undiscretize the input samples for AM-GIF
-        void *me_interp = interp_sample(input, false);
-        me.params = me_interp;
-
         // initialize AM-GIF parameters
         double alpha, beta, tau, eps;
-        alpha = 2.3354;
-        beta = 0.54564;
-        tau = 0.8;
-        eps = .01;
+        alpha = 1.3354;
+        beta = 9.54564;
+        tau = 1.2;
+        eps = 1e-10;
 
         std::cout << "- Estimating with AM-GIF..." << std::endl;
+
         // estimate with AM-GIF
-        gsl_vector *x, *y;
-        std::tie(x, y) = computeAMGIF(C, &me, &pe, L, alpha, beta, tau, eps);
+        std::tie(source, filter) = computeAMGIF(C, me, g, L, alpha, beta, tau, eps);
 
-        gsl_function source, filter;
-        source.function = filter.function = coords_eval;
-        source.params = x;
-        filter.params = y;
+        writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
+        writePlotData(source, GNUPLOT_FILE_AMGIF_SOURCE);
 
-        writePlotData(&filter, GNUPLOT_NUM, GNUPLOT_FILE_SOURCE_FLOW);
+        gsl_vector_free(dg);
+        gsl_vector_free(g);
+        gsl_vector_free(source);
+        gsl_vector_free(filter);
 
-        free(pe_interp);
-        free(me_interp);
-
+        break;
         std::cout << std::endl;
     }
 
-
     std::cout << " ==== Exiting safely ====" << std::endl;
 
-    gsl_vector_free(input);
-
+    gsl_vector_free(me);
+    free(data);
 
     return EXIT_SUCCESS;
 }
@@ -120,3 +115,5 @@ int main() {
 void terminate() {
     Pa_Terminate();
 }
+
+#endif // PRECOMP

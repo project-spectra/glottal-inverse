@@ -16,13 +16,5 @@ gsl_vector *hanning(size_t L);
 
 gsl_vector *lpcCoeffs(gsl_vector *x, size_t order);
 
-gsl_vector *lpcResidual(
-    gsl_vector *x,
-    size_t numSamples,
-    size_t L,
-    size_t shift,
-    size_t order
-);
-
 
 #endif // LPC_H

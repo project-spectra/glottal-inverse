@@ -9,30 +9,12 @@ using std::chrono::high_resolution_clock;
 using std::chrono::duration;
 using std::chrono::duration_cast;
 
+using ListCmu = const vector<mat_operator>;
+using VecPair = pair<gsl_vector *, gsl_vector *>;
 
-double deviationAMGIF(gsl_vector *y, gsl_vector *yi) {
-    // 2-norm distance  
-    gsl_vector *sub = gsl_vector_alloc(y->size);
-    gsl_vector_memcpy(sub, y);
-    gsl_vector_sub(sub, yi);
-    
-    double dist = gsl_blas_dnrm2(sub);
-
-    gsl_vector_free(sub);
-
-    return dist;
-}
-
-pair<gsl_vector *, gsl_vector*> computeAMGIF(
-        vector<mat_operator>& C,
-        gsl_function *me,
-        gsl_function *pe,
-        mat_operator& L,
-        double alpha,
-        double beta,
-        double tau,
-        double eps
-) {
+// macros to define static (and allocated on stack)
+// vectors and matrices to avoid reallocation
+// whenever the function is called.
 
 #define _static_array(name, length) static double data_##name[length]
 #define _static_vector_view(name, length) static auto view_##name = gsl_vector_view_array(data_##name, length)
@@ -48,92 +30,185 @@ pair<gsl_vector *, gsl_vector*> computeAMGIF(
     _static_matrix_view(name, n1, n2); \
     static auto name = &view_##name.matrix; \
 
-#define view_vector(name) (&view_##name.vector)
-#define view_matrix(name) (&view_##name.matrix)
+static constexpr size_t length = basis_length();
 
-    static constexpr size_t length = basis_length();
+static double errorDistance(const gsl_vector *a, const gsl_vector *b);
+static void computeMatA(gsl_matrix *A, const gsl_matrix *yRow, ListCmu& C);
+static void computeMatB(gsl_matrix *B, const gsl_vector *x, ListCmu& C);
+static void solveForX(gsl_permutation *perm, const gsl_matrix *A, gsl_vector *xHat, const gsl_matrix *L, const gsl_vector *dd, const double alpha);
+static void solveForY(gsl_permutation *perm, const gsl_matrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, const double beta, const double tau);
 
-    static_vector(d, length);
-    static_vector(x, length);
-    static_vector(y, length);
-    static_vector(rhs, length);
 
+VecPair computeAMGIF(
+        ListCmu& C,
+        gsl_vector *md, // source
+        gsl_vector *pe, // charac
+        mat_operator& L,
+        double alpha,
+        double beta,
+        double tau,
+        double eps
+) {
+
+    // Permutation for Cholesky decompostion
+    static auto perm = shared_ptr<gsl_permutation>(
+            gsl_permutation_alloc(length),
+            &gsl_permutation_free
+    );
+
+    // Results: x, y
+    auto x = gsl_vector_alloc(length);
+    auto y = gsl_vector_alloc(length);
+   
+    // dd = F(md)
+    static_vector(dd, length);
+    coords(md->data, data_dd);
+
+    // ye = F(pe)
+    static_vector(ye, length);
+    coords(pe->data, data_ye);
+
+    // yHat = ye
+    static_vector(yHat, length);
+    gsl_vector_memcpy(yHat, ye);
+
+    static_vector(xHat, length);
+ 
+    // A, B
     static_matrix(A, length, length);
     static_matrix(B, length, length);
+
+    // column matrix view of y
+    static auto view_yRow = gsl_matrix_view_vector(y, 1, length);
+    static auto yRow = &view_yRow.matrix;
+
+    double yErr;
+    size_t iters = 0;
+
+    do {
+        gsl_vector_memcpy(y, yHat);  // y = yHat
+        computeMatA(A, yRow, C);
+
+        // TODO: find alpha parameter
+        solveForX(perm.get(), A, xHat, L.get(), dd, alpha);  // estimated xHat
+
+        gsl_vector_memcpy(x, xHat);  // x = xHat
+        computeMatB(B, x, C);
+
+        // TODO: find beta parameter
+        solveForY(perm.get(), B, yHat, ye, dd, beta, tau);  // estimated yHat
+
+        // TODO: test for convergence
+        yErr = errorDistance(yHat, ye);
+
+        std::cout << "#" << iters << "\t - yErr: " << yErr << std::endl;
+
+        ++iters;
+    } while (yErr > eps && iters <= MAX_ITER);
+
+    // x = F(f) : wavelet coordinates for the input function
+    // y = F(p) : wavelet coordinates for the caracteristic function
+
+    auto f = gsl_vector_alloc(length);
+    auto p = gsl_vector_alloc(length);
+
+    uncoords(x->data, f->data);
+    uncoords(y->data, p->data);
+
+    gsl_vector_free(x);
+    gsl_vector_free(p);
+
+    return VecPair(p, f);
+}
+
+static double errorDistance(const gsl_vector *a, const gsl_vector *b) {
+    static_vector(diff, length);
+
+    gsl_vector_memcpy(diff, a);
+    gsl_vector_sub(diff, b);
+
+    double dist(0.);
+
+    // inf-norm
+    //dist = abs(gsl_vector_get(diff, gsl_blas_idamax(diff)));
+    // 2-norm
+    //dist = gsl_blas_dnrm2(diff);
+    // 1-norm
+    //dist = gsl_blas_dasum(diff);
+
+    return dist;
+}
+
+static void computeMatA(gsl_matrix *A, const gsl_matrix *yRow, ListCmu& C) {   
+    for (size_t mu = 0; mu < length; ++mu) {
+        auto row = gsl_matrix_submatrix(A, mu, 0, 1, length);
+
+        // A[mu,:] = y' C_mu
+        gsl_blas_dgemm(
+                CblasNoTrans, CblasNoTrans,
+                1., yRow, C[mu].get(),
+                0., &row.matrix
+        );
+    }
+}
+
+static void computeMatB(gsl_matrix *B, const gsl_vector *x, ListCmu& C) {
+    for (size_t mu = 0; mu < length; ++mu) {
+        auto row = gsl_matrix_row(B, mu);
+
+        // B[mu,:] = C_mu x
+        gsl_blas_dgemv(
+                CblasNoTrans,
+                1., C[mu].get(), x,
+                0., &row.vector
+        );
+    }
+}
+
+static void solveForX(gsl_permutation *perm, const gsl_matrix *A, gsl_vector *xHat, const gsl_matrix *L, const gsl_vector *dd, const double alpha) {
+    // === LHS ===
     static_matrix(lhs, length, length);
 
-    size_t mu;
-    double err;
+    // lhs = a L'L
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, alpha, L, L, 0., lhs);
+    
+    // lhs = A'A + a L'L
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., A, A, 1., lhs);
+    
+    // === RHS === 
+    static_vector(rhs, length);
 
-    std::cout << "coords" << std::endl;
+    // rhs = A'dd
+    gsl_blas_dgemv(CblasTrans, 1., A, dd, 0., rhs);
 
-    auto di = coords(me);
-    auto yi = coords(pe);
-
-    std::cout << "done coords" << std::endl;
-
-    gsl_vector_memcpy(y, yi);
-
-    auto div = gsl_matrix_view_vector(di, length, 1);
-    auto dv = gsl_matrix_view_vector(d, length, 1);
-    auto xv = gsl_matrix_view_vector(x, length, 1);
-    auto yv = gsl_matrix_view_vector(y, length, 1);
-    auto rhsv = gsl_matrix_view_vector(rhs, length, 1);
-
-    size_t iter = 1;
-    do {
-        // Minimize for Y
-
-        for (mu = 0; mu < length; ++mu) {
-            auto row = gsl_matrix_submatrix(A, mu, 0, 1, length);
-            
-            gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, &yv.matrix, C[mu].get(), 0.0, &row.matrix);
-        }
-
-        std::cout << "solve for Y" << std::endl;
-
-        gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, L.get(), L.get(), 0.0, lhs);
-        gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, A, A, alpha, lhs);
-
-        gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, A, &div.matrix, 0.0, &rhsv.matrix);
-
-        gsl_linalg_cholesky_decomp(lhs);
-        gsl_linalg_cholesky_solve(lhs, rhs, x);
-
-        // Minimize for X
-
-        for (mu = 0; mu < length; ++mu) {
-            auto column = gsl_matrix_submatrix(B, 0, mu, length, 1);
-
-            gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, C[mu].get(), &xv.matrix, 0.0, &column.matrix);
-        }
-        
-        std::cout << "solve for X" << std::endl;
-
-        gsl_matrix_set_identity(lhs);
-        gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, B, B, beta + tau, lhs);
-
-        gsl_vector_memcpy(rhs, yi);
-        gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, B, &div.matrix, tau, &rhsv.matrix);
-
-        gsl_linalg_cholesky_decomp(lhs);
-        gsl_linalg_cholesky_solve(lhs, rhs, y);
-
-        // Average the two for this estimation
-        gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, A, &xv.matrix, 0.0, &dv.matrix);
-        gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 0.5, B, &yv.matrix, 0.5, &dv.matrix);
-
-        err = deviationAMGIF(x, di);
-
-        std::cout << "  * Iteration " << iter << " with error " << err << std::endl;
-
-        iter++;
-    } while (err > eps && iter <= MAX_ITER);
-
-    std::cout << "  * Converged in " << iter-1 << " iterations with final error " << err << std::endl;
-
-    gsl_vector_free(di);
-    gsl_vector_free(yi);
-
-    return pair<gsl_vector *, gsl_vector *>(x, y);
+    // === Solve Pivoted Cholesky === 
+    gsl_linalg_pcholesky_decomp(lhs, perm);
+    
+    gsl_linalg_pcholesky_solve(lhs, perm, rhs, xHat);
 }
+
+static void solveForY(gsl_permutation *perm, const gsl_matrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, const double beta, const double tau) {
+    // === LHS ===
+    static_matrix(lhs, length, length);
+    
+    // lhs = I
+    gsl_matrix_set_identity(lhs);
+
+    // lhs = B'B + (b + t) I
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., B, B, beta + tau, lhs);
+    
+    // === RHS === 
+    static_vector(rhs, length);
+
+    // rhs = B'dd
+    gsl_blas_dgemv(CblasTrans, 1., B, dd, 0., rhs);
+    
+    // rhs = B'dd + t ye
+    gsl_blas_daxpy(tau, ye, rhs);
+
+    // === Solve Pivoted Cholesky === 
+    gsl_linalg_pcholesky_decomp(lhs, perm);
+    
+    gsl_linalg_pcholesky_solve(lhs, perm, rhs, yHat);
+}
+

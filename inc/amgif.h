@@ -15,22 +15,26 @@
 
 using std::pair;
 using std::vector;
-using std::unique_ptr;
+using std::shared_ptr;
 
 // Smart pointer to matrix
-using mat_operator = unique_ptr<gsl_matrix, void(*)(gsl_matrix *)>;
+using mat_operator = shared_ptr<gsl_matrix>;
+
+// Shorthand for template types
+using ListCmu = const vector<mat_operator>;
+using VecPair = pair<gsl_vector *, gsl_vector *>;
 
 // Generate operator L
 mat_operator computeL();
 
 // Generate operator C
-vector<mat_operator> computeC();
+ListCmu computeC();
 
 // Compute the AM-GIF estimates
-pair<gsl_vector *, gsl_vector *> computeAMGIF(
-        vector<mat_operator>& C,
-        gsl_function *me,
-        gsl_function *pe,
+VecPair computeAMGIF(
+        ListCmu& C,
+        gsl_vector *me,
+        gsl_vector *pe,
         mat_operator& L,
         double alpha,
         double beta,

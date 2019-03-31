@@ -12,6 +12,7 @@
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_wavelet.h>
 
 #include "constants.h"
 
@@ -27,32 +28,11 @@ constexpr size_t basis_length() {
     return 2 << (J + 1);
 }
 
-// Wavelet basis
-size_t basis_index(size_t j, size_t l);
-double basis_eval(double t, void *params);
+void convolute(gsl_vector *f, gsl_vector *g, gsl_vector *w);
 
-// Integration shorthand
-double integrate(const gsl_function *f, double a, double b);
-void integrate_dispose();
+void coords(double f[], double u[]);
+void uncoords(double u[], double f[]);
 
-// Projection
-struct projection_params {
-    const gsl_function *f;
-    const gsl_function *g;
-};
-double projection(gsl_function *f, gsl_function *g);
-
-// Convolution
-struct convolute_params {
-    const gsl_function *f;
-    const gsl_function *g;
-    double t;
-};
-double convolute(double t, void *p);
-
-// Coordinate system transforms
-gsl_vector *coords(gsl_function *f);
-double coords_eval(double t, void *p);
-
+void convolute(gsl_vector *f, gsl_vector *g, gsl_vector *w);
 
 #endif // WAVELETS_H

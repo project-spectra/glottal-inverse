@@ -3,12 +3,12 @@
 
 
 #include <fstream>
-#include <gsl/gsl_math.h>
+#include <gsl/gsl_vector.h>
 
 #include "constants.h"
 
 
-void writePlotData(gsl_function *f, size_t num, const std::string& filename);
+void writePlotData(gsl_vector *f, const std::string& filename);
 
 
 #endif // GNUPLOT_H

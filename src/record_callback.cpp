@@ -12,9 +12,8 @@ int recordCallback(
 ) {
     window_data *data = (window_data *) userData;
     const sample *rptr = (const sample *) inputBuffer;
-    sample *wptr = data->recordedSamples + (data->frameIndex * NUM_CHANNELS);
-    long framesToCalc;
-    long i, k;
+    sample *wptr = &data->recordedSamples[data->frameIndex];
+    size_t framesToCalc, i;
     int finished;
     unsigned long framesLeft = data->maxFrameIndex - data->frameIndex;
 
@@ -31,9 +30,13 @@ int recordCallback(
         finished = paContinue;
     }
 
-    for (i = 0; i < framesToCalc; ++i) {
-        for (k = 0; k < NUM_CHANNELS; ++k) {
-            *wptr++ = inputBuffer ? *rptr++ : 0.0;
+    if (inputBuffer == nullptr) {
+        for (i = 0; i < framesToCalc; ++i) {
+            *wptr++ = 0.;
+        }
+    } else {
+        for (i = 0; i < framesToCalc; ++i) {
+            *wptr++ = *rptr++;
         }
     }
 

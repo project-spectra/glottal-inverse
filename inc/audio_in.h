@@ -4,12 +4,14 @@
 
 #include <portaudio.h>
 
+#include "constants.h"
+
 typedef float sample;
 
 struct window_data {
     int frameIndex;
     int maxFrameIndex;
-    sample *recordedSamples;
+    sample recordedSamples[];
 };
 
 int recordCallback(

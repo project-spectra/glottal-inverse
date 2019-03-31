@@ -1,52 +1,49 @@
 #include "linalg.h"
 #include <iostream>
-/* Haar wavelet family */
+#include <memory>
+#include <cstring>
 
-double wavelet_mother(double t) {
-    if (0 <= t && t < 0.5) {
-        return 1.0;
-    }
-    if (0.5 <= t && t < 1) {
-        return -1.0;
-    }
-    return 0.0;
+static constexpr size_t length = basis_length();
+
+static auto haar = shared_ptr<gsl_wavelet>(
+        gsl_wavelet_alloc(gsl_wavelet_haar, 2),
+        gsl_wavelet_free
+);
+
+static auto workspace = shared_ptr<gsl_wavelet_workspace>(
+        gsl_wavelet_workspace_alloc(basis_length()),
+        gsl_wavelet_workspace_free
+);
+
+
+static void transform(double x[], double y[], gsl_wavelet_direction dir) {
+    memcpy(y, x, length * sizeof(double));
+    gsl_wavelet_transform(haar.get(), y, 1, length, dir, workspace.get());
 }
 
-double wavelet(size_t j, size_t l, double t) {
-    double a, b, y;
-
-    a = gsl_pow_uint(2, j / 2);
-    b = a * a;
-
-    y = a * wavelet_mother(b * t - l);
-
-    return y;
+void coords(double f[], double u[]) {
+    return transform(f, u, gsl_wavelet_forward);
 }
 
-double scaling(double t) {
-    if (0 <= t && t < 1) {
-        return 1;
-    }
-    return 0;
+void uncoords(double u[], double f[]) {
+    return transform(u, f, gsl_wavelet_backward);
 }
 
-size_t basis_index(size_t j, size_t l) {
-    // It's shifted by 1 to the right.
-    return gsl_pow_uint(2, j) + l;
+void basis(gsl_vector *u, size_t index) {
+    gsl_vector_set_basis(u, index);
 }
 
-double basis_eval(double t, void *params) {
-    size_t index = *(size_t *) params;
+void convolute(gsl_vector *f, gsl_vector *g, gsl_vector *w) {
+    static double u[length];
+    static double v[length];
+    
+    coords(f->data, u);
+    coords(g->data, v);
 
-    // Scaling function
-    if (index == 0) {
-        return scaling(t);
+    for (size_t i = 0; i < length; ++i) {
+        u[i] *= v[i];
     }
 
-    // Get the (j, l) indices
-    size_t j = floor(log2(index));
-    size_t l = index - gsl_pow_uint(2, j);
-
-    return wavelet(j, l, t);
+    uncoords(u, w->data);
 }
 

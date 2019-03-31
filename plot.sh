@@ -9,8 +9,7 @@ plot_time() {
 
         set title "$1"
 
-        set xrange [0:0.04]
-        set yrange [-1:1]
+        set xrange [0:255]
 
         bind all 'd' 'done = 1'
         done = 0
@@ -21,10 +20,10 @@ plot_time() {
 EOFMarker
 }
 
-plot_time 'Glottal flow' \
-          'est_source_flow.dat' &
+plot_time 'IAIF glottal flow' \
+          'iaif_source.dat' &
 
-#plot_time 'Glottal flow derivative' \
-#          'est_source_deriv.dat' &
+plot_time 'AMGIF glottal flow' \
+          'amgif_source.dat' &
 
 wait

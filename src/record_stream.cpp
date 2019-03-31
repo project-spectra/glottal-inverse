@@ -1,22 +1,28 @@
 #include <algorithm>
 #include <iostream>
+#include <cmath>
 
 #include "audio_in.h"
 #include "constants.h"
 
 
+// nearest power of two number of samples that can sample 20Hz
+// to avoid aliasing * 220% : 44 Hz
+const size_t WINDOW_LENGTH = static_cast<size_t>(
+    pow(2., ceil(log2(SAMPLE_RATE / 44.)))
+);
+
+
 bool openStream(PaStream **stream, window_data *data) {
     PaStreamParameters inputParameters;
     PaError err = paNoError;
-    int totalFrames;
-    int numSamples;
+    size_t totalFrames;
+    size_t numSamples;
 
-    data->maxFrameIndex = totalFrames = WINDOW_LENGTH * SAMPLE_RATE;
+    numSamples = data->maxFrameIndex = totalFrames = WINDOW_LENGTH;
     data->frameIndex = 0;
-    numSamples = totalFrames * NUM_CHANNELS;
+    
     // make sure the sample array is initialized
-    data->recordedSamples = new sample[numSamples];
-
     std::fill_n(data->recordedSamples, numSamples, 0.0);
    
     inputParameters.device = Pa_GetDefaultInputDevice();
@@ -24,7 +30,7 @@ bool openStream(PaStream **stream, window_data *data) {
         std::cerr << "No default input device." << std::endl;
         return false;
     }
-    inputParameters.channelCount = NUM_CHANNELS;
+    inputParameters.channelCount = 1;
     inputParameters.sampleFormat = paFloat32;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = nullptr;
@@ -57,7 +63,7 @@ bool recordWindow(PaStream *stream) {
     }
 
     while ((err = Pa_IsStreamActive(stream)) == 1) {
-        Pa_Sleep(100);
+        Pa_Sleep(50);
     }
     if (err < 0) {
         std::cerr << "Read stream failure: " << Pa_GetErrorText(err) << std::endl;
