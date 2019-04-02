@@ -29,7 +29,7 @@ int main() {
     window_data *data;
   
     data = static_cast<window_data *>(malloc(
-        sizeof(window_data) + WINDOW_LENGTH * sizeof(sample)
+        sizeof(window_data) + basis_length() * sizeof(sample)
     ));
 
     err = Pa_Initialize();
@@ -70,27 +70,27 @@ int main() {
         for (size_t i = 0; i < WINDOW_LENGTH; ++i) {
             gsl_vector_set(me, i, data->recordedSamples[i]);
         }
+        normalize(me);
 
-        // normalize the data
-        double max = gsl_vector_get(me, gsl_blas_idamax(me));
-        gsl_vector_scale(me, 1. / abs(max));
-
-        std::cout << "- Estimating with IAIF..." << std::endl;
+        //std::cout << "- Estimating with IAIF..." << std::endl;
 
         // get a first estimate with IAIF
         std::tie(dg, g) = computeIAIF(me);
-        
+        normalize(g);
+
         // initialize AM-GIF parameters
         double alpha, beta, tau, eps;
-        alpha = 1.3354;
-        beta = 9.54564;
+        alpha = 5;
+        beta = 3;
         tau = 1.2;
-        eps = 1e-10;
+        eps = 1e-3;
 
-        std::cout << "- Estimating with AM-GIF..." << std::endl;
+        //std::cout << "- Estimating with AM-GIF..." << std::endl;
 
         // estimate with AM-GIF
         std::tie(source, filter) = computeAMGIF(C, me, g, L, alpha, beta, tau, eps);
+        normalize(source);
+        normalize(filter);
 
         writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
         writePlotData(source, GNUPLOT_FILE_AMGIF_SOURCE);
@@ -99,9 +99,6 @@ int main() {
         gsl_vector_free(g);
         gsl_vector_free(source);
         gsl_vector_free(filter);
-
-        break;
-        std::cout << std::endl;
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;

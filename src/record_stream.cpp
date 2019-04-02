@@ -6,13 +6,6 @@
 #include "constants.h"
 
 
-// nearest power of two number of samples that can sample 20Hz
-// to avoid aliasing * 220% : 44 Hz
-const size_t WINDOW_LENGTH = static_cast<size_t>(
-    pow(2., ceil(log2(SAMPLE_RATE / 44.)))
-);
-
-
 bool openStream(PaStream **stream, window_data *data) {
     PaStreamParameters inputParameters;
     PaError err = paNoError;

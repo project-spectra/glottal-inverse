@@ -39,7 +39,7 @@ ListCmu computeC() {
         for (p = 0; p < length; ++p) {
 //            std::cout << "      p = " << p << "   \r" << std::flush;
 
-            for (f = p; f < length; ++f) {
+            for (f = 0; f < length; ++f) {
 
                 convoluteBasis(p, f, conv);
                 

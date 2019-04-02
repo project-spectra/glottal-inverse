@@ -11,7 +11,7 @@ static auto haar = shared_ptr<gsl_wavelet>(
 );
 
 static auto workspace = shared_ptr<gsl_wavelet_workspace>(
-        gsl_wavelet_workspace_alloc(basis_length()),
+        gsl_wavelet_workspace_alloc(length),
         gsl_wavelet_workspace_free
 );
 
@@ -35,15 +35,20 @@ void basis(gsl_vector *u, size_t index) {
 
 void convolute(gsl_vector *f, gsl_vector *g, gsl_vector *w) {
     static double u[length];
-    static double v[length];
     
     coords(f->data, u);
-    coords(g->data, v);
 
     for (size_t i = 0; i < length; ++i) {
-        u[i] *= v[i];
+        u[i] *= gsl_vector_get(g, i);
     }
 
     uncoords(u, w->data);
 }
 
+void normalize(gsl_vector *f) {
+    size_t max_index = gsl_blas_idamax(f);
+    double max = gsl_vector_get(f, max_index);
+
+    // don't normalize all the way
+    gsl_vector_scale(f, .99 / abs(max));
+}

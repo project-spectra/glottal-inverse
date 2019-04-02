@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sleep 2
+
 script=$(mktemp)
 
 plot_time() {
@@ -10,6 +12,9 @@ plot_time() {
         set title "$1"
 
         set xrange [0:255]
+        set yrange [-1:1]
+
+        plot "$2" with lines
 
         bind all 'd' 'done = 1'
         done = 0
