@@ -3,37 +3,33 @@
 #include "linalg.h"
 
 
-mat_operator computeL() {
+static constexpr size_t length = basis_length();
+
+gsl_matrix *computeL() {
     gsl_matrix *L;
-    size_t i, j, k;
 
-    constexpr size_t length = basis_length();
-    
-    double Ht[length];
-
-    // basis[0]
-    Ht[0] = 1.;
-    for (size_t i = 1; i < length; ++i) {
-        Ht[i] = 0.;
-    }
-
-    double H[length];
-    
-    coords(Ht, H);
-
-    L = gsl_matrix_alloc(length, length);
-   
+    size_t i, j, k; 
     double data;
     
+    double H[length];
+
+    // basis[0]
+    std::fill_n(H, length, 0.);
+    H[0] = 1.;
+    coords(H, H);
+
+    L = gsl_matrix_alloc(length, length);
+
     for (i = 0; i < length; ++i) {
         for (j = 0; j < length; ++j) {
             k = abs((int) i - (int) j);
             if (k < length) {
                 data = H[k];
+
                 gsl_matrix_set(L, i, j, data);
             }
         } 
     }
 
-    return mat_operator(L, gsl_matrix_free);
+    return L;
 }

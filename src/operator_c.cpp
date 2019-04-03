@@ -1,68 +1,86 @@
 #include "linalg.h"
 #include "amgif.h"
+#include "persist_c.h"
 
 #include <iostream>
 #include <chrono>
+#include <cstring>
 
 using std::chrono::high_resolution_clock;
 using std::chrono::duration;
 using std::chrono::duration_cast;
 
-void convoluteBasis(size_t i, size_t j, gsl_vector *conv) {
-    if (i == j) {
-        gsl_vector_set_basis(conv, i);
-    } else {
-        gsl_vector_set_zero(conv);
-    }
-}
 
-ListCmu computeC() {
-    static constexpr size_t length = basis_length();
+static constexpr size_t length = basis_length();
 
+#ifndef PRECOMP
+ListCmu
+#else
+void
+#endif
+computeC() {
+
+    ComputeStatus toLoad, toStore;
+    size_t mu;
+    gsl_spmatrix *C_mu;
+
+#ifndef PRECOMP
     auto C = vector<mat_operator>();
+    C.resize(length);
+#endif
 
-    size_t mu, p, f;
-    
-    gsl_matrix *C_mu;
-    double data;
+    findComputeStatus(toLoad, toStore);
 
-    auto conv = gsl_vector_alloc(length);
-    
-    C.reserve(length);
-    for (mu = 0; mu < length; ++mu) {
-        C_mu = gsl_matrix_alloc(length, length);
+#ifdef PRECOMP
+    std::cout << "  + Skipping already computed elements" << std::endl;
+#else
+    for (auto it = toLoad.cbegin(); it < toLoad.cend(); ++it) {
+        
+        mu = it->first;
+        C_mu = smartGetC(mu, it->second, true); // load
 
-        std::cout << "  * Computing C_mu for mu = " << mu << "..." << std::endl;
-    
-        auto t1 = high_resolution_clock::now(); 
+        C[mu] = mat_operator(C_mu, gsl_spmatrix_free);
 
-        for (p = 0; p < length; ++p) {
-//            std::cout << "      p = " << p << "   \r" << std::flush;
+        std::cout << "  + mu = " << mu << " (precomputed)" << std::endl;
+    }
+#endif
 
-            for (f = 0; f < length; ++f) {
+    for (auto it = toStore.cbegin(); it < toStore.cend(); ++it) {
+        mu = it->first;
+        
+        auto t1 = high_resolution_clock::now();
 
-                convoluteBasis(p, f, conv);
-                
-                data = gsl_vector_get(conv, mu);
-                
-                gsl_matrix_set(C_mu, p, f, data);
-                gsl_matrix_set(C_mu, f, p, data);
-            }
-        }
+        C_mu = smartGetC(mu, it->second, false); // store
         
         auto t2 = high_resolution_clock::now();
-
         auto dur = duration_cast<duration<double>>(t2 - t1);
+        
+        std::cout << "  + mu = " << mu << " , " << dur.count() << " seconds" << std::endl;
 
-        std::cout << "\033[1F]\r"
-                  << "  * Computed C_mu for mu = " << mu
-                  << " in " << dur.count() << " seconds" << std::endl;
-
-
-        C.push_back(mat_operator(C_mu, gsl_matrix_free));
+#ifdef PRECOMP
+        C[mu] = mat_operator(C_mu, gsl_spmatrix_free);
+#else
+        gsl_spmatrix_free(C_mu);
+#endif
     }
 
-    gsl_vector_free(conv);
-
+#ifndef PRECOMP
     return C;
+#endif
+}
+
+void computeSingleC(gsl_spmatrix *C, size_t mu) {
+    size_t p, f;
+    double data;
+
+    for (p = 0; p < length; ++p) {
+        for (f = p; f < length; ++f) {
+            auto conv = convoluteBasis(p, f);
+            
+            data = gsl_vector_get(conv.get(), mu);
+            
+            gsl_spmatrix_set(C, p, f, data);
+            gsl_spmatrix_set(C, f, p, data);
+        } 
+    }
 }

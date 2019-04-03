@@ -54,10 +54,10 @@ int main() {
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
-    mat_operator L(computeL());
+    gsl_matrix *L(computeL());
 
     std::cout << "- Computing operator C..." << std::endl;
-    vector<mat_operator> C(smartGetC());
+    vector<mat_operator> C(computeC());
 
     while (!stop) {
         std::cout << "- Processing one window..." << std::endl;
@@ -104,6 +104,7 @@ int main() {
     std::cout << " ==== Exiting safely ====" << std::endl;
 
     gsl_vector_free(me);
+    gsl_matrix_free(L);
     free(data);
 
     return EXIT_SUCCESS;

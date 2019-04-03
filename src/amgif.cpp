@@ -35,23 +35,23 @@ static constexpr size_t length = WINDOW_LENGTH;
 
 static double errorDistance(const gsl_vector *a, const gsl_vector *b);
 
-static void computeMatA(gsl_matrix *A, const gsl_matrix *yT, ListCmu& C);
+static void computeMatA(gsl_matrix *A, const gsl_matrix *yT, ListCmu& C, gsl_matrix *C_mu);
 static void solveForX(gsl_permutation *perm, const gsl_matrix *A, gsl_vector *xHat, const gsl_matrix *L, const gsl_vector *dd, const double alpha);
 
-static void computeMatB(gsl_matrix *B, const gsl_vector *x, ListCmu& C);
+static void computeMatB(gsl_matrix *B, const gsl_vector *x, ListCmu& C, gsl_matrix *C_mu);
 static void solveForY(gsl_permutation *perm, const gsl_matrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, const double beta, const double tau);
 
-static void computeD(const gsl_matrix *A, const gsl_matrix *B, const gsl_vector *x, const gsl_vector *y, gsl_vector *d, double &dist);
+static void computeD(const gsl_matrix *A, const gsl_matrix *B, const gsl_vector *x, const gsl_vector *y, gsl_vector *d);
 
 VecPair computeAMGIF(
         ListCmu& C,
-        gsl_vector *md, // source
+        gsl_vector *md, // signal
         gsl_vector *pe, // charac
-        mat_operator& L,
-        double alpha,
-        double beta,
-        double tau,
-        double eps
+        const gsl_matrix *L,
+        const double alpha,
+        const double beta,
+        const double tau,
+        const double eps
 ) {
 
     // Permutation for Cholesky decompostion
@@ -78,40 +78,40 @@ VecPair computeAMGIF(
     gsl_vector_memcpy(yHat, ye);
 
     static_vector(xHat, length);
- 
+    gsl_vector_set_zero(xHat);
+
     // A, B
     static_matrix(A, length, length);
     static_matrix(B, length, length);
+
+    // C_mu, L_d
+    static_matrix(C_mu, length, length);
 
     // column matrix view of y
     static auto view_yT = gsl_matrix_view_vector(y, 1, length);
     static auto yT = &view_yT.matrix;
 
-    double errForwBack;
     double errSignal;
-
     size_t iters = 1;
 
     do {
         gsl_vector_memcpy(y, yHat);  // y = yHat
-        computeMatA(A, yT, C);
+        computeMatA(A, yT, C, C_mu);
         
         // TODO: find alpha parameter
-        solveForX(perm.get(), A, xHat, L.get(), dd, alpha);  // estimated xHat
+        solveForX(perm.get(), A, xHat, L, dd, alpha);  // estimated xHat
 
         gsl_vector_memcpy(x, xHat);  // x = xHat
-        computeMatB(B, x, C);
+        computeMatB(B, x, C, C_mu);
 
         // TODO: find beta parameter
         solveForY(perm.get(), B, yHat, ye, dd, beta, tau);  // estimated yHat
 
         // Test for convergence:  Ax = By = d ~ dd
-        computeD(A, B, x, y, d, errForwBack);
+        computeD(A, B, x, y, d);
         
         errSignal = errorDistance(d, dd);
-
-        //std::cout << iters << ": Ax~By = " << errForwBack << "\t d~dd = " << errSignal << std::endl;
-
+        
         ++iters;
     } while (errSignal > eps && iters <= MAX_ITER);
 
@@ -127,11 +127,9 @@ VecPair computeAMGIF(
     uncoords(x->data, f->data);
     uncoords(y->data, p->data);
 
-    gsl_vector_fprintf(stdout, dd, "%g");
-
     /*  Just for testing, what's the residual between m and md  */
-    std::cout << "Residual (signal):  " << errorDistance(m, md) << std::endl;
-    std::cout << "Residual (wavelet): " << errorDistance(d, dd) << std::endl;
+    std::cout << "m~md : " << errorDistance(m, md) << std::endl;
+    std::cout << "p~pe : " << errorDistance(p, pe) << std::endl;
     std::cout << std::endl;
 
     gsl_vector_free(m);
@@ -157,14 +155,15 @@ static double errorDistance(const gsl_vector *a, const gsl_vector *b) {
     return dist;
 }
 
-static void computeMatA(gsl_matrix *A, const gsl_matrix *yT, ListCmu& C) {   
+static void computeMatA(gsl_matrix *A, const gsl_matrix *yT, ListCmu& C, gsl_matrix *C_mu) {   
     for (size_t mu = 0; mu < length; ++mu) {
         auto row = gsl_matrix_submatrix(A, mu, 0, 1, length);
+        gsl_spmatrix_sp2d(C_mu, C[mu].get());
 
         // A[mu,:] = y' C_mu
         gsl_blas_dgemm(
                 CblasNoTrans, CblasNoTrans,
-                1., yT, C[mu].get(),
+                1., yT, C_mu,
                 0., &row.matrix
         );
     }
@@ -174,11 +173,11 @@ static void solveForX(gsl_permutation *perm, const gsl_matrix *A, gsl_vector *xH
     // === LHS ===
     static_matrix(lhs, length, length);
 
-    // lhs = a L'L
-    gsl_blas_dgemm(CblasTrans, CblasNoTrans, alpha, L, L, 0., lhs);
+    // lhs = L'L
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., L, L, 0., lhs);
     
     // lhs = A'A + a L'L
-    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., A, A, 1., lhs);
+    gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., A, A, alpha, lhs);
     
     // === RHS === 
     static_vector(rhs, length);
@@ -192,14 +191,15 @@ static void solveForX(gsl_permutation *perm, const gsl_matrix *A, gsl_vector *xH
     gsl_linalg_pcholesky_solve(lhs, perm, rhs, xHat);
 }
 
-static void computeMatB(gsl_matrix *B, const gsl_vector *x, ListCmu& C) {
+static void computeMatB(gsl_matrix *B, const gsl_vector *x, ListCmu& C, gsl_matrix *C_mu) {
     for (size_t mu = 0; mu < length; ++mu) {
         auto row = gsl_matrix_row(B, mu);
+        gsl_spmatrix_sp2d(C_mu, C[mu].get());
 
         // B[mu,:] = C_mu x
         gsl_blas_dgemv(
                 CblasNoTrans,
-                1., C[mu].get(), x,
+                1., C_mu, x,
                 0., &row.vector
         );
     }
@@ -230,22 +230,19 @@ static void solveForY(gsl_permutation *perm, const gsl_matrix* B, gsl_vector *yH
     gsl_linalg_pcholesky_solve(lhs, perm, rhs, yHat);
 }
 
-static void computeD(const gsl_matrix *A, const gsl_matrix *B, const gsl_vector *x, const gsl_vector *y, gsl_vector *d, double& dist) {
+static void computeD(const gsl_matrix *A, const gsl_matrix *B, const gsl_vector *x, const gsl_vector *y, gsl_vector *d) {
 
     static_vector(dx, length);
     static_vector(dy, length);
 
     // Ax = d
-//    gsl_blas_dgemv(CblasNoTrans, 1., A, x, 0., dx);
+    gsl_blas_dgemv(CblasNoTrans, 1., A, x, 0., dx);
 
     // By = d
-    gsl_blas_dgemv(CblasNoTrans, 1., B, y, 0., d);
+    gsl_blas_dgemv(CblasNoTrans, 1., B, y, 0., dy);
     
-    /*// Average the two estimates
+    // Average the two estimates
     gsl_vector_memcpy(d, dx);
     gsl_vector_add(d, dy);
     gsl_vector_scale(d, .5);
-
-    // Get the error between the two
-    dist = errorDistance(dx, dy);*/
 }

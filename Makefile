@@ -28,7 +28,7 @@ TARGET := gif
 
 # Modify as necessary
 CXXFLAGS += -ftree-vectorize #-mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse 
-LDFLAGS += -lgsl -lcblas -lm -lportaudio -lstdc++fs
+LDFLAGS += -lgsl -lcblas -lm -lportaudio -lbz2 -lstdc++fs
 
 SRC_DIR := src
 INC_DIR := inc
@@ -39,7 +39,7 @@ OBJ_DIR := .obj
 DEP_DIR := .dep
 
 ifndef BUILD_TYPE
-	BUILD_TYPE := Debug
+	BUILD_TYPE := Release
 endif
 
 ##--- Toolchain flags
