@@ -12,11 +12,13 @@
     namespace fs = std::filesystem;
 #endif
 
+#include <cstring>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <gsl/gsl_spmatrix.h>
-#include <bzlib.h>
+#include <zlib.h>
 
 #include "constants.h"
 
@@ -28,6 +30,7 @@
 
 #define PERSIST_PATHLEN 64
 
+using std::make_unique;
 
 using ComputeStatus = std::vector<std::pair<size_t, std::string>>;
 
@@ -35,9 +38,9 @@ void findComputeStatus(ComputeStatus& toLoad, ComputeStatus& toStore);
 
 gsl_spmatrix *smartGetC(size_t mu, const std::string& path, bool load);
 
-gsl_spmatrix *bz2readC(FILE *f);
+gsl_spmatrix *cpReadMat(FILE *f);
 
-void bz2writeC(FILE *f, gsl_spmatrix *C);
+gsl_spmatrix *cpWriteMat(FILE *f, gsl_spmatrix *C);
 
 
 #endif // PERSIST_C_H

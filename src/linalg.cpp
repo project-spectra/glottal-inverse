@@ -2,8 +2,8 @@
 
 #include <iostream>
 #include <cstring>
+#include <mutex>
 
-static constexpr size_t length = basis_length();
 
 static auto haar = shared_ptr<gsl_wavelet>(
         gsl_wavelet_alloc(gsl_wavelet_haar, 2),
@@ -21,7 +21,7 @@ static void transform(double x[], double y[], gsl_wavelet_direction dir) {
     gsl_wavelet_transform(haar.get(), y, 1, length, dir, workspace.get());
 }
 
-static PtrVector getOrSetBasis(BasisMap& stored, size_t k);
+static double *getBasis(BasisList& stored, size_t k);
 
 
 void coords(double f[], double u[]) {
@@ -40,81 +40,77 @@ void normalize(gsl_vector *f) {
     gsl_vector_scale(f, .95 / abs(max));
 }
 
-PtrVector convoluteBasis(size_t n, size_t k) {
+static std::mutex basis;
+
+double convoluteBasis(size_t n, size_t k, size_t mu) {
+    std::lock_guard<std::mutex> lock(basis);
+
     // one map for the bases in wavelet coordinates
-    static BasisMap storedBases;
+    static BasisList storedBases(length);
 
     // one map for already computed convolutions
     static ConvMap storedConvs;
 
-    PtrVector transConv;
-
     // check if [ F(n) * F(k) ] is already computed
-    // remember that (n, k) is not supposed to be ordered
-    auto pair_nk = IndPair(n, k);
-    auto pair_kn = IndPair(k, n);
-
-    auto iter_nk = storedConvs.find(pair_nk);
-    auto iter_kn = storedConvs.find(pair_kn);
+    // remember that (n, k) is unordered in the map
     
-    auto nk_exist = (iter_nk != storedConvs.end());
-    auto kn_exist = (iter_kn != storedConvs.end());
+    auto pair_nk = IndPair(n, k);
+    auto iter_nk = storedConvs.find(pair_nk);
+    
+    auto nk_exists = (iter_nk != storedConvs.end());
 
-    if (nk_exist && kn_exist) {
-        transConv = iter_nk->second;
-    } else if (nk_exist) {
-        // if <n,k> but not <k,n> then reassign.
-        transConv = storedConvs[pair_kn] = iter_nk->second;
-    } else if (kn_exist) {
-        // same thing here.
-        transConv = storedConvs[pair_nk] = iter_kn->second;
+    if (nk_exists) {
+        return iter_nk->second[mu];
     } else {
         // this branch means that there is no entry.
         // so calculate the convolution~
         
         // get the bases from precomputation
-        auto phi_n = getOrSetBasis(storedBases, n);
-        auto phi_k = getOrSetBasis(storedBases, n);
+        auto phi_n = getBasis(storedBases, n);
+        auto phi_k = getBasis(storedBases, n);
 
         // do the convolution
-        auto conv = gsl_vector_alloc(length);
+        auto conv = make_unique<double[]>(length);
 
-        gsl_vector_memcpy(conv, phi_n.get());
-        gsl_vector_mul(conv, phi_k.get());
+        for (size_t mu = 0; mu < length; ++mu) {
+            conv[mu] = phi_n[mu] * phi_k[mu];
+        }
       
         // the way GSL handles wavelet transforms you can do it in place.
-        uncoords(conv->data, conv->data);
+        uncoords(conv.get(), conv.get());
 
-        // transfer it to the dynamic storage and free the rest
-        transConv = PtrVector(conv, gsl_vector_free);
+        double res = conv[mu];
 
         // and assign it to reuse dynamically
-        storedConvs[pair_nk] = storedConvs[pair_kn] = transConv;
-    }
+        storedConvs[pair_nk] = std::move(conv);
 
-    return transConv;
+        return res;
+    }
 }
 
-static PtrVector getOrSetBasis(BasisMap& stored, size_t k) {
-
-    PtrVector transBasis;
+static double *getBasis(BasisList& stored, size_t k) {
 
     // check if F(p) is already computed
-    auto iter = stored.find(k);
+    double *transBasis = stored[k].get();
 
-    if (iter == stored.end()) {
+    if (transBasis == nullptr) {
         // the way that GSL wavelet works , you can use a single vector.
         // transform to wavelet
-        auto phi = gsl_vector_alloc(length); 
-        gsl_vector_set_basis(phi, k);
+        auto phi = make_unique<double[]>(length);
+        
+        for (size_t mu = 0; mu < length; ++mu) {
+          phi[mu] = (mu != k) ? 0. : 1.;
+        }
  
-        coords(phi->data, phi->data);
+        coords(phi.get(), phi.get());
 
-        transBasis = stored[k] = PtrVector(phi, gsl_vector_free);
-    } else {
-        transBasis = iter->second;
+        transBasis = phi.get();
+        stored[k] = std::move(phi);
     }
 
     return transBasis;
 }
+
+
+
 

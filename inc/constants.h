@@ -8,19 +8,19 @@
 #define FRAMES_PER_BUFFER 1024
 
 // Vector basis
-#define J 5
+#define J 4
 
 // Basis length
-constexpr size_t basis_length() {
+constexpr size_t length =
     // There are Sum[0..J] 2^j wavelets.
     // That's 2^(J+1) - 1 elements.
     // Add one for the constant scaling function.
-    return 2 << (J + 1);
-}
-#define WINDOW_LENGTH (basis_length())
+    2 << (J + 1);
+
+#define WINDOW_LENGTH (length)
 
 // AM-GIF max iter count
-#define MAX_ITER 5
+#define MAX_ITER 2
 
 // GNUPlot data exporting
 #define GNUPLOT_FILE_IAIF_SOURCE "iaif_source.dat"

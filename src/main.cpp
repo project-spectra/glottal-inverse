@@ -1,8 +1,9 @@
 #ifndef PRECOMP
 
-#include <iostream>
-#include <cstdlib>
+#include <atomic>
 #include <csignal>
+#include <cstdlib>
+#include <iostream>
 
 #include <portaudio.h>
 
@@ -10,16 +11,16 @@
 #include "iaif.h"
 #include "amgif.h"
 #include "linalg.h"
-#include "persist_c.h"
+#include "restore_c.h"
 #include "gnuplot.h"
 
 
-volatile sig_atomic_t stop;
+volatile std::atomic<bool> stop;
 
 void terminate();
 void inthand(int signum) {
     (void) signum;
-    stop = 1;
+    stop = true;
 }
 
 
@@ -29,7 +30,7 @@ int main() {
     window_data *data;
   
     data = static_cast<window_data *>(malloc(
-        sizeof(window_data) + basis_length() * sizeof(sample)
+        sizeof(window_data) + length * sizeof(sample)
     ));
 
     err = Pa_Initialize();
@@ -47,14 +48,14 @@ int main() {
     
     std::cout << " ==== Recording ====" << std::endl;
    
-    gsl_vector *me, *dg, *g;
-    gsl_vector *source, *filter;
+    gsl_vector *md, *dg, *g;
+    gsl_vector *m, *f, *p;
 
-    me = gsl_vector_alloc(WINDOW_LENGTH);
+    md = gsl_vector_alloc(WINDOW_LENGTH);
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
-    gsl_matrix *L(computeL());
+    mat_operator L(computeL());
 
     std::cout << "- Computing operator C..." << std::endl;
     vector<mat_operator> C(computeC());
@@ -68,14 +69,15 @@ int main() {
 
         // convert the data to doubles
         for (size_t i = 0; i < WINDOW_LENGTH; ++i) {
-            gsl_vector_set(me, i, data->recordedSamples[i]);
+            gsl_vector_set(md, i, data->recordedSamples[i]);
         }
-        normalize(me);
+        normalize(md);
 
         //std::cout << "- Estimating with IAIF..." << std::endl;
 
         // get a first estimate with IAIF
-        std::tie(dg, g) = computeIAIF(me);
+        std::tie(dg, g) = computeIAIF(md);
+        normalize(dg);
         normalize(g);
 
         // initialize AM-GIF parameters
@@ -88,23 +90,27 @@ int main() {
         //std::cout << "- Estimating with AM-GIF..." << std::endl;
 
         // estimate with AM-GIF
-        std::tie(source, filter) = computeAMGIF(C, me, g, L, alpha, beta, tau, eps);
-        normalize(source);
-        normalize(filter);
+        //  m: signal function
+        //  f: input function
+        //  p: charac function
+        std::tie(m, f, p) = computeAMGIF(C, md, dg, L, alpha, beta, tau, eps);
+        normalize(m);
+        normalize(f);
+        normalize(p);
 
         writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
-        writePlotData(source, GNUPLOT_FILE_AMGIF_SOURCE);
+        writePlotData(f, GNUPLOT_FILE_AMGIF_SOURCE);
 
         gsl_vector_free(dg);
         gsl_vector_free(g);
-        gsl_vector_free(source);
-        gsl_vector_free(filter);
+        gsl_vector_free(m);
+        gsl_vector_free(f);
+        gsl_vector_free(p);
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;
 
-    gsl_vector_free(me);
-    gsl_matrix_free(L);
+    gsl_vector_free(md);
     free(data);
 
     return EXIT_SUCCESS;

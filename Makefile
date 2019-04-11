@@ -24,11 +24,10 @@
 
 ##--- Constants and configuration
 
-TARGET := gif
 
 # Modify as necessary
-CXXFLAGS += -ftree-vectorize #-mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse 
-LDFLAGS += -lgsl -lcblas -lm -lportaudio -lbz2 -lstdc++fs
+CXXFLAGS += -fopenmp -ftree-vectorize -mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse 
+LDFLAGS += -fopenmp -lgsl -lcblas -lm -lportaudio -lz -lstdc++fs
 
 SRC_DIR := src
 INC_DIR := inc
@@ -39,14 +38,26 @@ OBJ_DIR := .obj
 DEP_DIR := .dep
 
 ifndef BUILD_TYPE
-	BUILD_TYPE := Release
+	BUILD_TYPE := Debug
 endif
+
+
+# If precomp; else assume it's normal build.
+ifdef PRECOMP
+	TARGET := precomp
+	CXXFLAGS += -DPRECOMP
+else
+	TARGET := gif
+endif
+
+main: $(BIN_DIR)/$(TARGET)
+
 
 ##--- Toolchain flags
 
 CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaration -pipe -fPIC -fstack-protector-strong
 
-CXXFLAGS_Debug := -g -O2
+CXXFLAGS_Debug := -g3
 LDFLAGS_Debug := 
 
 CXXFLAGS_Release := -O3 -Os -Ofast
@@ -98,17 +109,13 @@ D_FILES := $(CXX_FILES:$(SRC_DIR)/%.cpp=$(DEP_DIR)/%.d)
 
 ##--- Phony make rules
 
-.PHONY: $(TARGET) all clean re
-
-all: $(TARGET)
-
-$(TARGET): $(BIN_DIR)/$(TARGET)
+.PHONY: gif precomp all clean re 
 
 clean:
 	-rm -f $(O_FILES) $(D_FILES)
 
 clean-dist: clean
-	-rm -f $(BIN_DIR)/$(TARGET)
+	-rm -f $(BIN_DIR)/gif $(BIN_DIR)/precomp
 
 re: clean-dist all
 

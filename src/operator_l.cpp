@@ -3,11 +3,7 @@
 #include "linalg.h"
 
 
-static constexpr size_t length = basis_length();
-
-gsl_matrix *computeL() {
-    gsl_matrix *L;
-
+gsl_spmatrix *computeL() {
     size_t i, j, k; 
     double data;
     
@@ -18,7 +14,7 @@ gsl_matrix *computeL() {
     H[0] = 1.;
     coords(H, H);
 
-    L = gsl_matrix_alloc(length, length);
+    auto Ltr = gsl_spmatrix_alloc(length, length);
 
     for (i = 0; i < length; ++i) {
         for (j = 0; j < length; ++j) {
@@ -26,10 +22,15 @@ gsl_matrix *computeL() {
             if (k < length) {
                 data = H[k];
 
-                gsl_matrix_set(L, i, j, data);
+                gsl_spmatrix_set(Ltr, i, j, data);
             }
         } 
     }
 
+    auto L = gsl_spmatrix_ccs(Ltr);
+
+    gsl_spmatrix_free(Ltr);
+    
     return L;
 }
+

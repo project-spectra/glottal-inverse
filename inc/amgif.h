@@ -13,8 +13,10 @@
 #include "constants.h"
 
 using std::pair;
+using std::tuple;
 using std::vector;
 using std::shared_ptr;
+using std::array;
 
 // Smart pointer to matrix
 using mat_operator = shared_ptr<gsl_spmatrix>;
@@ -22,21 +24,27 @@ using mat_operator = shared_ptr<gsl_spmatrix>;
 // Shorthand for template types
 using ListCmu = const vector<mat_operator>;
 using VecPair = pair<gsl_vector *, gsl_vector *>;
+using VecTriplet = tuple<gsl_vector *, gsl_vector *, gsl_vector *>;
 
 // Generate operator L
-gsl_matrix *computeL();
+gsl_spmatrix *computeL();
 
 // Generate operator C
-ListCmu computeC();
+#ifndef PRECOMP
+ListCmu
+#else
+void
+#endif
+computeC();
 
 void computeSingleC(gsl_spmatrix *C, size_t mu);
 
 // Compute the AM-GIF estimates
-VecPair computeAMGIF(
+VecTriplet computeAMGIF(
         ListCmu& C,
         gsl_vector *me,
         gsl_vector *pe,
-        const gsl_matrix *L,
+        const mat_operator& L,
         const double alpha,
         const double beta,
         const double tau,
