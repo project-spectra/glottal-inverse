@@ -18,7 +18,8 @@ void cpWriteMat(const char *pathRaw, const char *pathCompressed, gsl_spmatrix *m
     FILE *fDefIn = fopen(pathRaw, "rb");
     FILE *fDefOut = fopen(pathCompressed, "wb");
 
-    int ret = def(fDefIn, fDefOut, Z_DEFAULT_COMPRESSION);
+    //int ret = def(fDefIn, fDefOut, Z_DEFAULT_COMPRESSION);
+    int ret = def(fDefIn, fDefOut, Z_BEST_SPEED);
     
     fclose(fDefIn);
     fclose(fDefOut);

@@ -10,10 +10,6 @@ using std::chrono::high_resolution_clock;
 using std::chrono::duration;
 using std::chrono::duration_cast;
 
-using ListCmu = const vector<mat_operator>;
-using VecPair = pair<gsl_vector *, gsl_vector *>;
-
-using VecArr = array<double, length>;
 
 // macros to define static (and allocated on stack)
 // vectors and matrices to avoid reallocation
@@ -27,15 +23,13 @@ using VecArr = array<double, length>;
 
 static gsl_spmatrix *computeTransMat(const gsl_spmatrix *A);
 
-static gsl_spmatrix *makeMatrixForX(const gsl_vector *x);
-static gsl_spmatrix *makeMatrixForY(const gsl_vector *y);
+static gsl_spmatrix *computeMatA(const gsl_vector *y, const ListCmu& C);
+static gsl_spmatrix *computeMatB(const gsl_vector *x, const ListCmu& C);
 
-static void computeMatA(gsl_spmatrix *A, const gsl_spmatrix *yMat, const ListCmu& C);
-static void computeMatB(gsl_spmatrix *B, const gsl_spmatrix *xMat, const ListCmu& C);
+static void solveForX(const gsl_spmatrix *A, gsl_vector *xHat, const gsl_spmatrix *LL, const gsl_vector *dd, double alpha, double eps);
+static void solveForY(const gsl_spmatrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, double beta, double tau, double eps);
 
-static void solveForX(gsl_permutation *perm, const gsl_spmatrix *A, gsl_vector *xHat, const gsl_spmatrix *LL, const gsl_vector *dd, double alpha);
-static void solveForY(gsl_permutation *perm, const gsl_spmatrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, double beta, double tau);
-
+static void solveAxbIter(const gsl_spmatrix *A, gsl_vector *u, const gsl_vector *f, const double eps);
 
 static void computeD(const gsl_spmatrix *A, const gsl_spmatrix *B, const gsl_vector *x, const gsl_vector *y, gsl_vector *d);
 
@@ -52,12 +46,6 @@ VecTriplet computeAMGIF(
         const double tau,
         const double eps
 ) {
-
-    // Permutation for Cholesky decompostion
-    static auto perm = shared_ptr<gsl_permutation>(
-            gsl_permutation_alloc(length),
-            &gsl_permutation_free
-    );
 
     // Results: x, y, d
     static_vector(x, length);
@@ -76,41 +64,37 @@ VecTriplet computeAMGIF(
     static_vector(yHat, length);
     gsl_vector_memcpy(yHat, ye);
 
+    // xHat = 0
     static_vector(xHat, length);
-
-    // A, B
-    auto A = gsl_spmatrix_alloc_nzmax(length, length, (length * length) / 2, GSL_SPMATRIX_CCS);
-    
-    auto B = gsl_spmatrix_alloc_nzmax(length, length, (length * length) / 2, GSL_SPMATRIX_CCS);
+    gsl_vector_set_zero(xHat);
 
     // Calculate L'L firsthand.
     auto LL = computeTransMat(L.get());
-
-    // Make the x and y matrices for easier computation.
-    auto xMat = makeMatrixForX(x);
-    auto yMat = makeMatrixForY(y);
 
     double errSignal;
     size_t iters = 1;
 
     do {
         gsl_vector_memcpy(y, yHat);  // y = yHat
-        computeMatA(A, yMat, C);
+        auto A = computeMatA(y, C);
         
         // TODO: find alpha parameter
-        solveForX(perm.get(), A, xHat, LL, dd, alpha);  // estimated xHat
+        solveForX(A, xHat, LL, dd, alpha, eps);  // estimated xHat
 
         gsl_vector_memcpy(x, xHat);  // x = xHat
-        computeMatB(B, xMat, C);
+        auto B = computeMatB(x, C);
 
         // TODO: find beta parameter
-        solveForY(perm.get(), B, yHat, ye, dd, beta, tau);  // estimated yHat
+        solveForY(B, yHat, ye, dd, beta, tau, eps);  // estimated yHat
 
         // Test for convergence:  Ax = By = d ~ dd
         computeD(A, B, x, y, d);
         
         errSignal = errorDistance(d, dd);
-        
+       
+        gsl_spmatrix_free(A);
+        gsl_spmatrix_free(B);
+
         ++iters;
     } while (errSignal > eps && iters <= MAX_ITER);
 
@@ -129,45 +113,6 @@ VecTriplet computeAMGIF(
     return VecTriplet(m, f, p);
 }
 
-static gsl_spmatrix *makeMatrixForX(const gsl_vector *x) {
-
-    auto xDense = gsl_matrix_alloc(length, length);
-
-    // one Y on each row
-    for (size_t j = 0; j < length; ++j) {
-        gsl_matrix_set_row(xDense, j, x);
-    }
-
-    auto xTriplet = gsl_spmatrix_alloc(length, length);
-    gsl_spmatrix_d2sp(xTriplet, xDense);
-
-    auto xMat = gsl_spmatrix_ccs(xTriplet);
-
-    gsl_matrix_free(xDense);
-    gsl_spmatrix_free(xTriplet);
-
-    return xMat;
-}
-
-static gsl_spmatrix *makeMatrixForY(const gsl_vector *y) {
-    auto yDense = gsl_matrix_alloc(length, length);
-
-    // one X on each column
-    for (size_t i = 0; i < length; ++i) {
-        gsl_matrix_set_col(yDense, i, y);
-    }
-
-    auto yTriplet = gsl_spmatrix_alloc(length, length);
-    gsl_spmatrix_d2sp(yTriplet, yDense);
-
-    auto yMat = gsl_spmatrix_ccs(yTriplet);
-
-    gsl_matrix_free(yDense);
-    gsl_spmatrix_free(yTriplet);
-
-    return yMat;
-}
-
 static gsl_spmatrix *computeTransMat(const gsl_spmatrix *A) {
   size_t nzmax = gsl_spmatrix_nnz(A);
 
@@ -184,31 +129,53 @@ static gsl_spmatrix *computeTransMat(const gsl_spmatrix *A) {
   return ATA;
 }
 
-static void computeMatA(gsl_spmatrix *A, const gsl_spmatrix *yMat, const ListCmu& C) {
+static gsl_spmatrix *computeMatA(const gsl_vector *y, const ListCmu& C) {
+    static_vector(res, length);
+
+    auto resM = gsl_spmatrix_alloc(length, length);
+
     for (size_t mu = 0; mu < length; ++mu) {
-        // A[mu,:] = y' C_mu
-        gsl_spblas_dgemm(1., yMat, C[mu].get(), A);
+        // A[mu,:] = y' C_mu = (C_mu' y)'
+        gsl_spblas_dgemv(CblasTrans, 1., C[mu].get(), y, 0., res);
+      
+        for (size_t j = 0; j < length; ++j) {
+            gsl_spmatrix_set(resM, mu, j, gsl_vector_get(res, j));
+        }
     }
+
+    return gsl_spmatrix_ccs(resM);
 }
 
-static void computeMatB(gsl_spmatrix *B, const gsl_spmatrix *xMat, const ListCmu& C) {
+static gsl_spmatrix *computeMatB(const gsl_vector *x, const ListCmu& C) {
+    static_vector(res, length);
+
+    auto resM = gsl_spmatrix_alloc(length, length);
+
     for (size_t mu = 0; mu < length; ++mu) {
         // B[mu,:] = C_mu x
-        gsl_spblas_dgemm(1., C[mu].get(), xMat, B);
+        gsl_spblas_dgemv(CblasNoTrans, 1., C[mu].get(), x, 0., res);
+
+        for (size_t j = 0; j < length; ++j) {
+            gsl_spmatrix_set(resM, mu, j, gsl_vector_get(res, j));
+        }
     }
+
+    return gsl_spmatrix_ccs(resM);
 }
 
-static void solveForX(gsl_permutation *perm, const gsl_spmatrix *A, gsl_vector *xHat, const gsl_spmatrix *LL, const gsl_vector *dd, const double alpha) {
+static void solveForX(const gsl_spmatrix *A, gsl_vector *xHat, const gsl_spmatrix *LL, const gsl_vector *dd, const double alpha, const double eps) {
 
     // * LHS = A'A + a L'L
-
+    
     auto scaledLL = gsl_spmatrix_alloc_nzmax(length, length, gsl_spmatrix_nnz(LL), GSL_SPMATRIX_CCS);
+    gsl_spmatrix_memcpy(scaledLL, LL);
     gsl_spmatrix_scale(scaledLL, alpha);
 
     auto AtA = computeTransMat(A);
     
-    auto sparseLhs = gsl_spmatrix_alloc(length, length);
-    gsl_spmatrix_add(sparseLhs, AtA, scaledLL);
+    auto lhs = gsl_spmatrix_alloc_nzmax(length, length, GSL_MAX(gsl_spmatrix_nnz(scaledLL),
+                                                                gsl_spmatrix_nnz(AtA)), GSL_SPMATRIX_CCS);
+    gsl_spmatrix_add(lhs, AtA, scaledLL);
 
     // * RHS = A'dd
     
@@ -218,33 +185,30 @@ static void solveForX(gsl_permutation *perm, const gsl_spmatrix *A, gsl_vector *
 
     // === Solve Pivoted Cholesky ===
 
-    auto lhs = gsl_matrix_alloc(length, length);
-
-    gsl_spmatrix_sp2d(lhs, sparseLhs);
-
-    gsl_linalg_pcholesky_decomp(lhs, perm);  
-    gsl_linalg_pcholesky_solve(lhs, perm, rhs, xHat);
+    solveAxbIter(lhs, xHat, rhs, eps);
    
     // free stuff
     gsl_spmatrix_free(scaledLL);
     gsl_spmatrix_free(AtA);
-    gsl_spmatrix_free(sparseLhs);
-    gsl_matrix_free(lhs);
+    gsl_spmatrix_free(lhs);
 }
 
-static void solveForY(gsl_permutation *perm, const gsl_spmatrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, const double beta, const double tau) {
+static void solveForY(const gsl_spmatrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, const double beta, const double tau, const double eps) {
 
     // * LHS = B'B + (b + t) I
 
-    auto scaledId = gsl_spmatrix_alloc_nzmax(length, length, (length - 1) * length, GSL_SPMATRIX_TRIPLET);
+    auto scaledIdTri = gsl_spmatrix_alloc_nzmax(length, length, length, GSL_SPMATRIX_TRIPLET);
     for (size_t k = 0; k < length; ++k) {
-      gsl_spmatrix_set(scaledId, k, k, (beta + tau));
+      gsl_spmatrix_set(scaledIdTri, k, k, beta + tau);
     }
+    auto scaledId = gsl_spmatrix_ccs(scaledIdTri);
+    gsl_spmatrix_free(scaledIdTri);
 
     auto BtB = computeTransMat(B);
 
-    auto sparseLhs = gsl_spmatrix_alloc(length, length);
-    gsl_spmatrix_add(sparseLhs, BtB, scaledId);
+    auto lhs = gsl_spmatrix_alloc_nzmax(length, length, GSL_MAX(gsl_spmatrix_nnz(scaledId),
+                                                                gsl_spmatrix_nnz(BtB)), GSL_SPMATRIX_CCS); 
+    gsl_spmatrix_add(lhs, BtB, scaledId);
 
     // * RHS = B'dd + t ye
     
@@ -255,18 +219,35 @@ static void solveForY(gsl_permutation *perm, const gsl_spmatrix* B, gsl_vector *
 
     // === Solve Pivoted Cholesky ===
 
-    auto lhs = gsl_matrix_alloc(length, length);
-
-    gsl_spmatrix_sp2d(lhs, sparseLhs);
-
-    gsl_linalg_pcholesky_decomp(lhs, perm);  
-    gsl_linalg_pcholesky_solve(lhs, perm, rhs, yHat);
+    solveAxbIter(lhs, yHat, rhs, eps);
    
     // free stuff
     gsl_spmatrix_free(scaledId);
     gsl_spmatrix_free(BtB);
-    gsl_spmatrix_free(sparseLhs);
-    gsl_matrix_free(lhs);
+    gsl_spmatrix_free(lhs);
+}
+
+static void solveAxbIter(const gsl_spmatrix *A, gsl_vector *u, const gsl_vector *f, const double eps) {
+    const auto workT = gsl_splinalg_itersolve_gmres;
+    auto work = gsl_splinalg_itersolve_alloc(workT, length, 0);
+
+    size_t iter(1);  
+    double residual;
+    int status;
+
+    /* solve the system A u = f */
+    do {
+        status = gsl_splinalg_itersolve_iterate(A, f, eps, u, work);
+
+        /* print out residual norm ||A*u - f|| */
+        //residual = gsl_splinalg_itersolve_normr(work);
+
+        if (status == GSL_SUCCESS) {
+          fprintf(stderr, "Converged\n");
+        }
+    } while (status == GSL_CONTINUE && ++iter <= MAX_SUB_ITER);
+
+    gsl_splinalg_itersolve_free(work);
 }
 
 static void computeD(const gsl_spmatrix *A, const gsl_spmatrix *B, const gsl_vector *x, const gsl_vector *y, gsl_vector *d) {

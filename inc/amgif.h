@@ -2,27 +2,29 @@
 #define AMGIF_H
 
 
+#include <memory>
 #include <utility>
 #include <vector>
-#include <memory>
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_splinalg.h>
 #include <gsl/gsl_spmatrix.h>
 
 #include "constants.h"
 
+using std::array;
 using std::pair;
+using std::shared_ptr;
 using std::tuple;
 using std::vector;
-using std::shared_ptr;
-using std::array;
 
 // Smart pointer to matrix
 using mat_operator = shared_ptr<gsl_spmatrix>;
 
 // Shorthand for template types
 using ListCmu = const vector<mat_operator>;
+using VecArr = array<double, length>;
 using VecPair = pair<gsl_vector *, gsl_vector *>;
 using VecTriplet = tuple<gsl_vector *, gsl_vector *, gsl_vector *>;
 

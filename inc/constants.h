@@ -8,7 +8,7 @@
 #define FRAMES_PER_BUFFER 1024
 
 // Vector basis
-#define J 5
+#define J 8
 
 // Basis length
 constexpr size_t length =
@@ -19,9 +19,11 @@ constexpr size_t length =
 
 #define WINDOW_LENGTH (length)
 
-// AM-GIF max iter count
-#define MAX_ITER 2
-
+// AM-GIF max global iter count
+#define MAX_ITER 5
+// AM-GIF max Axb solve iter count
+#define MAX_SUB_ITER 20
+    
 // GNUPlot data exporting
 #define GNUPLOT_FILE_IAIF_SOURCE "iaif_source.dat"
 #define GNUPLOT_FILE_IAIF_SOURCE_DERIV "iaif_source_deriv.dat"

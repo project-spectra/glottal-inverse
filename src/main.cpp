@@ -84,7 +84,7 @@ int main() {
         alpha = 5;
         beta = 3;
         tau = 1.2;
-        eps = 1e-3;
+        eps = 1e-4;
 
         std::cout << "- Estimating with AM-GIF..." << std::endl;
 

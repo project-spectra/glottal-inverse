@@ -26,18 +26,18 @@ void findComputeStatus(ComputeStatus& toLoad, ComputeStatus& toStore) {
     }
 }
 
-gsl_spmatrix *smartGetC(size_t mu, const std::string& path, bool load) {
+gsl_spmatrix *smartGetC(size_t mu, const std::string& pathCmp, bool load) {
     gsl_spmatrix *C;
 
     fs::create_directories(PERSIST_DIR);
 
     // remove the .gz
-    const std::string pathCmp(path, 0, path.length() - 3);
+    const std::string pathRaw = pathCmp.substr(0, pathCmp.length() - 3);
 
     if (load) {
         // if the directory already exists, simply restore.
         #pragma omp critical
-        C = cpReadMat(path.c_str(), pathCmp.c_str());
+        C = cpReadMat(pathRaw.c_str(), pathCmp.c_str());
     } else {
         // else, compute and then persist.
 
@@ -50,8 +50,10 @@ gsl_spmatrix *smartGetC(size_t mu, const std::string& path, bool load) {
         C = Cc;
         
         #pragma omp critical
-        cpWriteMat(path.c_str(), pathCmp.c_str(), C);
+        cpWriteMat(pathRaw.c_str(), pathCmp.c_str(), C);
     }
+
+    fs::remove(pathRaw);
 
     return C;
 }
