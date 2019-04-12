@@ -48,10 +48,14 @@ int main() {
     
     std::cout << " ==== Recording ====" << std::endl;
    
+    gsl_vector_view md_view;
+
     gsl_vector *md, *dg, *g;
     gsl_vector *m, *f, *p;
 
-    md = gsl_vector_alloc(WINDOW_LENGTH);
+    md_view = gsl_vector_view_array(data->recordedSamples, WINDOW_LENGTH);
+    md = &md_view.vector;
+
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
@@ -66,14 +70,9 @@ int main() {
         // record a window
         data->frameIndex = 0;
         recordWindow(stream);
-
-        // convert the data to doubles
-        for (size_t i = 0; i < WINDOW_LENGTH; ++i) {
-            gsl_vector_set(md, i, data->recordedSamples[i]);
-        }
         normalize(md);
 
-        //std::cout << "- Estimating with IAIF..." << std::endl;
+        std::cout << "- Estimating with IAIF..." << std::endl;
 
         // get a first estimate with IAIF
         std::tie(dg, g) = computeIAIF(md);
@@ -87,7 +86,7 @@ int main() {
         tau = 1.2;
         eps = 1e-3;
 
-        //std::cout << "- Estimating with AM-GIF..." << std::endl;
+        std::cout << "- Estimating with AM-GIF..." << std::endl;
 
         // estimate with AM-GIF
         //  m: signal function
@@ -110,7 +109,6 @@ int main() {
 
     std::cout << " ==== Exiting safely ====" << std::endl;
 
-    gsl_vector_free(md);
     free(data);
 
     return EXIT_SUCCESS;

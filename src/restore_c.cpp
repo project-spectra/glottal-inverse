@@ -12,7 +12,7 @@ void findComputeStatus(ComputeStatus& toLoad, ComputeStatus& toStore) {
     auto sep = out.tellp();
 
     for (size_t mu = 0; mu < length; ++mu) {
-        out.seekp(sep) << "C_" << mu << ".z" << std::ends;
+        out.seekp(sep) << "C_" << mu << ".gz" << std::flush;
         
         const auto path = out.str();
         
@@ -27,33 +27,32 @@ void findComputeStatus(ComputeStatus& toLoad, ComputeStatus& toStore) {
 }
 
 gsl_spmatrix *smartGetC(size_t mu, const std::string& path, bool load) {
-    FILE *f;
     gsl_spmatrix *C;
+
+    fs::create_directories(PERSIST_DIR);
+
+    // remove the .gz
+    const std::string pathCmp(path, 0, path.length() - 3);
 
     if (load) {
         // if the directory already exists, simply restore.
-        f = fopen(path.c_str(), "rb");
-
-        C = cpReadMat(f);
-
-        fclose(f);
+        #pragma omp critical
+        C = cpReadMat(path.c_str(), pathCmp.c_str());
     } else {
         // else, compute and then persist.
-        fs::create_directories(PERSIST_DIR);
 
         C = gsl_spmatrix_alloc(length, length);
 
         computeSingleC(C, mu);
-
-        f = fopen(path.c_str(), "wb");
-
-        auto Cp = cpWriteMat(f, C);
+        
+        auto Cc = gsl_spmatrix_ccs(C);
         gsl_spmatrix_free(C);
-        C = Cp;
-
-        fclose(f);
+        C = Cc;
+        
+        #pragma omp critical
+        cpWriteMat(path.c_str(), pathCmp.c_str(), C);
     }
-    
+
     return C;
 }
 

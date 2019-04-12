@@ -27,10 +27,10 @@ computeC() {
     findComputeStatus(toLoad, toStore);
 
 #ifdef PRECOMP
-    std::cout << "  + Skipping already computed elements..." << std::endl;
+    std::cout << "  + Skipping already computed elements... (" << toLoad.size() << ")"<< std::endl;
 #else
-    std::cout << "  + Loading already computed elements..." << std::endl;
-    
+    std::cout << "  + Loading already computed elements... (" << toLoad.size() << ")" << std::endl;
+  
     #pragma omp parallel for schedule(dynamic)
     for (auto it = toLoad.cbegin(); it < toLoad.cend(); ++it) {
         size_t mu = it->first;

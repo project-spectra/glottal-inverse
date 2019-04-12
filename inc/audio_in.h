@@ -6,7 +6,7 @@
 
 #include "constants.h"
 
-typedef float sample;
+typedef double sample;
 
 struct window_data {
     int frameIndex;

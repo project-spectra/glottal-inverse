@@ -8,7 +8,7 @@
 #define FRAMES_PER_BUFFER 1024
 
 // Vector basis
-#define J 4
+#define J 5
 
 // Basis length
 constexpr size_t length =

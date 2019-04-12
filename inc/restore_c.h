@@ -21,6 +21,7 @@
 #include <zlib.h>
 
 #include "constants.h"
+#include "zpipe.h"
 
 
 #define STR_HELPER(x) #x
@@ -38,9 +39,9 @@ void findComputeStatus(ComputeStatus& toLoad, ComputeStatus& toStore);
 
 gsl_spmatrix *smartGetC(size_t mu, const std::string& path, bool load);
 
-gsl_spmatrix *cpReadMat(FILE *f);
+gsl_spmatrix *cpReadMat(const char *pathRaw, const char *pathCompressed);
 
-gsl_spmatrix *cpWriteMat(FILE *f, gsl_spmatrix *C);
+void cpWriteMat(const char *pathRaw, const char *pathCompressed, gsl_spmatrix *mat);
 
 
 #endif // PERSIST_C_H

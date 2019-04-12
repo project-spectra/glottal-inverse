@@ -1,55 +1,30 @@
 #include "restore_c.h"
 
+void cpWriteMat(const char *pathRaw, const char *pathCompressed, gsl_spmatrix *mat) {
+  
+    // First write the matrix in raw file.
 
-gsl_spmatrix *cpWriteMat(FILE *file, gsl_spmatrix *mat) {    
+    FILE *fileGsl = fopen(pathRaw, "wb");
 
-    size_t size1(mat->size1);
-    size_t size2(mat->size2);
-    size_t nz(mat->nz);
+    size_t nnz = gsl_spmatrix_nnz(mat);
+    fwrite(&nnz, sizeof nnz, 1, fileGsl);
 
-    // Calculate data buffer size.
-    size_t workSize(GSL_MAX(size1, size2) *
-                    GSL_MAX(sizeof(size_t), sizeof(double)));
+    gsl_spmatrix_fwrite(fileGsl, mat);
 
-    size_t dataSize(
-        4 * sizeof(size_t) +
-          nz * sizeof(size_t) +
-          nz * sizeof(double) +
-          (size2 + 1) * sizeof(size_t) +
-          workSize
-    );
-     
-    auto ccs = gsl_spmatrix_ccs(mat);
+    fclose(fileGsl);
+
+    // Then write to compressed file.
+
+    FILE *fDefIn = fopen(pathRaw, "rb");
+    FILE *fDefOut = fopen(pathCompressed, "wb");
+
+    int ret = def(fDefIn, fDefOut, Z_DEFAULT_COMPRESSION);
     
-    auto data = make_unique<unsigned char[]>(dataSize);
-    void *cur = data.get();
-    
-    cur = mempcpy(cur, &ccs->size1, sizeof(size_t));
-    cur = mempcpy(cur, &ccs->size2, sizeof(size_t));
-    cur = mempcpy(cur, &ccs->nzmax, sizeof(size_t));
-    cur = mempcpy(cur, &ccs->nz, sizeof(size_t));
+    fclose(fDefIn);
+    fclose(fDefOut);
 
-    cur = mempcpy(cur, ccs->i, nz * sizeof(size_t));
-    cur = mempcpy(cur, ccs->data, nz * sizeof(double));
-    cur = mempcpy(cur, ccs->p, (size2 + 1) * sizeof(size_t));
-    cur = mempcpy(cur, ccs->work, workSize);
-
-    // Try to compress
-    size_t compressedSize(dataSize);
-    auto buffer = make_unique<unsigned char[]>(compressedSize);
-
-    compressBound(compressedSize);
-    int ret = compress2(buffer.get(), &compressedSize, data.get(), dataSize, 6); 
     if (ret != Z_OK) {
-        fclose(file);
-        throw std::ios_base::failure("Couldn't compress matrix");
+        zerr(ret);
+        exit(EXIT_FAILURE);
     }
-
-    // Write header for total lengths
-    fwrite(&dataSize, sizeof(size_t), 1, file);       // data
-    fwrite(&compressedSize, sizeof(size_t), 1, file); // compressed
-
-    fwrite(buffer.get(), sizeof(unsigned char), compressedSize, file);
-
-    return ccs;
 }
