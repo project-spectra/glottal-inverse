@@ -3,8 +3,7 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "amgif.h"
-#include "restore_c.h"
+#include "operators.h"
 
 
 int main() {

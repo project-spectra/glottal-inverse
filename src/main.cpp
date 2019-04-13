@@ -11,7 +11,7 @@
 #include "iaif.h"
 #include "amgif.h"
 #include "linalg.h"
-#include "restore_c.h"
+#include "operators.h"
 #include "gnuplot.h"
 
 
@@ -25,6 +25,10 @@ void inthand(int signum) {
 
 
 int main() {
+    
+    computeC();
+    return 1;
+/*
     PaError err;
     PaStream *stream;
     window_data *data;
@@ -55,7 +59,6 @@ int main() {
 
     md_view = gsl_vector_view_array(data->recordedSamples, WINDOW_LENGTH);
     md = &md_view.vector;
-
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
@@ -111,7 +114,7 @@ int main() {
 
     free(data);
 
-    return EXIT_SUCCESS;
+    return EXIT_SUCCESS;*/
 }
 
 void terminate() {

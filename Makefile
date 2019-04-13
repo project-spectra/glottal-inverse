@@ -60,7 +60,7 @@ CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaratio
 CXXFLAGS_Debug := -g3
 LDFLAGS_Debug := 
 
-CXXFLAGS_Release := -O3 -Os -Ofast
+CXXFLAGS_Release := -O3 -Ofast
 LDFLAGS_Release :=
 
 CXXFLAGS += $(CXXFLAGS_$(BUILD_TYPE))

@@ -24,22 +24,8 @@ using mat_operator = shared_ptr<gsl_spmatrix>;
 
 // Shorthand for template types
 using ListCmu = const vector<mat_operator>;
-using VecArr = array<double, length>;
-using VecPair = pair<gsl_vector *, gsl_vector *>;
+using VecArr = array<double, basisLength>;
 using VecTriplet = tuple<gsl_vector *, gsl_vector *, gsl_vector *>;
-
-// Generate operator L
-gsl_spmatrix *computeL();
-
-// Generate operator C
-#ifndef PRECOMP
-ListCmu
-#else
-void
-#endif
-computeC();
-
-void computeSingleC(gsl_spmatrix *C, size_t mu);
 
 // Compute the AM-GIF estimates
 VecTriplet computeAMGIF(

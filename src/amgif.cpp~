@@ -54,11 +54,11 @@ VecTriplet computeAMGIF(
    
     // dd = F(md)
     static_vector(dd, length);
-    coords(md->data, arr_dd.data());
+    projForward(md->data, arr_dd.data());
 
     // ye = F(pe)
     static_vector(ye, length);
-    coords(pe->data, arr_ye.data());
+    projForward(pe->data, arr_ye.data());
 
     // yHat = ye
     static_vector(yHat, length);
@@ -106,9 +106,9 @@ VecTriplet computeAMGIF(
     auto f = gsl_vector_alloc(length);
     auto p = gsl_vector_alloc(length);
 
-    uncoords(d->data, m->data);
-    uncoords(x->data, f->data);
-    uncoords(y->data, p->data);
+    projBackward(d->data, m->data);
+    projBackward(x->data, f->data);
+    projBackward(y->data, p->data);
 
     return VecTriplet(m, f, p);
 }

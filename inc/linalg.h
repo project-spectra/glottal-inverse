@@ -2,11 +2,12 @@
 #define BASIS_H
 
 
+#include <algorithm>
 #include <cstddef>
 #include <cmath>
-#include <unordered_map>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include <gsl/gsl_linalg.h>
@@ -18,24 +19,41 @@
 
 #include "constants.h"
 
+using std::array;
 using std::shared_ptr;
 using std::unique_ptr;
-using std::make_unique;
 using std::vector;
 using std::map;
 using std::pair;
 
-using IndPair = pair<size_t, size_t>;
-using PtrVector = unique_ptr<double[]>;
-using BasisList = vector<PtrVector>;
-using ConvMap = map<IndPair, PtrVector>;
+struct VectorFree {
+    void operator()(gsl_vector *x) const noexcept;
+};
 
-void coords(double f[], double u[]);
-void uncoords(double u[], double f[]);
+using VecPtr = unique_ptr<gsl_vector, VectorFree>;
+
+using BasisMap = array<VecPtr, basisLength>;
+using ConvMap = array<VecPtr, basisLength * basisLength>;
+
+
+void projForward(gsl_vector *f);
+void projBackward(gsl_vector *u);
+
+void projForward(gsl_vector *f, gsl_vector *u);
+void projBackward(gsl_vector *u, gsl_vector *f);
+
+gsl_vector *getBasis(size_t k);
+gsl_vector *getConvoluted(size_t p, size_t f);
+
+double convolutedBasis(size_t p, size_t f, size_t mu);
 
 void normalize(gsl_vector *f);
 
-double convoluteBasis(size_t p, size_t f, size_t mu);
+
+extern const VectorFree vecFree;
+
+extern shared_ptr<BasisMap> storedBases;
+extern shared_ptr<ConvMap> storedConvs;
 
 
 #endif // WAVELETS_H
