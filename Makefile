@@ -26,7 +26,7 @@
 
 
 # Modify as necessary
-CXXFLAGS += -ftree-vectorize -mavx -msse -msse2 -msse3 -march=haswell -mtune=haswell -mfpmath=sse -fopenmp 
+CXXFLAGS += -fexceptions -ftree-vectorize -march=native -fopenmp 
 LDFLAGS += -lgsl -lcblas -lm -lportaudio -lz -lstdc++fs -fopenmp
 
 SRC_DIR := src
