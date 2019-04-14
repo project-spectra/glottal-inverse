@@ -16,7 +16,7 @@ bool openStream(PaStream **stream, window_data *data) {
     data->frameIndex = 0;
     
     // make sure the sample array is initialized
-    std::fill_n(data->recordedSamples, numSamples, 0.0);
+    std::fill_n(data->recordedSamples, numSamples, 0.);
    
     inputParameters.device = Pa_GetDefaultInputDevice();
     if (inputParameters.device == paNoDevice) {
@@ -56,7 +56,7 @@ bool recordWindow(PaStream *stream) {
     }
 
     while ((err = Pa_IsStreamActive(stream)) == 1) {
-        Pa_Sleep(50);
+        Pa_Sleep(25);
     }
     if (err < 0) {
         std::cerr << "Read stream failure: " << Pa_GetErrorText(err) << std::endl;

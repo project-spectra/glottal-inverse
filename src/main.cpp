@@ -25,16 +25,12 @@ void inthand(int signum) {
 
 
 int main() {
-    
-    computeC();
-    return 1;
-/*
     PaError err;
     PaStream *stream;
     window_data *data;
   
     data = static_cast<window_data *>(malloc(
-        sizeof(window_data) + length * sizeof(sample)
+        sizeof(window_data) + basisLength * sizeof(double)
     ));
 
     err = Pa_Initialize();
@@ -62,10 +58,7 @@ int main() {
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
-    mat_operator L(computeL());
-
-    std::cout << "- Computing operator C..." << std::endl;
-    vector<mat_operator> C(computeC());
+    gsl_matrix *L = computeL();
 
     while (!stop) {
         std::cout << "- Processing one window..." << std::endl;
@@ -95,7 +88,7 @@ int main() {
         //  m: signal function
         //  f: input function
         //  p: charac function
-        std::tie(m, f, p) = computeAMGIF(C, md, dg, L, alpha, beta, tau, eps);
+        std::tie(m, f, p) = computeAMGIF(md, g, L, alpha, beta, tau, eps);
         normalize(m);
         normalize(f);
         normalize(p);
@@ -114,7 +107,7 @@ int main() {
 
     free(data);
 
-    return EXIT_SUCCESS;*/
+    return EXIT_SUCCESS;
 }
 
 void terminate() {

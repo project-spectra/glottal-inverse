@@ -8,7 +8,7 @@ void setFilenames(string& raw, string& compressed, size_t mu) {
   
     raw = out.str();
     
-    out << ".gz";
+    out << ".zstr";
     compressed = out.str();
 
 }

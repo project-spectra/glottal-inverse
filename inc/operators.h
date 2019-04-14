@@ -31,7 +31,7 @@ using VecPair = pair<gsl_vector *, gsl_vector *>;
 using VecTriplet = tuple<gsl_vector *, gsl_vector *, gsl_vector *>;
 
 // Generate operator L
-gsl_spmatrix *computeL();
+gsl_matrix *computeL();
 
 // Generate operator C
 void computeC();

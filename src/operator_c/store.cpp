@@ -27,16 +27,10 @@ void storeMat(const gsl_spmatrix *C, size_t mu) {
     FILE *fDefIn = fopen(raw.c_str(), "rb");
     FILE *fDefOut = fopen(compressed.c_str(), "wb");
 
-    //int ret = def(fDefIn, fDefOut, Z_DEFAULT_COMPRESSION);
-    int ret = def(fDefIn, fDefOut, 5);
+    compress(fDefIn, fDefOut, 3);
     
     fclose(fDefIn);
     fclose(fDefOut);
 
     fs::remove(raw);
-
-    if (ret != Z_OK) {
-        zerr(ret);
-        exit(EXIT_FAILURE);
-    }
 }

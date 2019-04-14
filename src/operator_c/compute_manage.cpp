@@ -43,7 +43,7 @@ void computeC() {
 
         if (!toStore[mu]) {
             #pragma omp critical
-            std::cout << "[" << std::setw(4) << percent(totalDone, basisLength) << "]"
+            std::cout << "[" << std::right << std::setw(4) << percent(totalDone, basisLength) << "]"
                       << "   + mu = " << std::left << std::setw(basisMaxDigits) << mu
                       << "   (precomputed)" << std::endl;
             continue;
@@ -58,7 +58,7 @@ void computeC() {
         auto dur = duration_cast<duration<double>>(t2 - t1);
 
         #pragma omp critical
-        std::cout << "[" << std::setw(4) << percent(totalDone, basisLength) << "]"
+        std::cout << "[" << std::right << std::setw(4) << percent(totalDone, basisLength) << "]"
                   << "   + mu = " << std::left << std::setw(basisMaxDigits) << mu
                   << "   in   " << dur.count() << " seconds" << std::endl;
 

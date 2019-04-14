@@ -18,6 +18,7 @@
 #include <gsl/gsl_wavelet.h>
 
 #include "constants.h"
+#include "vector.h"
 
 using std::array;
 using std::shared_ptr;
@@ -26,14 +27,8 @@ using std::vector;
 using std::map;
 using std::pair;
 
-struct VectorFree {
-    void operator()(gsl_vector *x) const noexcept;
-};
-
-using VecPtr = unique_ptr<gsl_vector, VectorFree>;
-
-using BasisMap = array<VecPtr, basisLength>;
-using ConvMap = array<VecPtr, basisLength * basisLength>;
+using BasisMap = Vector[]; // length
+using ConvMap = Vector[]; // length * length
 
 
 void projForward(gsl_vector *f);
@@ -42,18 +37,16 @@ void projBackward(gsl_vector *u);
 void projForward(gsl_vector *f, gsl_vector *u);
 void projBackward(gsl_vector *u, gsl_vector *f);
 
-gsl_vector *getBasis(size_t k);
-gsl_vector *getConvoluted(size_t p, size_t f);
+const Vector& getBasis(size_t k);
+const Vector& getConvoluted(size_t p, size_t f);
 
 double convolutedBasis(size_t p, size_t f, size_t mu);
 
 void normalize(gsl_vector *f);
 
 
-extern const VectorFree vecFree;
-
-extern shared_ptr<BasisMap> storedBases;
-extern shared_ptr<ConvMap> storedConvs;
+extern unique_ptr<BasisMap> storedBases;
+extern unique_ptr<ConvMap> storedConvs;
 
 
 #endif // WAVELETS_H

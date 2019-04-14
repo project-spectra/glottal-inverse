@@ -9,7 +9,7 @@
 #define FRAMES_PER_BUFFER 1024
 
 // Vector basis
-#define J 9
+#define J 8
 
 // Basis length
 constexpr size_t basisLength =
@@ -22,9 +22,10 @@ constexpr size_t basisLength =
 #define WINDOW_LENGTH (basisLength)
 
 // AM-GIF max global iter count
-#define MAX_ITER 5
-// AM-GIF max Axb solve iter count
-#define MAX_SUB_ITER 20
+#define MAX_ITER 1
+
+// AM-GIF max ring buffer capacity
+#define MAX_CAPACITY 256
     
 // GNUPlot data exporting
 #define GNUPLOT_FILE_IAIF_SOURCE "iaif_source.dat"

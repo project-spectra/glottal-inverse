@@ -27,7 +27,7 @@
 
 # Modify as necessary
 CXXFLAGS += -fexceptions -ftree-vectorize -march=native -fopenmp 
-LDFLAGS += -lgsl -lcblas -lm -lportaudio -lz -lstdc++fs -fopenmp
+LDFLAGS += -lgsl -lcblas -lm -lportaudio -lzstd -lstdc++fs -fopenmp
 
 SRC_DIR := src
 INC_DIR := inc

@@ -16,15 +16,10 @@ gsl_spmatrix *loadMat(size_t mu) {
     FILE *fInfIn = fopen(compressed.c_str(), "rb");
     FILE *fInfOut = fopen(raw.c_str(), "wb");
 
-    int ret = inf(fInfIn, fInfOut);
+    decompress(fInfIn, fInfOut);
 
     fclose(fInfIn);
     fclose(fInfOut);
-
-    if (ret != Z_OK) {
-        zerr(ret);
-        exit(EXIT_FAILURE);
-    }
    
     // Then read the matrix.
    

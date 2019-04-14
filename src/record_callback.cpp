@@ -10,9 +10,10 @@ int recordCallback(
         PaStreamCallbackFlags statusFlags,
         void *userData
 ) {
-    window_data *data = (window_data *) userData;
-    const sample *rptr = (const sample *) inputBuffer;
-    sample *wptr = &data->recordedSamples[data->frameIndex];
+    auto *data = static_cast<window_data *>(userData);
+    auto *rptr = static_cast<const float *>(inputBuffer);
+    auto *wptr = &data->recordedSamples[data->frameIndex];
+
     size_t framesToCalc, i;
     int finished;
     unsigned long framesLeft = data->maxFrameIndex - data->frameIndex;
@@ -36,7 +37,7 @@ int recordCallback(
         }
     } else {
         for (i = 0; i < framesToCalc; ++i) {
-            *wptr++ = *rptr++;
+            *wptr++ = static_cast<double>(*rptr++);
         }
     }
 
