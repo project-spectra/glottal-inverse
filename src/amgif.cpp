@@ -99,8 +99,6 @@ VecTriplet computeAMGIF(
         gsl_matrix_free(A);
         gsl_matrix_free(B);
 
-        std::cout << "iter " << iters << std::endl;
-
         ++iters;
     } while (errSignal > eps && iters <= MAX_ITER);
 

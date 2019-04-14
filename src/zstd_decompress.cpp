@@ -43,7 +43,7 @@ void decompress(FILE *fileIn, FILE *fileOut)
             ZSTD_outBuffer output = { bufOut.get(), sizeOut, 0 };
 
             toRead = ZSTD_decompressStream(strm, &output, &input);
-            zstdErrorDie(toRead, "ZSTD_compressStream");
+            zstdErrorDie(toRead, "ZSTD_decompressStream");
             
             fwrite(bufOut.get(), 1, output.pos, fileOut);
         }
