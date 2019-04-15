@@ -28,7 +28,7 @@ gsl_spmatrix *loadMat(size_t mu) {
     size_t nnz;
     fread(&nnz, sizeof nnz, 1, fileGsl);
 
-    auto C = gsl_spmatrix_alloc_nzmax(basisLength, basisLength, nnz, GSL_SPMATRIX_CCS);
+    auto C = gsl_spmatrix_alloc(basisLength, basisLength);
 
     gsl_spmatrix_fread(fileGsl, C);
 

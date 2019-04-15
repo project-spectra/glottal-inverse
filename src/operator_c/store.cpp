@@ -15,9 +15,6 @@ void storeMat(const gsl_spmatrix *C, size_t mu) {
 
     FILE *fileGsl = fopen(raw.c_str(), "wb");
 
-    size_t nnz = gsl_spmatrix_nnz(C);
-    fwrite(&nnz, sizeof nnz, 1, fileGsl);
-
     gsl_spmatrix_fwrite(fileGsl, C);
 
     fclose(fileGsl);

@@ -1,24 +1,64 @@
 #include "operators.h"
 #include "operators_buffer.h"
 
+#include <zstd.h>
+
 
 OperatorBuffer::OperatorBuffer(size_t cap)
     : m_capacity(cap), m_mats(cap)
 {
     for (auto& it : m_mats) {
-        it = std::make_pair(false, gsl_matrix_alloc(basisLength, basisLength));
+        //it = std::make_pair(false, gsl_matrix_alloc(basisLength, basisLength));
     }
+
+    readCompressedFiles();
 }
 
 OperatorBuffer::~OperatorBuffer() {
     for (auto& it : m_mats) {
-        gsl_matrix_free(it.second);
+        //gsl_matrix_free(it.second);
+    }
+
+    for (auto& it : m_data) {
+        free(it.second);
     }
 }
 
 gsl_matrix *OperatorBuffer::get(size_t mu)
 {
-    size_t it_mu, k;
+    // get compressedData
+    void *bufSrc;
+    size_t bufLen;
+    
+    std::tie(bufLen, bufSrc) = m_data[mu];
+
+    const size_t destLen = ZSTD_getFrameContentSize(bufSrc, bufLen);
+    if (ZSTD_isError(destLen)) {
+        fprintf(stderr, "Error getFrameContentSize C[%zu] : %s\n", mu, ZSTD_getErrorName(destLen));
+        exit(EXIT_FAILURE);
+    }
+
+    void *bufDest = new unsigned char[destLen];
+
+    const size_t bytesDecompressed = ZSTD_decompress(bufDest, destLen, bufSrc, bufLen);
+    if (ZSTD_isError(bytesDecompressed)) {
+        fprintf(stderr, "Error ZSTD_decompress C[%zu] : %s\n", mu, ZSTD_getErrorName(bytesDecompressed));
+        exit(EXIT_FAILURE);
+    }
+
+    gsl_spmatrix *sparse = gsl_spmatrix_alloc(basisLength, basisLength);
+
+    spmatrix_read(sparse, bufDest);
+
+    gsl_matrix *dense = gsl_matrix_alloc(basisLength, basisLength);
+
+    gsl_spmatrix_sp2d(dense, sparse);
+
+    gsl_spmatrix_free(sparse);
+
+    return dense;
+    
+    /*size_t it_mu, k;
 
     gsl_matrix *denseMat;
     
@@ -58,42 +98,13 @@ gsl_matrix *OperatorBuffer::get(size_t mu)
 
     // get matrix and load it
     gsl_spmatrix *sparseMat = loadMat(mu);
-    spmatrix_ccs2d(denseMat, sparseMat);
+    gsl_spmatrix_sp2d(denseMat, sparseMat);
     gsl_spmatrix_free(sparseMat);
 
     m_buffer.emplace_front(mu, k);
 
-    return denseMat;
+    return denseMat;*/
 
 }
 
 
-void spmatrix_ccs2d(gsl_matrix *dest, gsl_spmatrix *src)
-{
-    const size_t *si(src->i);
-    const size_t *sp(src->p);
-    const double *sdata(src->data);
-
-    const size_t size2(src->size2);
-
-    size_t i, j, p;    
-    size_t sp_jp1;
-
-    double data;
-
-    // if zero, zero
-    if (src->nz == 0) return;
-
-    // for each column
-    for (j = 0; j < size2; ++j) {
-        sp_jp1 = sp[j + 1];
-
-        // find each row with data
-        for (p = sp[j]; p < sp_jp1; ++p) {
-            i = si[p];
-            data = sdata[p];
-
-            gsl_matrix_set(dest, i, j, data);
-        }
-    }
-}

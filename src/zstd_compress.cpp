@@ -1,65 +1,30 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 #include <memory>
 #include <zstd.h>
-
-
-static void zstdErrorDie(size_t result, const char *func) {
-    if (ZSTD_isError(result)) {
-        std::cerr << func << "() error: " << ZSTD_getErrorName(result) << std::endl;
-        exit(EXIT_FAILURE);
-    }
-}
+#include "zstd_util.h"
 
 
 void compress(FILE *fileIn, FILE *fileOut, int level)
 {
-    static thread_local auto strmPtr = std::shared_ptr<ZSTD_CStream>(
-            ZSTD_createCStream(),
-            ZSTD_freeCStream
+    static thread_local auto cctxPtr = std::shared_ptr<ZSTD_CCtx>(
+            ZSTD_createCCtx(),
+            ZSTD_freeCCtx
     );
-    
-    ZSTD_CStream* strm(strmPtr.get());
 
-    const size_t sizeIn = ZSTD_CStreamInSize();
-    const size_t sizeOut = ZSTD_CStreamOutSize();
+    size_t sizeIn;
+    std::shared_ptr<void> bufIn(readWholeFile(fileIn, &sizeIn));
 
-    std::shared_ptr<void> bufIn(new unsigned char[sizeIn]);
+    const size_t sizeOut = ZSTD_compressBound(sizeIn);
     std::shared_ptr<void> bufOut(new unsigned char[sizeOut]);
 
-    const size_t initResult = ZSTD_initCStream(strm, level);
-    zstdErrorDie(initResult, "ZSTD_initCStream");
+    const size_t cSize = ZSTD_compressCCtx(
+            cctxPtr.get(),
+            bufOut.get(), sizeOut,
+            bufIn.get(), sizeIn,
+            level
+    );
 
-    size_t read, toRead;
-    
-    toRead = sizeIn;
+    zstdErrorDie(cSize, "ZSTD_compressCCtx");
 
-    while ((read = fread(bufIn.get(), 1, toRead, fileIn))) {
-        ZSTD_inBuffer input = { bufIn.get(), read, 0 };
-
-        while (input.pos < input.size) {
-            ZSTD_outBuffer output = { bufOut.get(), sizeOut, 0 };
-
-            toRead = ZSTD_compressStream(strm, &output, &input);
-            zstdErrorDie(toRead, "ZSTD_compressStream");
-
-            if (toRead > sizeIn)
-                toRead = sizeIn;
-
-            fwrite(bufOut.get(), 1, output.pos, fileOut);
-        }
-    }
-
-    ZSTD_outBuffer output = { bufOut.get(), sizeOut, 0 };
-    
-    const size_t remainingToFlush = ZSTD_endStream(strm, &output);
-    if (remainingToFlush > 0) {
-        std::cerr << "Not fully flushed" << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    fwrite(bufOut.get(), 1, output.pos, fileOut);
+    fwrite(bufOut.get(), 1, cSize, fileOut);
 
 }

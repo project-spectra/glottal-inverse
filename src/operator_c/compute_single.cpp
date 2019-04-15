@@ -18,10 +18,6 @@ gsl_spmatrix *computeSingleC(size_t mu) {
         }
     }
 
-    auto Cc = gsl_spmatrix_ccs(C);
-
-    gsl_spmatrix_free(C);
-
-    return Cc;
+    return C;
 
 }
