@@ -6,10 +6,12 @@
 
 #include "constants.h"
 
+typedef float sample;
+
 struct window_data {
     int frameIndex;
     int maxFrameIndex;
-    double recordedSamples[];
+    sample recordedSamples[];
 };
 
 int recordCallback(

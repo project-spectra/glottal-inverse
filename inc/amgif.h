@@ -23,11 +23,13 @@ using std::vector;
 
 // Shorthand for template types
 using VecArr = array<double, basisLength>;
+using MatArr = array<double, basisLength * basisLength>;
 using VecTriplet = tuple<gsl_vector *, gsl_vector *, gsl_vector *>;
 using OpBuf = OperatorBuffer;
 
 // Compute the AM-GIF estimates
 VecTriplet computeAMGIF(
+        OpBuf& Cbuf,
         gsl_vector *me,
         gsl_vector *pe,
         const gsl_matrix *L,

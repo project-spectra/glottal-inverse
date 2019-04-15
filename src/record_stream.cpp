@@ -56,7 +56,7 @@ bool recordWindow(PaStream *stream) {
     }
 
     while ((err = Pa_IsStreamActive(stream)) == 1) {
-        Pa_Sleep(25);
+        Pa_Sleep(50);
     }
     if (err < 0) {
         std::cerr << "Read stream failure: " << Pa_GetErrorText(err) << std::endl;

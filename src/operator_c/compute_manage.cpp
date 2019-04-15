@@ -1,14 +1,10 @@
 #include "operators.h"
+#include "timer.h"
 
 #include <iostream>
 #include <iomanip>
-#include <chrono>
 #include <cmath>
 #include <string>
-
-using std::chrono::high_resolution_clock;
-using std::chrono::duration;
-using std::chrono::duration_cast;
 
 
 // Digit count basis length

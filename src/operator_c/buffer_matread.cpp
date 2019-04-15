@@ -20,7 +20,8 @@ void spmatrix_read(gsl_spmatrix *dest, const void *src)
     cur += sizeof(size_t);
 
     // set nzmax
-    gsl_spmatrix_realloc(nz, dest);
+    dest->nz = nz;
+    dest->nzmax = nz;
 
     // read i, data, p, wihch are all size nz, for a triplet storage format.
     memcpy(dest->i, cur, nz * sizeof(size_t));

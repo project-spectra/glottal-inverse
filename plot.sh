@@ -11,7 +11,7 @@ plot_time() {
 
         set title "$1"
 
-        set xrange [0:255]
+        set xrange [0:1023]
         set yrange [-1:1]
 
         plot "$2" with lines

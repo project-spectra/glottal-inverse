@@ -30,7 +30,7 @@ int main() {
     window_data *data;
   
     data = static_cast<window_data *>(malloc(
-        sizeof(window_data) + basisLength * sizeof(double)
+        sizeof(window_data) + WINDOW_LENGTH * sizeof(sample)
     ));
 
     err = Pa_Initialize();
@@ -47,18 +47,18 @@ int main() {
     }
     
     std::cout << " ==== Recording ====" << std::endl;
-   
-    gsl_vector_view md_view;
 
     gsl_vector *md, *dg, *g;
     gsl_vector *m, *f, *p;
 
-    md_view = gsl_vector_view_array(data->recordedSamples, WINDOW_LENGTH);
-    md = &md_view.vector;
+    md = gsl_vector_alloc(WINDOW_LENGTH);
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
     gsl_matrix *L = computeL();
+
+    std::cout << "- Initializing operator C decompression buffer..." << std::endl;
+    OpBuf Cbuf;
 
     while (!stop) {
         std::cout << "- Processing one window..." << std::endl;
@@ -66,6 +66,11 @@ int main() {
         // record a window
         data->frameIndex = 0;
         recordWindow(stream);
+
+        // convert to doubles
+        for (size_t i = 0; i < WINDOW_LENGTH; ++i) {
+            gsl_vector_set(md, i, data->recordedSamples[i]);
+        }
         normalize(md);
 
         std::cout << "- Estimating with IAIF..." << std::endl;
@@ -88,13 +93,13 @@ int main() {
         //  m: signal function
         //  f: input function
         //  p: charac function
-        std::tie(m, f, p) = computeAMGIF(md, g, L, alpha, beta, tau, eps);
+        std::tie(m, f, p) = computeAMGIF(Cbuf, md, g, L, alpha, beta, tau, eps);
         normalize(m);
         normalize(f);
         normalize(p);
 
         writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
-        writePlotData(f, GNUPLOT_FILE_AMGIF_SOURCE);
+        writePlotData(p, GNUPLOT_FILE_AMGIF_SOURCE);
 
         gsl_vector_free(dg);
         gsl_vector_free(g);
@@ -105,6 +110,7 @@ int main() {
 
     std::cout << " ==== Exiting safely ====" << std::endl;
 
+    gsl_vector_free(md);
     free(data);
 
     return EXIT_SUCCESS;

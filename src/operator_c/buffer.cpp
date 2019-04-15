@@ -1,23 +1,18 @@
 #include "operators.h"
 #include "operators_buffer.h"
 
+#include <iostream>
 #include <zstd.h>
 
 
-OperatorBuffer::OperatorBuffer(size_t cap)
-    : m_capacity(cap), m_mats(cap)
+OperatorBuffer::OperatorBuffer()
+    : m_mat(gsl_matrix_alloc(basisLength, basisLength))
 {
-    for (auto& it : m_mats) {
-        //it = std::make_pair(false, gsl_matrix_alloc(basisLength, basisLength));
-    }
-
     readCompressedFiles();
 }
 
 OperatorBuffer::~OperatorBuffer() {
-    for (auto& it : m_mats) {
-        //gsl_matrix_free(it.second);
-    }
+    gsl_matrix_free(m_mat);
 
     for (auto& it : m_data) {
         free(it.second);
@@ -47,64 +42,12 @@ gsl_matrix *OperatorBuffer::get(size_t mu)
     }
 
     gsl_spmatrix *sparse = gsl_spmatrix_alloc(basisLength, basisLength);
-
     spmatrix_read(sparse, bufDest);
 
-    gsl_matrix *dense = gsl_matrix_alloc(basisLength, basisLength);
-
-    gsl_spmatrix_sp2d(dense, sparse);
+    gsl_matrix_set_zero(m_mat);
+    gsl_spmatrix_sp2d(m_mat, sparse);
 
     gsl_spmatrix_free(sparse);
 
-    return dense;
-    
-    /*size_t it_mu, k;
-
-    gsl_matrix *denseMat;
-    
-    // look for it, if it's loaded, good.
-    for (auto& entry : m_buffer)
-    {
-        std::tie(it_mu, k) = entry;
-
-        if (it_mu == mu) {
-            return m_mats[k].second;
-        }
-    }
-
-    // if not, check capacity and drop the end.
-    if (m_buffer.size() == m_capacity) {
-        // reset mat to zero
-        size_t k = m_buffer.back().second;
-        
-        auto& matEntry = m_mats[k];
-        matEntry.first = false; // unused
-        gsl_matrix_set_zero(matEntry.second);
-
-        m_buffer.pop_back();
-    }
-    
-    // find first free matrix
-    for (k = 0; k < m_capacity; ++k) {
-        auto& matEntry = m_mats[k];
-
-        // unused
-        if (!matEntry.first) {    
-            matEntry.first = true;
-            denseMat = matEntry.second;
-            break;
-        }
-    }
-
-    // get matrix and load it
-    gsl_spmatrix *sparseMat = loadMat(mu);
-    gsl_spmatrix_sp2d(denseMat, sparseMat);
-    gsl_spmatrix_free(sparseMat);
-
-    m_buffer.emplace_front(mu, k);
-
-    return denseMat;*/
-
+    return m_mat;
 }
-
-
