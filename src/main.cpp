@@ -23,8 +23,10 @@ void inthand(int signum) {
     stop = true;
 }
 
-
+#include <fenv.h>
 int main() {
+    feenableexcept(FE_INVALID | FE_OVERFLOW);
+
     PaError err;
     PaStream *stream;
     window_data *data;

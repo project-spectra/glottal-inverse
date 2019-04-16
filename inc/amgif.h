@@ -13,7 +13,6 @@
 #include "constants.h"
 #include "operators_buffer.h"
 
-using std::array;
 using std::pair;
 using std::shared_ptr;
 using std::tuple;
@@ -22,8 +21,6 @@ using std::vector;
 // Smart pointer to matrix
 
 // Shorthand for template types
-using VecArr = array<double, basisLength>;
-using MatArr = array<double, basisLength * basisLength>;
 using VecTriplet = tuple<gsl_vector *, gsl_vector *, gsl_vector *>;
 using OpBuf = OperatorBuffer;
 

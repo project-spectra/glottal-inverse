@@ -2,25 +2,8 @@
 #include "operators.h"
 #include "constants.h"
 #include "linalg.h"
+#include "gsl_util.h"
 #include "timer.h"
-
-
-// macros to define static (and allocated on stack)
-// vectors and matrices to avoid reallocation
-// whenever the function is called.
-
-#define static_vector(name)  \
-    static VecArr arr_##name;  \
-    static auto view_##name = gsl_vector_view_array(arr_##name.data(), basisLength);  \
-    static auto name = &view_##name.vector;  \
-
-#define static_matrix(name)  \
-    static MatArr arr_##name;  \
-    static auto view_##name = gsl_matrix_view_array(arr_##name.data(), basisLength, basisLength);  \
-    static auto name = &view_##name.matrix;  \
-
-
-using OpBuf = OperatorBuffer;
 
 
 static void computeMatA(gsl_matrix *A, const gsl_vector *y, OpBuf& C);

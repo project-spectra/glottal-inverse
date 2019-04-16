@@ -14,7 +14,7 @@
 
 gsl_vector *hanning(size_t L);
 
-gsl_vector *lpcCoeffs(gsl_vector *x, size_t order);
+void lpcCoeffs(double *lpc, gsl_vector *x, size_t order);
 
 
 #endif // LPC_H

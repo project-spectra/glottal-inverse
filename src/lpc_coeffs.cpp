@@ -1,18 +1,19 @@
 #include "lpc.h"
+#include <cstring>
 
 
-gsl_vector *lpcCoeffs(gsl_vector *x, size_t order) {
-    const size_t n = x->size;
-    const size_t m = order + 1;
+void lpcCoeffs(double *lpc, gsl_vector *x, size_t order) {
+    const int n = x->size;
+    const int m = static_cast<int>(order + 1);
 
     double aut[m + 1];
-    double lpc[m];
 
     double err, eps;
     int i, j;
 
-    for (j = m; j >= 0; --j) {
-        double d = 0;
+    j = m + 1;
+    while (j--) {
+        double d = 0.;
         for (i = j; i < n; ++i) {
             d += gsl_vector_get(x, i) * gsl_vector_get(x, i - j);
         }
@@ -22,12 +23,15 @@ gsl_vector *lpcCoeffs(gsl_vector *x, size_t order) {
     err = aut[0] * (1. + 1e-10);
     eps = 1e-9 * aut[0] + 1e-10;
 
-    for (i = 0; i < m; ++i) {
-        if (err < eps) {
-            break;
-        }
-
+    for (i = 0; i < m; ++i) { 
         double r = -aut[i + 1];
+
+        if (err < eps) {
+            for (j = i; j < m; ++j) {
+                lpc[j] = 0.;
+            }
+            goto done;
+        }
         
         for (j = 0; j < i; ++j) {
             r -= lpc[j] * aut[i - j];
@@ -42,17 +46,14 @@ gsl_vector *lpcCoeffs(gsl_vector *x, size_t order) {
             lpc[i - 1 - j] += r * tmp;
         }
 
-        if (i % 2 == 1) {
+        if (i & 1) {
             lpc[j] += lpc[j] * r;
         };
 
         err *= 1. - r * r;
     }
 
-    // if err < eps before the end
-    for (j = i; j < m; ++j) {
-        lpc[j] = 0.;
-    }
+done:
 
     double g = .99;
     double damp = g;
@@ -60,13 +61,6 @@ gsl_vector *lpcCoeffs(gsl_vector *x, size_t order) {
         lpc[j] *= damp;
         damp *= g;
     }
-
-    gsl_vector *res = gsl_vector_alloc(m);
-    for (j = 0; j < m; ++j) {
-        gsl_vector_set(res, j, lpc[j]);
-    }
-
-    return res;
 }
 
 /*

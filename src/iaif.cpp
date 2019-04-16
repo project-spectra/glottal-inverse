@@ -1,4 +1,5 @@
 #include "iaif.h"
+#include "gsl_util.h"
 
 
 // LPC analysis order for vocal tract
@@ -13,89 +14,81 @@ static constexpr double d = 0.99;
 // How many times to apply highpass filter
 static constexpr size_t hpfilt = 1;
 
+// Highpass cutoff frequency
+static constexpr double fc = 50.;
+
 // The coefficients for the IIR integration filter
 static constexpr double intCoefs[][2] = { { 1 }, { 1, -d } };
-
-
-// Coefficients for the IIR Butterworth highpass filter
-// - N = 5
-// - Fc = 40 Hz
-// - Fs = SAMPLE_RATE
-static const auto hpCoefs = create_hp_butterworth(5, 40.);
 
 
 static inline void applyWindow(gsl_vector *x, gsl_vector *win) {
     gsl_vector_mul(x, win);
 }
 
-static inline void applyInt(gsl_vector *x) {
+static void applyInt(gsl_vector *x, gsl_vector *res) {
     static auto b = gsl_vector_const_view_array(intCoefs[0], 1);
     static auto a = gsl_vector_const_view_array(intCoefs[1], 2);
     
-    filter_iir(&b.vector, &a.vector, x);
+    filter_iir(&b.vector, &a.vector, x, res);
 }
 
 
 std::pair<gsl_vector *, gsl_vector *> computeIAIF(gsl_vector *x) {
     const size_t M = x->size;
-    const size_t preflt = p_vt + 1;
+    // const size_t preflt = p_vt + 1;  // unused
 
     if (M <= p_vt) {
         return std::pair<gsl_vector *, gsl_vector *>
             (nullptr, nullptr);
     }
 
+    static_vector(signal);
+    gsl_vector_memcpy(signal, x);
+    
     auto dg = gsl_vector_alloc(M);
     auto g = gsl_vector_alloc(M);
 
-    auto signal = gsl_vector_alloc(M);
-    auto inter = gsl_vector_alloc(M);
-    gsl_vector_memcpy(signal, x);
-    gsl_vector_memcpy(inter, x);
-
-    gsl_vector *hpB, *hpA;
-    std::tie(hpB, hpA) = hpCoefs;
+    auto winHan = hanning(M);
 
     for (size_t it = 0; it < hpfilt; ++it) {
-        filter_iir(hpB, hpA, signal);
+        filter_hpf(signal, fc);
     }
 
-    auto win = hanning(M);
-    
-    // TODO: append preflt 
+    static_vector2(Hg1, 2);  // 1+1
+    static_vector2(Hvt1, p_vt+1);
+    static_vector2(Hg2, p_gl+1);
+    static_vector2(Hvt2, p_vt+1);
 
-    applyWindow(inter, win);            // inter = xw
-    auto Hg1 = lpcCoeffs(inter, 1);     // LPC o/ Hg1
-    filter_fir(Hg1, signal, inter);     // inter = y
+    static_vector(y1);
+    static_vector(g1);
+    static_vector(g1int);
+    static_vector(y2);
+    static_vector(y2int);
 
-    applyWindow(inter, win);            // inter = yw
-    auto Hvt1 = lpcCoeffs(inter, p_vt); // LPC o/ Hvt1
-    filter_fir(Hvt1, signal, inter);    // inter = g1
-    applyInt(inter);                    // inter = g1int
+    applyWindow(signal, winHan);
+    lpcCoeffs(Hg1->data, signal, 1);
+    filter_fir(Hg1, signal, y1);
 
-    applyWindow(inter, win);            // inter = g1w
-    auto Hg2 = lpcCoeffs(inter, p_gl);  // LPC o/ Hg2
-    filter_fir(Hg2, signal, inter);     // inter = y2
-    applyInt(inter);                    // inter = y2int
+    applyWindow(y1, winHan);
+    lpcCoeffs(Hvt1->data, y1, p_vt);
+    filter_fir(Hvt1, y1, g1);
+    applyInt(g1, g1int);
 
-    applyWindow(inter, win);            // inter = y2w
-    auto Hvt2 = lpcCoeffs(inter, p_vt); // LPC o/ Hvt2
+    applyWindow(g1int, winHan);
+    lpcCoeffs(Hg2->data, g1, p_gl);
+    filter_fir(Hg2, g1, y2);
+    applyInt(y2, y2int);
+
+    applyWindow(y2int, winHan);
+    lpcCoeffs(Hvt2->data, y2int, p_vt);
 
     // calculate dg
     filter_fir(Hvt2, signal, dg);
-
     // calculate g
-    gsl_vector_memcpy(g, dg);
-    applyInt(g);
+    applyInt(dg, g);
 
     // free resources
-    gsl_vector_free(signal);
-    gsl_vector_free(inter);
-    gsl_vector_free(win);
-    gsl_vector_free(Hg1);
-    gsl_vector_free(Hvt1);
-    gsl_vector_free(Hg2);
-    gsl_vector_free(Hvt2);
+    gsl_vector_free(winHan);
 
     return std::pair<gsl_vector *, gsl_vector *>(dg, g);
 }
