@@ -2,6 +2,7 @@
 #define IAIF_H
 
 #include <utility>
+#include <tuple>
 
 #include <gsl/gsl_vector.h>
 

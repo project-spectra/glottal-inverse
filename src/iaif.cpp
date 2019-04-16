@@ -16,6 +16,14 @@ static constexpr size_t hpfilt = 1;
 // The coefficients for the IIR integration filter
 static constexpr double intCoefs[][2] = { { 1 }, { 1, -d } };
 
+
+// Coefficients for the IIR Butterworth highpass filter
+// - N = 5
+// - Fc = 40 Hz
+// - Fs = SAMPLE_RATE
+static const auto hpCoefs = create_hp_butterworth(5, 40.);
+
+
 static inline void applyWindow(gsl_vector *x, gsl_vector *win) {
     gsl_vector_mul(x, win);
 }
@@ -30,7 +38,7 @@ static inline void applyInt(gsl_vector *x) {
 
 std::pair<gsl_vector *, gsl_vector *> computeIAIF(gsl_vector *x) {
     const size_t M = x->size;
-//    const size_t preflt = p_vt + 1;
+    const size_t preflt = p_vt + 1;
 
     if (M <= p_vt) {
         return std::pair<gsl_vector *, gsl_vector *>
@@ -45,7 +53,12 @@ std::pair<gsl_vector *, gsl_vector *> computeIAIF(gsl_vector *x) {
     gsl_vector_memcpy(signal, x);
     gsl_vector_memcpy(inter, x);
 
-    // TODO: apply hpfilter
+    gsl_vector *hpB, *hpA;
+    std::tie(hpB, hpA) = hpCoefs;
+
+    for (size_t it = 0; it < hpfilt; ++it) {
+        filter_iir(hpB, hpA, signal);
+    }
 
     auto win = hanning(M);
     
