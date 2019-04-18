@@ -10,7 +10,7 @@
 #include "lpc.h"
 #include "filter.h"
 
-std::pair<gsl_vector *, gsl_vector *>computeIAIF(gsl_vector *x);
+void computeIAIF(gsl_vector *g, gsl_vector *dg, gsl_vector *x);
 
 
 #endif // IAIF_H

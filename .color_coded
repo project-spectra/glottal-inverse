@@ -1,0 +1,7 @@
+-x
+c++
+-Iinc
+-Wall
+-Werror=implicit-function-declaration
+-Wextra
+-Wno-sign-compare

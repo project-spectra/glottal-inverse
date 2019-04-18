@@ -2,7 +2,7 @@
 #include <cstring>
 
 
-void lpcCoeffs(double *lpc, gsl_vector *x, size_t order) {
+double lpcCoeffs(double *lpc, gsl_vector *x, size_t order) {
     const int n = x->size;
     const int m = static_cast<int>(order + 1);
 
@@ -61,6 +61,8 @@ done:
         lpc[j] *= damp;
         damp *= g;
     }
+
+    return err;
 }
 
 /*

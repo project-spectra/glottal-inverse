@@ -4,14 +4,18 @@
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
+#include <iomanip>
 
 #include <portaudio.h>
 
 #include "audio_in.h"
+#include "pitch.h"
 #include "iaif.h"
 #include "amgif.h"
 #include "linalg.h"
 #include "operators.h"
+#include "derivative.h"
+#include "glottal_phases.h"
 #include "gnuplot.h"
 #include "gsl_util.h"
 
@@ -52,19 +56,14 @@ int main() {
     std::cout << " ==== Recording ====" << std::endl;
 
     static_vector(md);
-    gsl_vector *g, *dg;
-    gsl_vector *m, *f, *p;
 
-    std::cout << "- Computing operator L..." << std::endl;
-    // generate the matrix for a low-pass filter operator
-    gsl_matrix *L = computeL();
+    static_vector(g);
+    static_vector(dg);
 
-    std::cout << "- Initializing operator C decompression buffer..." << std::endl;
-    OpBuf Cbuf;
+    double f0est, T0est;
+    double Oq, Cq;
 
     while (!stop) {
-        std::cout << "- Processing one window..." << std::endl;
-
         // record a window
         data->frameIndex = 0;
         recordWindow(stream);
@@ -73,23 +72,37 @@ int main() {
         for (size_t i = 0; i < WINDOW_LENGTH; ++i) {
             gsl_vector_set(md, i, data->recordedSamples[i]);
         }
-        normalize(md);
-
-        std::cout << "- Estimating with IAIF..." << std::endl;
         
-        // get a first estimate with IAIF
-        std::tie(dg, g) = computeIAIF(md);
-        normalize(dg);
-        normalize(g);
+        if (!pitch_AMDF(md, &f0est, &T0est)) {
+            //std::cout << "  (/)  No voiced speech detected" << std::endl;
+            continue;
+        }
+        
+        // estimate glottal source with IAIF
+        computeIAIF(g, dg, md);
 
-        // initialize AM-GIF parameters
+        // estimate GCI and GOI
+        // find min and max peak of dEGG
+        estimatePhases(g, T0est, &Oq, &Cq);
+
+        std::cout << "  (*) Estimated:" << std::endl
+                  << "      - f0: " << (int) f0est << " Hz" << std::endl
+                  << "      - Cq: " << std::setprecision(2) << Cq << std::endl 
+                  << "      - Oq: " << std::setprecision(2) << Oq << std::endl;
+
+        // write and plot
+        writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
+        writePlotData(dg, GNUPLOT_FILE_IAIF_SOURCE_DERIV);
+
+        /*
+        std::cout << "- Estimating with AM-GIF..." << std::endl;
+
+        // initialize AM-GIF parameters TODO estimate alpha&beta
         double alpha, beta, tau, eps;
         alpha = 4;
         beta = 5;
         tau = 3.;
         eps = 1e-4;
-
-        std::cout << "- Estimating with AM-GIF..." << std::endl;
 
         // estimate with AM-GIF
         //  m: signal function
@@ -99,20 +112,17 @@ int main() {
         normalize(m);
         normalize(f);
         normalize(p);
-
-        writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
+        
         writePlotData(p, GNUPLOT_FILE_AMGIF_SOURCE);
 
-        gsl_vector_free(dg);
-        gsl_vector_free(g);
         gsl_vector_free(m);
         gsl_vector_free(f);
         gsl_vector_free(p);
+        */
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;
 
-    gsl_vector_free(md);
     free(data);
 
     return EXIT_SUCCESS;

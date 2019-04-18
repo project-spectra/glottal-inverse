@@ -13,5 +13,7 @@ void filter_iir(gsl_vector *b, gsl_vector *a, gsl_vector *x, gsl_vector *res);
 
 void filter_hpf(gsl_vector *x, const double fc);
 
+void filter_lpf(gsl_vector *x, const double fc);
+
 
 #endif // FILTER_H

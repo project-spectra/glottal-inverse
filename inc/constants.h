@@ -5,19 +5,20 @@
 #include <cmath>
 
 // Audio sample rate
-#define SAMPLE_RATE 16000
+#define SAMPLE_RATE 32000
 #define FRAMES_PER_BUFFER 1024
 
 // Vector basis
-#define J 6
+#define J 7
 
 // Basis length
-constexpr size_t basisLength =
+/*constexpr size_t basisLength =
     // There are Sum[0..J] 2^j wavelets.
     // That's 2^(J+1) - 1 elements.
     // Add one for the constant scaling function.
-    2 << (J + 1);
+    2 << (J + 1);*/
 
+#define basisLength 2048
 
 #define WINDOW_LENGTH (basisLength)
 

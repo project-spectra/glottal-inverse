@@ -85,7 +85,7 @@ VecTriplet computeAMGIF(
 
         TIMER_END("Iter");
 
-        std::cerr << "Iteration " << iters << " with error " << errSignal << std::endl;
+        //std::cerr << "Iteration " << iters << " with error " << errSignal << std::endl;
 
         ++iters;
     } while (iters <= MAX_ITER);

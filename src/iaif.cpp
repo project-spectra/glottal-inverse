@@ -33,20 +33,16 @@ static void applyInt(gsl_vector *x, gsl_vector *res) {
 }
 
 
-std::pair<gsl_vector *, gsl_vector *> computeIAIF(gsl_vector *x) {
+void computeIAIF(gsl_vector *g, gsl_vector *dg, gsl_vector *x) {
     const size_t M = x->size;
     // const size_t preflt = p_vt + 1;  // unused
 
     if (M <= p_vt) {
-        return std::pair<gsl_vector *, gsl_vector *>
-            (nullptr, nullptr);
+        return;
     }
 
     static_vector(signal);
     gsl_vector_memcpy(signal, x);
-    
-    auto dg = gsl_vector_alloc(M);
-    auto g = gsl_vector_alloc(M);
 
     auto winHan = hanning(M);
 
@@ -89,6 +85,4 @@ std::pair<gsl_vector *, gsl_vector *> computeIAIF(gsl_vector *x) {
 
     // free resources
     gsl_vector_free(winHan);
-
-    return std::pair<gsl_vector *, gsl_vector *>(dg, g);
 }
