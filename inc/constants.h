@@ -5,11 +5,11 @@
 #include <cmath>
 
 // Audio sample rate
-#define SAMPLE_RATE 44100
+#define SAMPLE_RATE 16000
 #define FRAMES_PER_BUFFER 1024
 
 // Vector basis
-#define J 7
+#define J 6
 
 // Basis length
 constexpr size_t basisLength =
@@ -21,12 +21,10 @@ constexpr size_t basisLength =
 
 #define WINDOW_LENGTH (basisLength)
 
+
 // AM-GIF max global iter count
 #define MAX_ITER 2
 
-// AM-GIF max ring buffer capacity
-#define MAX_CAPACITY 16
-    
 // GNUPlot data exporting
 #define GNUPLOT_FILE_IAIF_SOURCE "iaif_source.dat"
 #define GNUPLOT_FILE_IAIF_SOURCE_DERIV "iaif_source_deriv.dat"

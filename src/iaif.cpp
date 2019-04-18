@@ -15,14 +15,14 @@ static constexpr double d = 0.99;
 static constexpr size_t hpfilt = 1;
 
 // Highpass cutoff frequency
-static constexpr double fc = 50.;
+static constexpr double fc = 70.;
 
 // The coefficients for the IIR integration filter
 static constexpr double intCoefs[][2] = { { 1 }, { 1, -d } };
 
 
 static inline void applyWindow(gsl_vector *x, gsl_vector *win) {
-    gsl_vector_mul(x, win);
+    //gsl_vector_mul(x, win);
 }
 
 static void applyInt(gsl_vector *x, gsl_vector *res) {

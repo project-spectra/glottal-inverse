@@ -13,6 +13,7 @@
 #include "linalg.h"
 #include "operators.h"
 #include "gnuplot.h"
+#include "gsl_util.h"
 
 
 volatile std::atomic<bool> stop;
@@ -23,9 +24,7 @@ void inthand(int signum) {
     stop = true;
 }
 
-#include <fenv.h>
 int main() {
-    feenableexcept(FE_INVALID | FE_OVERFLOW);
 
     PaError err;
     PaStream *stream;
@@ -38,6 +37,7 @@ int main() {
     err = Pa_Initialize();
     if (err != paNoError) {
         std::cerr << "PortAudio init failure: " << Pa_GetErrorText(err) << std::endl;
+        free(data);
         return EXIT_FAILURE;
     }
 
@@ -45,15 +45,15 @@ int main() {
 
     if (!openStream(&stream, data)) {
         std::cerr << "Exiting with error..." << std::endl;
+        free(data);
         return EXIT_FAILURE;
     }
     
     std::cout << " ==== Recording ====" << std::endl;
 
-    gsl_vector *md, *dg, *g;
+    static_vector(md);
+    gsl_vector *g, *dg;
     gsl_vector *m, *f, *p;
-
-    md = gsl_vector_alloc(WINDOW_LENGTH);
 
     std::cout << "- Computing operator L..." << std::endl;
     // generate the matrix for a low-pass filter operator
@@ -76,7 +76,7 @@ int main() {
         normalize(md);
 
         std::cout << "- Estimating with IAIF..." << std::endl;
-
+        
         // get a first estimate with IAIF
         std::tie(dg, g) = computeIAIF(md);
         normalize(dg);
@@ -84,9 +84,9 @@ int main() {
 
         // initialize AM-GIF parameters
         double alpha, beta, tau, eps;
-        alpha = 5;
-        beta = 3;
-        tau = 1.2;
+        alpha = 4;
+        beta = 5;
+        tau = 3.;
         eps = 1e-4;
 
         std::cout << "- Estimating with AM-GIF..." << std::endl;

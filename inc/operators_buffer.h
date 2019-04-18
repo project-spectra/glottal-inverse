@@ -2,9 +2,6 @@
 #define OPERATORS_BUFFER_H
 
 
-#include <deque>
-#include <mutex>
-
 #include "operators.h"
 
 
@@ -16,17 +13,24 @@ public:
     OperatorBuffer();
     virtual ~OperatorBuffer();
 
-    gsl_matrix *get(size_t mu);
+    gsl_matrix **get();
 
 private:
     // Load compressed files
     void readCompressedFiles();
 
+    // Decompress files
+    void decompressFiles();
+
+    // Decompress one matrix
+    gsl_matrix *readOneMatrix(size_t mu);
+
     // load all the compressed files in-memory
     vector<std::pair<size_t, void *>> m_data;
 
-    // single matrix (computation is on a single thead)
-    gsl_matrix *m_mat;
+    // matrix buffer (computiation is on a single thread)
+    vector<gsl_matrix *> m_mats;
+    
 };
 
 

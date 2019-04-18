@@ -1,25 +1,10 @@
 #include "operators.h"
 #include "operators_buffer.h"
 
-#include <iostream>
 #include <zstd.h>
 
 
-OperatorBuffer::OperatorBuffer()
-    : m_mat(gsl_matrix_alloc(basisLength, basisLength))
-{
-    readCompressedFiles();
-}
-
-OperatorBuffer::~OperatorBuffer() {
-    gsl_matrix_free(m_mat);
-
-    for (auto& it : m_data) {
-        free(it.second);
-    }
-}
-
-gsl_matrix *OperatorBuffer::get(size_t mu)
+gsl_matrix *OperatorBuffer::readOneMatrix(size_t mu)
 {
     // get compressedData
     void *bufSrc;
@@ -44,10 +29,19 @@ gsl_matrix *OperatorBuffer::get(size_t mu)
     gsl_spmatrix *sparse = gsl_spmatrix_alloc(basisLength, basisLength);
     spmatrix_read(sparse, bufDest);
 
-    gsl_matrix_set_zero(m_mat);
-    gsl_spmatrix_sp2d(m_mat, sparse);
+    gsl_matrix *dense = gsl_matrix_alloc(basisLength, basisLength);
+    gsl_spmatrix_sp2d(dense, sparse);
 
     gsl_spmatrix_free(sparse);
 
-    return m_mat;
+    return dense;
+}
+
+void OperatorBuffer::decompressFiles()
+{
+    m_mats.resize(basisLength);
+
+    for (size_t mu = 0; mu < basisLength; ++mu) {
+        m_mats[mu] = readOneMatrix(mu);
+    }
 }

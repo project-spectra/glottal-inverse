@@ -9,9 +9,13 @@ void writePlotData(gsl_vector *f, const std::string& filename) {
     size_t i;
 
     std::ofstream out(filename);
+    
+    double t;
 
     for (i = 0; i < WINDOW_LENGTH; ++i) {
-        out << i << "," << gsl_vector_get(f, i) << std::endl;
+        t = i / static_cast<double>(SAMPLE_RATE);
+
+        out << t << "," << gsl_vector_get(f, i) << std::endl;
     }
 
     out.close();

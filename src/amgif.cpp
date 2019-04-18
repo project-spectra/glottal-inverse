@@ -6,8 +6,8 @@
 #include "timer.h"
 
 
-static void computeMatA(gsl_matrix *A, const gsl_vector *y, OpBuf& C);
-static void computeMatB(gsl_matrix *B, const gsl_vector *x, OpBuf& C);
+static void computeMatA(gsl_matrix *A, const gsl_vector *y, gsl_matrix *C[]);
+static void computeMatB(gsl_matrix *B, const gsl_vector *x, gsl_matrix *C[]);
 
 static void solveForX(const gsl_matrix *A, gsl_vector *xHat, const gsl_matrix *LL, const gsl_vector *dd, double alpha);
 static void solveForY(const gsl_matrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, double beta, double tau);
@@ -29,6 +29,8 @@ VecTriplet computeAMGIF(
         const double tau,
         const double eps
 ) {
+    gsl_matrix **C = Cbuf.get();
+
     // Results: x, y, d
     static_vector(x);
     static_vector(y);
@@ -65,20 +67,20 @@ VecTriplet computeAMGIF(
         TIMER_START;
 
         gsl_vector_memcpy(y, yHat);  // y = yHat
-        computeMatA(A, y, Cbuf);
+        computeMatA(A, y, C);
        
         // TODO: find alpha parameter
         solveForX(A, xHat, LL, dd, alpha);  // estimated xHat
 
         gsl_vector_memcpy(x, xHat);  // x = xHat
-        computeMatB(B, x, Cbuf);
+        computeMatB(B, x, C);
 
         // TODO: find beta parameter
         solveForY(B, yHat, ye, dd, beta, tau);  // estimated yHat
 
         // Test for convergence:  Ax = By = d ~ dd
         computeD(A, B, x, y, d);
-        
+
         errSignal = errorDistance(d, dd);
 
         TIMER_END("Iter");
@@ -86,7 +88,11 @@ VecTriplet computeAMGIF(
         std::cerr << "Iteration " << iters << " with error " << errSignal << std::endl;
 
         ++iters;
-    } while (errSignal > eps && iters <= MAX_ITER);
+    } while (iters <= MAX_ITER);
+
+    // copy the last estimations
+    gsl_vector_memcpy(x, yHat);
+    gsl_vector_memcpy(y, yHat);
 
     // d = F(m) : wavelet coordinates for the speech function
     // x = F(f) : wavelet coordinates for the input function
@@ -103,27 +109,27 @@ VecTriplet computeAMGIF(
     return VecTriplet(m, f, p);
 }
 
-static void computeMatA(gsl_matrix *A, const gsl_vector *y, OpBuf& C) {
+static void computeMatA(gsl_matrix *A, const gsl_vector *y, gsl_matrix *C[]) {
     TIMER_START;
 
     for (size_t mu = 0; mu < basisLength; ++mu) {
         // A[mu,:] = y' C_mu = (C_mu' y)'
         auto row = gsl_matrix_row(A, mu);
 
-        gsl_blas_dgemv(CblasTrans, 1., C.get(mu), y, 0., &row.vector);
+        gsl_blas_dgemv(CblasTrans, 1., C[mu], y, 0., &row.vector);
     }
     
     TIMER_END(" Compute A");
 }
 
-static void computeMatB(gsl_matrix *B, const gsl_vector *x, OpBuf& C) {
+static void computeMatB(gsl_matrix *B, const gsl_vector *x, gsl_matrix *C[]) {
     TIMER_START;
 
     for (size_t mu = 0; mu < basisLength; ++mu) {
         // B[mu,:] = C_mu x
         auto row = gsl_matrix_row(B, mu);
         
-        gsl_blas_dgemv(CblasNoTrans, 1., C.get(mu), x, 0., &row.vector);
+        gsl_blas_dgemv(CblasNoTrans, 1., C[mu], x, 0., &row.vector);
     }
 
     TIMER_END(" Compute B");
@@ -149,8 +155,8 @@ static void solveForX(const gsl_matrix *A, gsl_vector *xHat, const gsl_matrix *L
     // === Solve Pivoted Cholesky ===
 
     solveAxb(lhs, xHat, rhs);
-    
-    TIMER_END(" Solve for X");
+
+    TIMER_END("  Solve for X")
 }
 
 static void solveForY(const gsl_matrix* B, gsl_vector *yHat, const gsl_vector *ye, const gsl_vector *dd, const double beta, const double tau) {
@@ -174,22 +180,23 @@ static void solveForY(const gsl_matrix* B, gsl_vector *yHat, const gsl_vector *y
     // === Solve Pivoted Cholesky ===
 
     solveAxb(lhs, yHat, rhs);
-    
-    TIMER_END(" Solve for Y");
+
+    TIMER_END("  Solve for Y");
 }
 
 static void solveAxb(gsl_matrix *A, gsl_vector *x, const gsl_vector *b) { 
-    static auto p = shared_ptr<gsl_permutation>(
-            gsl_permutation_alloc(basisLength),
-            gsl_permutation_free
-    );
 
     TIMER_START;
 
-    gsl_linalg_pcholesky_decomp(A, p.get());
-    gsl_linalg_pcholesky_solve(A, p.get(), b, x);
+    /*static auto p = shared_ptr<gsl_permutation>(
+            gsl_permutation_alloc(basisLength),
+            gsl_permutation_free
+    );*/
 
-    TIMER_END("  Pivoted Cholesky")
+    gsl_linalg_cholesky_decomp(A);
+    gsl_linalg_cholesky_solve(A, b, x);
+
+    TIMER_END("  Non-Pivoted Cholesky");
 
 }
 
@@ -219,9 +226,9 @@ static double errorDistance(const gsl_vector *a, const gsl_vector *b) {
     double dist(0.);
 
     // inf-norm
-    //dist = abs(gsl_vector_get(diff, gsl_blas_idamax(diff)));
+    dist = abs(gsl_vector_get(diff, gsl_blas_idamax(diff)));
     // 2-norm
-    dist = gsl_blas_dnrm2(diff);
+    //dist = gsl_blas_dnrm2(diff);
     // 1-norm
     //dist = gsl_blas_dasum(diff);
 

@@ -11,7 +11,7 @@ plot_time() {
 
         set title "$1"
 
-        set xrange [0:1023]
+        set xrange [0:0.016]
         set yrange [-1:1]
 
         plot "$2" with lines
@@ -28,7 +28,7 @@ EOFMarker
 plot_time 'IAIF glottal flow' \
           'iaif_source.dat' &
 
-plot_time 'AMGIF glottal flow' \
+plot_time 'AMGIF glottal flow derivative' \
           'amgif_source.dat' &
 
 wait
