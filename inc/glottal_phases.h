@@ -14,6 +14,11 @@
 #include <gsl/gsl_fft_halfcomplex.h>
 #include <gsl/gsl_fft_complex.h>
 
+#define delete __cExt_delete_
+#include <gsl/gsl_filter.h>
+#undef delete
+
+
 #include "constants.h"
 
 

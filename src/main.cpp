@@ -11,9 +11,7 @@
 #include "audio_in.h"
 #include "pitch.h"
 #include "iaif.h"
-#include "amgif.h"
 #include "linalg.h"
-#include "operators.h"
 #include "derivative.h"
 #include "glottal_phases.h"
 #include "gnuplot.h"
@@ -87,38 +85,13 @@ int main() {
 
         std::cout << "  (*) Estimated:" << std::endl
                   << "      - f0: " << (int) f0est << " Hz" << std::endl
-                  << "      - Cq: " << std::setprecision(2) << Cq << std::endl 
-                  << "      - Oq: " << std::setprecision(2) << Oq << std::endl;
+                  << "      - Cq: " << std::setprecision(1) << Cq << std::endl 
+                  << "      - Oq: " << std::setprecision(1) << Oq << std::endl;
 
         // write and plot
         writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
         writePlotData(dg, GNUPLOT_FILE_IAIF_SOURCE_DERIV);
 
-        /*
-        std::cout << "- Estimating with AM-GIF..." << std::endl;
-
-        // initialize AM-GIF parameters TODO estimate alpha&beta
-        double alpha, beta, tau, eps;
-        alpha = 4;
-        beta = 5;
-        tau = 3.;
-        eps = 1e-4;
-
-        // estimate with AM-GIF
-        //  m: signal function
-        //  f: input function
-        //  p: charac function
-        std::tie(m, f, p) = computeAMGIF(Cbuf, md, g, L, alpha, beta, tau, eps);
-        normalize(m);
-        normalize(f);
-        normalize(p);
-        
-        writePlotData(p, GNUPLOT_FILE_AMGIF_SOURCE);
-
-        gsl_vector_free(m);
-        gsl_vector_free(f);
-        gsl_vector_free(p);
-        */
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;

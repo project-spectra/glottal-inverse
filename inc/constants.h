@@ -5,11 +5,8 @@
 #include <cmath>
 
 // Audio sample rate
-#define SAMPLE_RATE 32000
+#define SAMPLE_RATE 44100
 #define FRAMES_PER_BUFFER 1024
-
-// Vector basis
-#define J 7
 
 // Basis length
 /*constexpr size_t basisLength =
@@ -18,7 +15,7 @@
     // Add one for the constant scaling function.
     2 << (J + 1);*/
 
-#define basisLength 2048
+#define basisLength 4096
 
 #define WINDOW_LENGTH (basisLength)
 

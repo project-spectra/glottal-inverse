@@ -12,7 +12,7 @@ plot_time() {
         set title "$1"
 
         set xrange [0:0.2]
-        set yrange [0:5]
+        set yrange $3
 
         plot "$2" with lines
 
@@ -25,10 +25,9 @@ plot_time() {
 EOFMarker
 }
 
-plot_time 'IAIF glottal flow' \
-          'iaif_source.dat' &
+plot_time 'Phase-difference graph' \
+          'iaif_source.dat' \
+          '[0:6.28]' &
 
-plot_time 'Glottal flow derivative' \
-          'iaif_source_deriv.dat' &
 
 wait

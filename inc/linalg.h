@@ -16,6 +16,8 @@
 #include <gsl/gsl_spblas.h>
 #include <gsl/gsl_spmatrix.h>
 #include <gsl/gsl_wavelet.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_vector_complex.h>
 
 #include "constants.h"
 #include "vector.h"
@@ -42,7 +44,10 @@ const Vector& getConvoluted(size_t p, size_t f);
 
 double convolutedBasis(size_t p, size_t f, size_t mu);
 
-void normalize(gsl_vector *f);
+
+void normalize(gsl_vector *f, double a);
+void normalize_complex(gsl_vector_complex *f, double a);
+
 
 
 extern unique_ptr<BasisMap> storedBases;

@@ -6,9 +6,234 @@
 <string>clang version 8.0.0 (tags/RELEASE_800/final)</string>
  <key>diagnostics</key>
  <array>
+  <dict>
+   <key>path</key>
+   <array>
+    <dict>
+     <key>kind</key><string>event</string>
+     <key>location</key>
+     <dict>
+      <key>line</key><integer>61</integer>
+      <key>col</key><integer>13</integer>
+      <key>file</key><integer>0</integer>
+     </dict>
+     <key>ranges</key>
+     <array>
+       <array>
+        <dict>
+         <key>line</key><integer>61</integer>
+         <key>col</key><integer>20</integer>
+         <key>file</key><integer>0</integer>
+        </dict>
+        <dict>
+         <key>line</key><integer>61</integer>
+         <key>col</key><integer>30</integer>
+         <key>file</key><integer>0</integer>
+        </dict>
+       </array>
+     </array>
+     <key>depth</key><integer>0</integer>
+     <key>extended_message</key>
+     <string>Value stored to &apos;data&apos; is never read</string>
+     <key>message</key>
+     <string>Value stored to &apos;data&apos; is never read</string>
+    </dict>
+   </array>
+   <key>description</key><string>Value stored to &apos;data&apos; is never read</string>
+   <key>category</key><string>Dead store</string>
+   <key>type</key><string>Dead assignment</string>
+   <key>check_name</key><string>deadcode.DeadStores</string>
+   <!-- This hash is experimental and going to change! -->
+   <key>issue_hash_content_of_line_in_context</key><string>4304e9a406268c0bcdd5115adbbd1649</string>
+  <key>issue_context_kind</key><string>function</string>
+  <key>issue_context</key><string>estimatePhases</string>
+  <key>issue_hash_function_offset</key><string>49</string>
+  <key>location</key>
+  <dict>
+   <key>line</key><integer>61</integer>
+   <key>col</key><integer>13</integer>
+   <key>file</key><integer>0</integer>
+  </dict>
+  <key>ExecutedLines</key>
+  <dict>
+   <key>0</key>
+   <array>
+    <integer>61</integer>
+   </array>
+  </dict>
+  </dict>
+  <dict>
+   <key>path</key>
+   <array>
+    <dict>
+     <key>kind</key><string>event</string>
+     <key>location</key>
+     <dict>
+      <key>line</key><integer>63</integer>
+      <key>col</key><integer>13</integer>
+      <key>file</key><integer>0</integer>
+     </dict>
+     <key>ranges</key>
+     <array>
+       <array>
+        <dict>
+         <key>line</key><integer>63</integer>
+         <key>col</key><integer>20</integer>
+         <key>file</key><integer>0</integer>
+        </dict>
+        <dict>
+         <key>line</key><integer>63</integer>
+         <key>col</key><integer>43</integer>
+         <key>file</key><integer>0</integer>
+        </dict>
+       </array>
+     </array>
+     <key>depth</key><integer>0</integer>
+     <key>extended_message</key>
+     <string>Value stored to &apos;data&apos; is never read</string>
+     <key>message</key>
+     <string>Value stored to &apos;data&apos; is never read</string>
+    </dict>
+   </array>
+   <key>description</key><string>Value stored to &apos;data&apos; is never read</string>
+   <key>category</key><string>Dead store</string>
+   <key>type</key><string>Dead assignment</string>
+   <key>check_name</key><string>deadcode.DeadStores</string>
+   <!-- This hash is experimental and going to change! -->
+   <key>issue_hash_content_of_line_in_context</key><string>b5a088a6830a2b4508c171e9de08f42e</string>
+  <key>issue_context_kind</key><string>function</string>
+  <key>issue_context</key><string>estimatePhases</string>
+  <key>issue_hash_function_offset</key><string>51</string>
+  <key>location</key>
+  <dict>
+   <key>line</key><integer>63</integer>
+   <key>col</key><integer>13</integer>
+   <key>file</key><integer>0</integer>
+  </dict>
+  <key>ExecutedLines</key>
+  <dict>
+   <key>0</key>
+   <array>
+    <integer>63</integer>
+   </array>
+  </dict>
+  </dict>
+  <dict>
+   <key>path</key>
+   <array>
+    <dict>
+     <key>kind</key><string>event</string>
+     <key>location</key>
+     <dict>
+      <key>line</key><integer>65</integer>
+      <key>col</key><integer>13</integer>
+      <key>file</key><integer>0</integer>
+     </dict>
+     <key>ranges</key>
+     <array>
+       <array>
+        <dict>
+         <key>line</key><integer>65</integer>
+         <key>col</key><integer>20</integer>
+         <key>file</key><integer>0</integer>
+        </dict>
+        <dict>
+         <key>line</key><integer>65</integer>
+         <key>col</key><integer>37</integer>
+         <key>file</key><integer>0</integer>
+        </dict>
+       </array>
+     </array>
+     <key>depth</key><integer>0</integer>
+     <key>extended_message</key>
+     <string>Value stored to &apos;data&apos; is never read</string>
+     <key>message</key>
+     <string>Value stored to &apos;data&apos; is never read</string>
+    </dict>
+   </array>
+   <key>description</key><string>Value stored to &apos;data&apos; is never read</string>
+   <key>category</key><string>Dead store</string>
+   <key>type</key><string>Dead assignment</string>
+   <key>check_name</key><string>deadcode.DeadStores</string>
+   <!-- This hash is experimental and going to change! -->
+   <key>issue_hash_content_of_line_in_context</key><string>b215885b862d52d020e1175e6e634045</string>
+  <key>issue_context_kind</key><string>function</string>
+  <key>issue_context</key><string>estimatePhases</string>
+  <key>issue_hash_function_offset</key><string>53</string>
+  <key>location</key>
+  <dict>
+   <key>line</key><integer>65</integer>
+   <key>col</key><integer>13</integer>
+   <key>file</key><integer>0</integer>
+  </dict>
+  <key>ExecutedLines</key>
+  <dict>
+   <key>0</key>
+   <array>
+    <integer>65</integer>
+   </array>
+  </dict>
+  </dict>
+  <dict>
+   <key>path</key>
+   <array>
+    <dict>
+     <key>kind</key><string>event</string>
+     <key>location</key>
+     <dict>
+      <key>line</key><integer>67</integer>
+      <key>col</key><integer>13</integer>
+      <key>file</key><integer>0</integer>
+     </dict>
+     <key>ranges</key>
+     <array>
+       <array>
+        <dict>
+         <key>line</key><integer>67</integer>
+         <key>col</key><integer>20</integer>
+         <key>file</key><integer>0</integer>
+        </dict>
+        <dict>
+         <key>line</key><integer>67</integer>
+         <key>col</key><integer>37</integer>
+         <key>file</key><integer>0</integer>
+        </dict>
+       </array>
+     </array>
+     <key>depth</key><integer>0</integer>
+     <key>extended_message</key>
+     <string>Value stored to &apos;data&apos; is never read</string>
+     <key>message</key>
+     <string>Value stored to &apos;data&apos; is never read</string>
+    </dict>
+   </array>
+   <key>description</key><string>Value stored to &apos;data&apos; is never read</string>
+   <key>category</key><string>Dead store</string>
+   <key>type</key><string>Dead assignment</string>
+   <key>check_name</key><string>deadcode.DeadStores</string>
+   <!-- This hash is experimental and going to change! -->
+   <key>issue_hash_content_of_line_in_context</key><string>a101c526455ec8f9aa5b671f167655b6</string>
+  <key>issue_context_kind</key><string>function</string>
+  <key>issue_context</key><string>estimatePhases</string>
+  <key>issue_hash_function_offset</key><string>55</string>
+  <key>location</key>
+  <dict>
+   <key>line</key><integer>67</integer>
+   <key>col</key><integer>13</integer>
+   <key>file</key><integer>0</integer>
+  </dict>
+  <key>ExecutedLines</key>
+  <dict>
+   <key>0</key>
+   <array>
+    <integer>67</integer>
+   </array>
+  </dict>
+  </dict>
  </array>
  <key>files</key>
  <array>
+  <string>/home/rika/Codes/glottal-inverse/src/glottal_phases.cpp</string>
  </array>
 </dict>
 </plist>
