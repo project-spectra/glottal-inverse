@@ -15,7 +15,7 @@
     // Add one for the constant scaling function.
     2 << (J + 1);*/
 
-#define basisLength 4096
+#define basisLength 2048
 
 #define WINDOW_LENGTH (basisLength)
 

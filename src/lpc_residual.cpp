@@ -1,5 +1,6 @@
 #include "lpc.h"
 #include "filter.h"
+#include "window.h"
 
 #include <gsl/gsl_blas.h>
 
@@ -54,7 +55,7 @@ void lpcResidual(gsl_matrix *lpc, gsl_vector *res, gsl_vector *x, size_t L, size
         }
 
         gsl_vector_scale(inv, sqrt(Knum / Kden));
-        gsl_vector_add(res, inv);
+        gsl_vector_add(segment, inv);
 
         start += shift;
         stop += shift;

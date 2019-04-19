@@ -11,9 +11,9 @@
 #include "audio_in.h"
 #include "pitch.h"
 #include "iaif.h"
-#include "linalg.h"
-#include "derivative.h"
-#include "glottal_phases.h"
+#include "normalize.h"
+#include "gci_sedreams.h"
+#include "glottal.h"
 #include "gnuplot.h"
 #include "gsl_util.h"
 
@@ -79,14 +79,27 @@ int main() {
         // estimate glottal source with IAIF
         computeIAIF(g, dg, md);
 
-        // estimate GCI and GOI
-        // find min and max peak of dEGG
-        estimatePhases(g, T0est, &Oq, &Cq);
+        // estimate GCIs
+        auto gci = gci_sedreams(g, SAMPLE_RATE, f0est);
 
+        // estimate glottal parameters
+        auto vp = estimateGlottal(g, dg, SAMPLE_RATE, gci);
+
+        // get mean Oq
+        double OQmean(0.5);
+        size_t nbValid(1);
+        for (auto& frame : vp) {
+            if (frame.valid) {
+                nbValid++;
+                OQmean += frame.QOQ;
+            }
+        }
+        OQmean /= nbValid;
+        
+        // print results
         std::cout << "  (*) Estimated:" << std::endl
                   << "      - f0: " << (int) f0est << " Hz" << std::endl
-                  << "      - Cq: " << std::setprecision(1) << Cq << std::endl 
-                  << "      - Oq: " << std::setprecision(1) << Oq << std::endl;
+                  << "      - Mean Oq: " << std::setprecision(1) << OQmean << " (" << nbValid - 1 << " valid frames)" << std::endl;
 
         // write and plot
         writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);

@@ -1,6 +1,6 @@
 #include "lpc.h"
 
-gsl_vector *hanning(size_t L) {
+gsl_vector *hanning(const size_t L) {
     gsl_vector *w;
     size_t n, N;
     double data;

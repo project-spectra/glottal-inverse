@@ -9,6 +9,7 @@
 #include "constants.h"
 #include "lpc.h"
 #include "filter.h"
+#include "window.h"
 
 void computeIAIF(gsl_vector *g, gsl_vector *dg, gsl_vector *x);
 
