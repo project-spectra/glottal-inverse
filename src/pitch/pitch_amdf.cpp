@@ -1,9 +1,12 @@
+#include <cmath>
+#include <cstring>
+#include <gsl/gsl_blas.h>
+#include "constants.h"
 #include "pitch.h"
-#include "gsl_util.h"
 
 
 static constexpr double minFrequency(80.);
-static constexpr double maxFrequency(800.);
+static constexpr double maxFrequency(500.);
 static constexpr double ratio(5.0);
 static constexpr double sensitivity(0.1);
 
@@ -19,7 +22,7 @@ DECL_PITCH(AMDF) {
 
     const size_t maxShift(frame->size);
 
-    static_vector2(amd, maxShift);
+    auto amd = gsl_vector_alloc(maxShift);
 
     for (size_t i = 0; i < maxShift; ++i) {
 
@@ -69,6 +72,8 @@ DECL_PITCH(AMDF) {
 
     *f0res = f0;
     *T0res = 1. / f0;
+
+    gsl_vector_free(amd);
 
     return f0 != -1;
 

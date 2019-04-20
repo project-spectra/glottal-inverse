@@ -1,4 +1,6 @@
-#include "lpc.h"
+#include <cmath>
+#include <gsl/gsl_math.h>
+#include "window.h"
 
 gsl_vector *hanning(const size_t L) {
     gsl_vector *w;

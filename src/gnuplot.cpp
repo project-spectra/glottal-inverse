@@ -1,3 +1,5 @@
+#include <fstream>
+#include "constants.h"
 #include "gnuplot.h"
 
 

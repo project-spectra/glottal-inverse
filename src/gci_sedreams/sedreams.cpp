@@ -1,9 +1,12 @@
 #include <cstdint>
+#include <cmath>
+#include "filter.h"
+#include "window.h"
+#include "lpc.h"
+#include "normalize.h"
 #include "gci_sedreams.h"
 
-
 using std::vector;
-
 
 vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0mean) {
 
@@ -19,7 +22,7 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
 
     // filter out any NaNs
     for (n = 0; n < N; ++n) {
-        if (isnan(gsl_vector_get(res, n))) {
+        if (!std::isfinite(gsl_vector_get(res, n))) {
             gsl_vector_set(res, n, 0.);
         }
     }
@@ -38,7 +41,7 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
     filter_iir(blackwin, &filtDenView.vector, signal, meanBasedSignal);
     gsl_vector_free(blackwin);
 
-    // Remove low frequency contents
+    // Remove low frequency contents  TODO:ellipsis IIR fiter
     filter_hpf(meanBasedSignal, 50./(fs/2.));
     normalize(meanBasedSignal, 1.);
 
@@ -55,14 +58,13 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
         minInd.pop_back();
     }
     maxInd.shrink_to_fit();
-    minInd.shrink_to_fit();
-
+    
     // Determine the median position of GCIs within the cycle
     normalize(res, 1.);
-    vector<size_t> posInd;
 
     // find points of res > threshold
-    const double resThreshold(0.4);
+    vector<size_t> posInd;
+    constexpr double resThreshold(0.4);
     for (n = 0; n < N; ++n) {
         if (gsl_vector_get(res, n) > resThreshold) {
             posInd.push_back(n);
@@ -72,11 +74,11 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
 
     // relative positive indices
     const size_t posLen(posInd.size());
-    vector<size_t> relPosInd(posLen, 0);
+    vector<int> relPosInd(posLen, 0);
 
     for (n = 0; n < posLen; ++n) {
         // pos = min_k { abs(minInd[k] - posInd[n]) }
-        
+    
         size_t pos(-1);
         size_t val, minVal(SIZE_MAX);
 
@@ -88,33 +90,36 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
             }
         }
 
-        size_t interv = maxInd[pos] - minInd[pos];
+        int num = (int) posInd[n] - (int) minInd[pos];
+        int den = (int) maxInd[pos] - (int) minInd[pos];
 
-        relPosInd[n] = (posInd[n] - minInd[pos]) / interv;
+        relPosInd[n] = num / den;
     }
-
-    double ratioGCI = median(relPosInd);
+    
+    int ratioGCI = median(relPosInd);
 
     // Detect GCIs *and* GOIs from the residual signal using the presence intervals derived from the mean signal
     const size_t minLen(minInd.size());
     vector<size_t> gci(minLen, 0);
 
-    size_t maxVal, minVal, interv;
+    int maxVal, minVal;
+    int interv;
     double alpha;
 
-    size_t ind(0), start, stop;
+    size_t ind(0);
+    int start, stop;
 
     for (n = 0; n < minLen; ++n) {
         maxVal = maxInd[n];
         minVal = minInd[n];
         interv = maxVal - minVal;
-        
+
         alpha = ratioGCI - 0.35;
         start = minVal + round(alpha * interv);
 
         alpha = ratioGCI + 0.35;
         stop = minVal + round(alpha * interv);
-
+      
         if (start < 1) {
             start = 1;
         } else if (start > N) {

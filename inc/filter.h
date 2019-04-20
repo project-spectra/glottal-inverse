@@ -4,8 +4,6 @@
 
 #include <gsl/gsl_vector.h>
 
-#include <utility>
-
 
 void filter_fir(gsl_vector *b, gsl_vector *x, gsl_vector *res);
 

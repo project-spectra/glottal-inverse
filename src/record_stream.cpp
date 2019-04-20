@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <iostream>
 #include <cmath>
-
 #include "audio_in.h"
 #include "constants.h"
 

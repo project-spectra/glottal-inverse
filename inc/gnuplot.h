@@ -2,10 +2,8 @@
 #define GNUPLOT_H
 
 
-#include <fstream>
+#include <string>
 #include <gsl/gsl_vector.h>
-
-#include "constants.h"
 
 
 void writePlotData(gsl_vector *f, const std::string& filename);

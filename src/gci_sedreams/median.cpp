@@ -2,7 +2,7 @@
 #include "gci_sedreams.h"
 
 
-double median(std::vector<size_t>& x) {
+int median(std::vector<int>& x) {
     const size_t len(x.size());
 
     if (len == 0) {

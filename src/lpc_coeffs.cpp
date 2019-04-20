@@ -1,5 +1,4 @@
 #include "lpc.h"
-#include <cstring>
 
 
 double lpcCoeffs(double *lpc, gsl_vector *x, size_t order) {

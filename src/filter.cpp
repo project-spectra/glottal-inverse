@@ -1,5 +1,4 @@
 #include "filter.h"
-#include <cstring>
 
 void filter_fir(gsl_vector *b, gsl_vector *x, gsl_vector *res) {
     size_t m, n;

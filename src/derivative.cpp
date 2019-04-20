@@ -1,3 +1,5 @@
+#include <gsl/gsl_interp.h>
+#include "constants.h"
 #include "derivative.h"
 
 

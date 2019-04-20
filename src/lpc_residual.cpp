@@ -1,8 +1,8 @@
-#include "lpc.h"
+#include <cmath>
+#include <gsl/gsl_blas.h>
 #include "filter.h"
 #include "window.h"
-
-#include <gsl/gsl_blas.h>
+#include "lpc.h"
 
 
 void lpcResidual(gsl_matrix *lpc, gsl_vector *res, gsl_vector *x, size_t L, size_t shift, size_t order)

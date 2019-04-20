@@ -1,10 +1,10 @@
-#ifndef PRECOMP
-
 #include <atomic>
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+
+#include <experimental/iterator>
 
 #include <portaudio.h>
 
@@ -86,20 +86,23 @@ int main() {
         auto vp = estimateGlottal(g, dg, SAMPLE_RATE, gci);
 
         // get mean Oq
-        double OQmean(0.5);
-        size_t nbValid(1);
+        double OQmean(0.);
+        size_t nbValid(0);
         for (auto& frame : vp) {
             if (frame.valid) {
-                nbValid++;
+                std::cout << "OQ["<<nbValid<<"] = "<<frame.QOQ<<std::endl; 
                 OQmean += frame.QOQ;
+                nbValid++;
             }
         }
-        OQmean /= nbValid;
-        
+        if (nbValid > 0) {
+            OQmean /= nbValid;
+        }
+
         // print results
         std::cout << "  (*) Estimated:" << std::endl
                   << "      - f0: " << (int) f0est << " Hz" << std::endl
-                  << "      - Mean Oq: " << std::setprecision(1) << OQmean << " (" << nbValid - 1 << " valid frames)" << std::endl;
+                  << "      - Mean Oq: " << std::setprecision(1) << OQmean << " (" << nbValid << " valid frames)" << std::endl;
 
         // write and plot
         writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
@@ -117,5 +120,3 @@ int main() {
 void terminate() {
     Pa_Terminate();
 }
-
-#endif // PRECOMP

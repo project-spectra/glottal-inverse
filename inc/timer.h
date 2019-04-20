@@ -2,6 +2,8 @@
 #define TIMER_H
 
 
+# ifdef HAS_TIMER
+
 #include <chrono>
 #include <cstdio>
 
@@ -9,8 +11,6 @@
 using std::chrono::high_resolution_clock;
 using std::chrono::duration;
 using std::chrono::duration_cast;
-
-# ifdef HAS_TIMER
 
 #define TIMER_START  auto t1 = high_resolution_clock::now();
 #define TIMER_END(name)  do { auto t2 = high_resolution_clock::now(); \

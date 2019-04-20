@@ -1,3 +1,4 @@
+#include <cmath>
 #include <gsl/gsl_math.h>
 #include "window.h"
 

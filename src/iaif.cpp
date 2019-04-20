@@ -1,5 +1,9 @@
-#include "iaif.h"
+#include "constants.h"
+#include "lpc.h"
+#include "filter.h"
+#include "window.h"
 #include "gsl_util.h"
+#include "iaif.h"
 
 
 // LPC analysis order for vocal tract

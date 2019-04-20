@@ -1,11 +1,12 @@
+#include <array>
 #include <cmath>
 #include <tuple>
 #include <gsl/gsl_blas.h>
 #include "glottal.h"
 
 
-static constexpr double F0min = 80.;
-static constexpr double F0max = 800.;
+static constexpr double F0min = 20.;
+static constexpr double F0max = 600.;
 
 static constexpr double QOQ_level = 0.5;
 static constexpr size_t T0_num = 3;
@@ -27,6 +28,7 @@ GlottalParameters estimateGlottal(gsl_vector *gf, gsl_vector *gfd, const double 
     size_t T0;
     double F0;
 
+    size_t gf_seg_start, gf_seg_end;
     gsl_vector *gf_seg;
     gsl_vector *gf_seg_comp;
     gsl_vector *gfd_seg;
@@ -56,13 +58,32 @@ GlottalParameters estimateGlottal(gsl_vector *gf, gsl_vector *gfd, const double 
             continue;
         }
 
-
+        frame.valid = true;
+        
         auto gfSegView = gsl_vector_subvector(gf, start, stop - start);
         gf_seg = &gfSegView.vector;
 
-        // TODO: Compensate in the glottal flow pulse
-        gf_seg_comp = gf_seg;
+        // Compensate for zero-line drift in the glottal flow pulse
+        gf_seg_comp = gsl_vector_alloc(stop - start);
+        gsl_vector_memcpy(gf_seg_comp, gf_seg);
 
+        if (start != stop) {
+            gf_seg_start = gsl_vector_get(gf_seg, 0);
+            if (gf_seg->size > 1) {
+                gf_seg_end = gsl_vector_get(gf_seg, stop - start - 1);
+                
+                // interpolate line and subtract
+                double a((double) (gf_seg_end - gf_seg_start) / (double) (stop - start));
+                double b(gf_seg_start);
+
+                for (size_t k = 0; k < stop - start; ++k) {
+                    *gsl_vector_ptr(gf_seg_comp, k) -= a * k + b;
+                }
+            } else {
+                gsl_vector_add_constant(gf_seg_comp, -gf_seg_start);
+            }
+        }
+        
         if (stop + glot_shift <= gfd->size) {
             stop2 = stop + glot_shift;
         } else {
@@ -83,11 +104,13 @@ GlottalParameters estimateGlottal(gsl_vector *gf, gsl_vector *gfd, const double 
         std::tie(T1, T2) = findAmid_t(gf_seg_comp, Amid, max_idx);
 
         frame.NAQ = (f_ac / d_peak) / (double) T0;
-        frame.QOQ = (double) (T2 - T1) / (fs / F0);
+        frame.QOQ = ((double) T2 - (double) T1) / (fs / F0);
 
         // TODO: everything else
 
         result[n] = frame;
+
+        gsl_vector_free(gf_seg_comp);
     }
 
     return result;
