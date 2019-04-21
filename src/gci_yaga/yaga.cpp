@@ -12,6 +12,7 @@ void gci_yaga(gsl_vector *u)
     candvec cands;
     findCandidates(gamma, cands);
 
-    selectCandidates(u, gamma, cands);
+    std::vector<size_t> bestCands;
+    selectCandidates(u, gamma, cands, bestCands);
 
 }

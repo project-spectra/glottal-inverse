@@ -7,7 +7,7 @@ static constexpr double mu = 1.;
 static constexpr double sigma = 0.2;
 
 
-void cost_calc(const gsl_vector *u, const valarray& gamma, const cand& r_cand, const cand& q_cand, const cand& p_cand, valarray& cost)
+void cost_calc(const gsl_vector *u, const valarray& gamma, const valarray& norms, const double maxNorm, const cand& r_cand, const cand& q_cand, const cand& p_cand, valarray& cost)
 {
     size_t r(r_cand.first);
     bool is_zcr(r_cand.second);
@@ -41,5 +41,5 @@ void cost_calc(const gsl_vector *u, const valarray& gamma, const cand& r_cand, c
     cost[4] = 0.5 - fmin(ssqe_r, ssqe_p) / fmax(ssqe_r, ssqe_p);
     
     // Closed phase energy
-    cost[5] = cost_CP(u, r, q) - 0.5;
+    cost[5] = cost_CP(norms, maxNorm, r) - 0.5;
 }
