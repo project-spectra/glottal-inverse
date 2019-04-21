@@ -4,7 +4,4 @@ bin/
 persistedOperatorC/
 *.dat
 
-compile_commands.json
-.color_coded
-.ycm_extra_conf.py
 *.plist
