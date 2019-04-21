@@ -10,6 +10,7 @@
 
 
 // GNUPlot data exporting
+#define GNUPLOT_FILE_SPEECH "speech.dat"
 #define GNUPLOT_FILE_IAIF_SOURCE "iaif_source.dat"
 #define GNUPLOT_FILE_IAIF_SOURCE_DERIV "iaif_source_deriv.dat"
 

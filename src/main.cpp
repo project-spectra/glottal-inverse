@@ -73,23 +73,27 @@ int main() {
         
         if (!pitch_AMDF(md, &f0est, &T0est)) {
             //std::cout << "  (/)  No voiced speech detected" << std::endl;
-            continue;
+            //continue;
         }
         
         // estimate glottal source with IAIF
+        normalize(md, 1.);
         computeIAIF(g, dg, md);
+        normalize(g, 1.);
+        normalize(dg, 1.);
 
         // estimate GCIs
-        auto gci = gci_sedreams(md, SAMPLE_RATE, f0est);
+        //auto gci = gci_sedreams(md, SAMPLE_RATE, f0est);
 
         // estimate glottal parameters
-        auto vp = estimateGlottal(g, dg, SAMPLE_RATE, gci);
+        //auto vp = estimateGlottal(g, dg, SAMPLE_RATE, gci);
                
         // print results
-        std::cout << "  (*) Estimated:" << std::endl
-                  << "      - f0: " << (int) f0est << " Hz" << std::endl;
+        //std::cout << "  (*) Estimated:" << std::endl
+        //          << "      - f0: " << (int) f0est << " Hz" << std::endl;
 
         // write and plot
+        writePlotData(md, GNUPLOT_FILE_SPEECH);
         writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
         writePlotData(dg, GNUPLOT_FILE_IAIF_SOURCE_DERIV);
 
