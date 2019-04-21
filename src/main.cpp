@@ -16,6 +16,7 @@
 #include "glottal.h"
 #include "gnuplot.h"
 #include "gsl_util.h"
+#include "print_iter.h"
 
 
 volatile std::atomic<bool> stop;
@@ -59,7 +60,6 @@ int main() {
     static_vector(dg);
 
     double f0est, T0est;
-    double Oq, Cq;
 
     while (!stop) {
         // record a window
@@ -80,29 +80,14 @@ int main() {
         computeIAIF(g, dg, md);
 
         // estimate GCIs
-        auto gci = gci_sedreams(g, SAMPLE_RATE, f0est);
+        auto gci = gci_sedreams(md, SAMPLE_RATE, f0est);
 
         // estimate glottal parameters
         auto vp = estimateGlottal(g, dg, SAMPLE_RATE, gci);
-
-        // get mean Oq
-        double OQmean(0.);
-        size_t nbValid(0);
-        for (auto& frame : vp) {
-            if (frame.valid) {
-                std::cout << "OQ["<<nbValid<<"] = "<<frame.QOQ<<std::endl; 
-                OQmean += frame.QOQ;
-                nbValid++;
-            }
-        }
-        if (nbValid > 0) {
-            OQmean /= nbValid;
-        }
-
+               
         // print results
         std::cout << "  (*) Estimated:" << std::endl
-                  << "      - f0: " << (int) f0est << " Hz" << std::endl
-                  << "      - Mean Oq: " << std::setprecision(1) << OQmean << " (" << nbValid << " valid frames)" << std::endl;
+                  << "      - f0: " << (int) f0est << " Hz" << std::endl;
 
         // write and plot
         writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);

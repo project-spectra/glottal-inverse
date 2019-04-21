@@ -3,7 +3,7 @@
 
 
 // Audio sample rate
-#define SAMPLE_RATE 32000
+#define SAMPLE_RATE 44100
 #define FRAMES_PER_BUFFER 1024
 
 #define WINDOW_LENGTH 4096

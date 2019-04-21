@@ -25,6 +25,8 @@ void lpcResidual(gsl_matrix *lpc, gsl_vector *res, gsl_vector *x, size_t L, size
     gsl_vector *segment = gsl_vector_alloc(N);
     gsl_vector *inv = gsl_vector_alloc(N);
 
+    gsl_vector_set_zero(res);
+
     double lpcRow[order+1];
 
     while (stop < lenX)
@@ -55,7 +57,9 @@ void lpcResidual(gsl_matrix *lpc, gsl_vector *res, gsl_vector *x, size_t L, size
         }
 
         gsl_vector_scale(inv, sqrt(Knum / Kden));
-        gsl_vector_add(segment, inv);
+        
+        auto resSegment = gsl_vector_subvector(res, start, N);
+        gsl_vector_add(&resSegment.vector, inv);
 
         start += shift;
         stop += shift;

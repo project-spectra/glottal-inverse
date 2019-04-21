@@ -11,6 +11,7 @@ struct VPFrame {
     double t;    // GCI (s)
     bool valid;  // false if not actually a cycle
 
+    double F0;   // Glottal cycle frequency
     double NAQ;  // Normalized amplitude quotient
     double QOQ;  // Quasi open quotient
     double H1H2; // Difference in H1-H2 amplitude

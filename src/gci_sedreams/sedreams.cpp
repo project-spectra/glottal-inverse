@@ -74,7 +74,7 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
 
     // relative positive indices
     const size_t posLen(posInd.size());
-    vector<int> relPosInd(posLen, 0);
+    vector<double> relPosInd(posLen, 0);
 
     for (n = 0; n < posLen; ++n) {
         // pos = min_k { abs(minInd[k] - posInd[n]) }
@@ -90,13 +90,13 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
             }
         }
 
-        int num = (int) posInd[n] - (int) minInd[pos];
-        int den = (int) maxInd[pos] - (int) minInd[pos];
+        double num = (double) posInd[n] - (double) minInd[pos];
+        double den = (double) maxInd[pos] - (double) minInd[pos];
 
         relPosInd[n] = num / den;
     }
     
-    int ratioGCI = median(relPosInd);
+    double ratioGCI = median(relPosInd);
 
     // Detect GCIs *and* GOIs from the residual signal using the presence intervals derived from the mean signal
     const size_t minLen(minInd.size());

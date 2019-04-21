@@ -2,6 +2,7 @@
 #include <cmath>
 #include <tuple>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_interp.h>
 #include "glottal.h"
 
 
@@ -50,7 +51,7 @@ GlottalParameters estimateGlottal(gsl_vector *gf, gsl_vector *gfd, const double 
 
         VPFrame frame;
         frame.t = gci_n / fs;
-    
+        
         // Safety measures
         if (!isfinite(F0) || T0 == 0 || F0 < F0min || F0 > F0max) {
             frame.valid = false;
@@ -59,6 +60,7 @@ GlottalParameters estimateGlottal(gsl_vector *gf, gsl_vector *gfd, const double 
         }
 
         frame.valid = true;
+        frame.F0 = F0;
         
         auto gfSegView = gsl_vector_subvector(gf, start, stop - start);
         gf_seg = &gfSegView.vector;
@@ -73,12 +75,21 @@ GlottalParameters estimateGlottal(gsl_vector *gf, gsl_vector *gfd, const double 
                 gf_seg_end = gsl_vector_get(gf_seg, stop - start - 1);
                 
                 // interpolate line and subtract
-                double a((double) (gf_seg_end - gf_seg_start) / (double) (stop - start));
-                double b(gf_seg_start);
+                const double xa[2] = { 0, (double) (stop - start - 1) };
+                const double ya[2] = { (double) gf_seg_start, (double) gf_seg_end };
+
+                auto interp = gsl_interp_alloc(gsl_interp_linear, 2);
+                auto acc = gsl_interp_accel_alloc();
+                
+                gsl_interp_init(interp, xa, ya, 2);
 
                 for (size_t k = 0; k < stop - start; ++k) {
-                    *gsl_vector_ptr(gf_seg_comp, k) -= a * k + b;
+                    *gsl_vector_ptr(gf_seg_comp, k)
+                        -= gsl_interp_eval(interp, xa, ya, (double) k, acc);
                 }
+                
+                gsl_interp_accel_free(acc);
+                gsl_interp_free(interp);
             } else {
                 gsl_vector_add_constant(gf_seg_comp, -gf_seg_start);
             }

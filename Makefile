@@ -24,10 +24,11 @@
 
 ##--- Constants and configuration
 
+TARGET := gif
 
 # Modify as necessary
-CXXFLAGS += -fexceptions -ftree-vectorize -march=native -fopenmp 
-LDFLAGS += -lgsl -lcblas -lm -lportaudio -lzstd -lstdc++fs -fopenmp
+CXXFLAGS += -fexceptions 
+LDFLAGS += -lgsl -lcblas -lm -lportaudio
 
 SRC_DIR := src
 INC_DIR := inc
@@ -39,15 +40,6 @@ DEP_DIR := .dep
 
 ifndef BUILD_TYPE
 	BUILD_TYPE := Debug
-endif
-
-
-# If precomp; else assume it's normal build.
-ifdef PRECOMP
-	TARGET := precomp
-	CXXFLAGS += -DPRECOMP
-else
-	TARGET := gif
 endif
 
 main: $(BIN_DIR)/$(TARGET)

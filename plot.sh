@@ -6,7 +6,7 @@ script=$(mktemp)
 
 plot_time() {
     echo | gnuplot <<EOFMarker
-        set term wxt enh font "arial,12"
+        set term qt enh font "arial,12"
         set datafile sep ","
 
         set title "$1"
@@ -25,9 +25,13 @@ plot_time() {
 EOFMarker
 }
 
-plot_time 'Phase-difference graph' \
+plot_time 'LPC residual' \
           'iaif_source.dat' \
-          '[0:6.28]' &
+          '[-1:1]' &
+
+plot_time 'Estimated glottal flow derivative' \
+          'iaif_source_deriv.dat' \
+          '[-1:1]' &
 
 
 wait
