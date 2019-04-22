@@ -1,19 +1,18 @@
 #include <cmath>
-#include <gsl/gsl_math.h>
 #include "window.h"
 
-gsl_vector *hanning(const size_t L) {
-    gsl_vector *w;
-    size_t n, N;
-    double data;
-    
-    w = gsl_vector_alloc(L);
-    N = L - 1;
+valarray hanning(const size_t L)
+{
+    valarray win(L);
 
+    const size_t N(L - 1);
+
+    size_t n;
     for (n = 0; n <= N; ++n) {
-        data = .5 * (1. - cos(2. * M_PI * n / static_cast<double>(N)));
-        gsl_vector_set(w, n, data);
+        win[n] = n;
     }
 
-    return w;
+    win = .5 * (1. - cos(2. * M_PI * n / (double) N));
+
+    return win;
 }

@@ -3,10 +3,12 @@
 
 
 #include <string>
-#include <gsl/gsl_vector.h>
+#include <valarray>
+
+using valarray = std::valarray<double>;
 
 
-void writePlotData(gsl_vector *f, const std::string& filename);
+void writePlotData(const valarray& f, const std::string& filename);
 
 
 #endif // GNUPLOT_H

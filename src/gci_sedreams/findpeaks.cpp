@@ -2,19 +2,14 @@
 
 using std::vector;
 
-std::deque<size_t> findPeaks(gsl_vector *signal, double sign) {
+std::deque<size_t> findPeaks(const valarray& signal, double sign) {
     
-    const size_t N(signal->size);
+    const size_t N(signal.size());
 
     size_t n;
 
-    vector<double> df1(signal->size);
-    for (n = 1; n < N; ++n)
-        df1[n] = gsl_vector_get(signal, n) - gsl_vector_get(signal, n-1);
-
-    vector<double> df2(signal->size);
-    for (n = 2; n < N; ++n)
-        df2[n] = sign * (df1[n] - df1[n-1]);
+    valarray df1(signal.shift(2) - signal.shift(1));
+    valarray df2(sign * (df1.shift(2) - df1.shift(1)));
     
     df1[0] = df1[1];
     df2[0] = df2[1] = df2[2];
@@ -31,33 +26,4 @@ std::deque<size_t> findPeaks(gsl_vector *signal, double sign) {
     }
 
     return idx;
-
-    /* 
-    double prevVal = -HUGE_VAL;
-    
-    bool ascending = true;
-
-    for (size_t n = 1; n < signal->size; ++n) {
-
-        double curVal = sign * gsl_vector_get(signal, n);
-
-        // (still) ascending?
-        if (prevVal < curVal) {
-            ascending = true;
-        } 
-        // (still) descending?
-        else if (prevVal > curVal) {
-            // starts descending?
-            if (ascending) {
-                 peaks.push_back(n-1); 
-                 ascending = false;
-            }
-        }
-        // prevVal == curVal is simply ignored...
-        
-        prevVal = curVal;
-    }
-
-    return peaks;
-    */
 }

@@ -75,7 +75,7 @@ void selectOpenCandidates(const vector<size_t>& closed, const deque<size_t>& ope
             r = p+2;
 
             // Time is strictly increasing
-            if (best[n].t < open[p]) {
+            if (prev[n].t < open[p]) {
                 double Qcp, Qcq, Qcr;
                 double dpq, dqr, dpr;
 

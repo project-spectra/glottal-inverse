@@ -2,7 +2,6 @@
 #include "lpc.h"
 #include "filter.h"
 #include "window.h"
-#include "gsl_util.h"
 #include "iaif.h"
 
 
@@ -16,77 +15,54 @@ static constexpr size_t p_gl = (2 * SAMPLE_RATE) / 4000;
 static constexpr double d = 0.99;
 
 // How many times to apply highpass filter
-static constexpr size_t hpfilt = 1;
+static constexpr size_t hpfilt = 3;
 
 // Highpass cutoff frequency
 static constexpr double fc = 70.;
 
-// The coefficients for the IIR integration filter
-static constexpr double intCoefs[][2] = { { 1 }, { 1, -d } };
-
-
-static inline void applyWindow(gsl_vector *x, gsl_vector *win) {
-    //gsl_vector_mul(x, win);
-}
-
-static void applyInt(gsl_vector *x, gsl_vector *res) {
-    static auto b = gsl_vector_const_view_array(intCoefs[0], 1);
-    static auto a = gsl_vector_const_view_array(intCoefs[1], 2);
+static void applyInt(const valarray& x, valarray& res) {
+    // The coefficients for the IIR integration filter
+    static valarray b = { 1 };
+    static valarray a = { 1, -d };
     
-    filter_iir(&b.vector, &a.vector, x, res);
+    filter_iir(b, a, x, res);
 }
 
 
-void computeIAIF(gsl_vector *g, gsl_vector *dg, gsl_vector *x) {
-    const size_t M = x->size;
+void computeIAIF(const valarray& signal, valarray& g, valarray& dg) {
+    const size_t M(signal.size());
     // const size_t preflt = p_vt + 1;  // unused
 
     if (M <= p_vt) {
         return;
     }
 
-    static_vector(signal);
-    gsl_vector_memcpy(signal, x);
-
-    auto winHan = hanning(M);
+    valarray x(signal);
+    valarray win = hanning(M);
 
     for (size_t it = 0; it < hpfilt; ++it) {
-        filter_hpf(signal, fc);
+        filter_hpf(x, fc);
     }
 
-    static_vector2(Hg1, 2);  // 1+1
-    static_vector2(Hvt1, p_vt+1);
-    static_vector2(Hg2, p_gl+1);
-    static_vector2(Hvt2, p_vt+1);
+    valarray Hg1, Hg2, Hvt1, Hvt2;
 
-    static_vector(y1);
-    static_vector(g1);
-    static_vector(g1int);
-    static_vector(y2);
-    static_vector(y2int);
+    valarray y1(M), y2(M), y2int(M);
+    valarray g1(M), g1int(M);
 
-    applyWindow(signal, winHan);
-    lpcCoeffs(Hg1->data, signal, 1);
-    filter_fir(Hg1, signal, y1);
+    lpcCoeffs(x * win, 1, Hg1);
+    filter_fir(Hg1, x, y1);
 
-    applyWindow(y1, winHan);
-    lpcCoeffs(Hvt1->data, y1, p_vt);
-    filter_fir(Hvt1, y1, g1);
+    lpcCoeffs(y1 * win, p_vt, Hvt1);
+    filter_fir(Hvt1, x, g1);
     applyInt(g1, g1int);
 
-    applyWindow(g1int, winHan);
-    lpcCoeffs(Hg2->data, g1, p_gl);
-    filter_fir(Hg2, g1, y2);
+    lpcCoeffs(g1int * win, p_gl, Hg2);
+    filter_fir(Hg2, x, y2);
     applyInt(y2, y2int);
 
-    applyWindow(y2int, winHan);
-    lpcCoeffs(Hvt2->data, y2int, p_vt);
-
+    lpcCoeffs(y2int * win, p_vt, Hvt2);
     // calculate dg
-    filter_fir(Hvt2, signal, dg);
+    filter_fir(Hvt2, x, dg);
     // calculate g
     applyInt(dg, g);
-
-    // free resources
-    gsl_vector_free(winHan);
 }

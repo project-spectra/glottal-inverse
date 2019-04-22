@@ -8,48 +8,43 @@
 
 using std::vector;
 
-vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0mean) {
+vector<size_t> gci_sedreams(const valarray& signal, const double fs, const double f0mean) {
 
-    const size_t N(signal->size);
+    const size_t N(signal.size());
     size_t n, k;
 
-    gsl_vector *res = gsl_vector_alloc(N);
+    valarray res;
 
-    lpcResidual(nullptr, res, signal,
+    lpcResidual(signal,
                     round(25./1000.*fs),
                     round(5./1000.*fs),
-                    round(fs/1000.) + 2);
+                    round(fs/1000.) + 2,
+                    res, nullptr);
 
     // filter out any NaNs
     for (n = 0; n < N; ++n) {
-        if (!std::isfinite(gsl_vector_get(res, n))) {
-            gsl_vector_set(res, n, 0.);
+        if (!std::isfinite(res[N])) {
+            res[n] = 0.;
         }
     }
 
     // Calculation of the mean-base signal
     size_t T0mean = round(fs / f0mean);
     size_t halfL = round((1.7 * T0mean) / 2.);
-    auto blackwin = blackman(2 * halfL + 1);
+    valarray blackwin(blackman(2 * halfL + 1));
     
     // Filter wave with blackwin and take mean
-    auto meanBasedSignal = gsl_vector_alloc(N);
+    valarray meanBasedSignal;
 
-    double filtDen[] = { static_cast<double>(blackwin->size) };
-    auto filtDenView = gsl_vector_view_array(filtDen, 1);
-
-    filter_iir(blackwin, &filtDenView.vector, signal, meanBasedSignal);
-    gsl_vector_free(blackwin);
+    filter_iir(blackwin, { static_cast<double>(blackwin.size()) }, signal, meanBasedSignal);
 
     // Remove low frequency contents  TODO:ellipsis IIR fiter
     filter_hpf(meanBasedSignal, 50./(fs/2.));
-    normalize(meanBasedSignal, 1.);
+    normalize(meanBasedSignal);
 
     // Detect minima and maxima of the mean-based signal
     auto maxInd = findPeaks(meanBasedSignal, 1.);
     auto minInd = findPeaks(meanBasedSignal, -1.);
-
-    gsl_vector_free(meanBasedSignal);
 
     while (maxInd.front() < minInd.front()) {
         maxInd.pop_front();
@@ -60,13 +55,13 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
     maxInd.shrink_to_fit();
     
     // Determine the median position of GCIs within the cycle
-    normalize(res, 1.);
+    normalize(res);
 
     // find points of res > threshold
     vector<size_t> posInd;
     constexpr double resThreshold(0.4);
     for (n = 0; n < N; ++n) {
-        if (gsl_vector_get(res, n) > resThreshold) {
+        if (res[n] > resThreshold) {
             posInd.push_back(n);
         }
     }
@@ -130,14 +125,18 @@ vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0
         }
 
         if (stop > 1) {
-            auto vec = gsl_vector_subvector(res, start, stop - start);
-            size_t maxi = gsl_vector_max_index(&vec.vector);
+            size_t maxi(start);
+            double maxr(-HUGE_VAL);
+            for (size_t i = start; i <= stop; ++i) {
+                if (res[i] > maxr) {
+                    maxr = res[i];
+                    maxi = i;
+                }
+            }
 
-            gci[ind++] = (start + maxi - 1);
+            gci[ind++] = maxi;
         }
     }
-    
-    gsl_vector_free(res);
 
     return gci;
 }

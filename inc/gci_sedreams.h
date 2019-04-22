@@ -3,13 +3,14 @@
 
 #include <deque>
 #include <utility>
+#include <valarray>
 #include <vector>
 
-#include <gsl/gsl_vector.h>
+using valarray = std::valarray<double>;
 
-std::vector<size_t> gci_sedreams(gsl_vector *signal, const double fs, const double f0mean);
+std::vector<size_t> gci_sedreams(const valarray& signal, const double fs, const double f0mean);
 
-std::deque<size_t> findPeaks(gsl_vector *signal, double sign);
+std::deque<size_t> findPeaks(const valarray& signal, double sign);
 
 double median(std::vector<double>& x);
 

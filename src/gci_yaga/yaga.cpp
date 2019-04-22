@@ -3,7 +3,7 @@
 #include "gci_yaga.h"
 
 
-void gci_yaga(gsl_vector *u)
+void gci_yaga(const valarray& u)
 {
     valarray pm;
     computeSWT(u, pm);

@@ -1,6 +1,6 @@
 #include "gci_yaga_subroutines.h"
 
-void cand_select_precalc_norms(const gsl_vector *u, const candvec& cands, valarray& norms, double& maxNorm)
+void cand_select_precalc_norms(const valarray& u, const candvec& cands, valarray& norms, double& maxNorm)
 {
     const size_t Ncand(cands.size());
 
@@ -16,7 +16,7 @@ void cand_select_precalc_norms(const gsl_vector *u, const candvec& cands, valarr
     {
         q = cands[k+1].first;
         
-        valarray seg(u->data + p, q - p);
+        valarray seg(u[std::slice(p, q - p, 1)]);
 
         nrm = sqrt((seg * seg).sum());
         if (nrm > maxNorm) {

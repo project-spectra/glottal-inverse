@@ -2,9 +2,10 @@
 #define NORMALIZE_H
 
 
-#include <gsl/gsl_vector.h>
+#include <valarray>
 
-void normalize(gsl_vector *f, double a);
+using valarray = std::valarray<double>;
 
+void normalize(valarray& f);
 
 #endif // NORMALIZE_H

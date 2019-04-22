@@ -18,13 +18,13 @@ static constexpr size_t endSkip = (11. / 1000. * SAMPLE_RATE) / 2 + 2;
 // how many N-best to keep
 static constexpr size_t Nbest = 3;
 
-void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands, std::vector<size_t>& bestCands)
+void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, std::vector<size_t>& bestCands)
 {
     size_t t;
     
     // skip candidates at each end if necessary (for the cost function to compute properly)
     t = cands.back().first;
-    while (t > u->size - endSkip) {
+    while (t > u.size() - endSkip) {
         cands.pop_back();
         t = cands.back().first;
     }

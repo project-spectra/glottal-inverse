@@ -11,8 +11,8 @@
 
 // GNUPlot data exporting
 #define GNUPLOT_FILE_SPEECH "speech.dat"
-#define GNUPLOT_FILE_IAIF_SOURCE "iaif_source.dat"
-#define GNUPLOT_FILE_IAIF_SOURCE_DERIV "iaif_source_deriv.dat"
+#define GNUPLOT_FILE_SOURCE "glottal_source.dat"
+#define GNUPLOT_FILE_SOURCE_DERIV "glottal_source_deriv.dat"
 
 
 #endif // CONSTANTS_H

@@ -1,19 +1,8 @@
 sudo apt-get update
-sudo apt-get install git build-essential libatlas-base-dev liblapack-dev libblas-dev zlib1g-dev portaudio19-dev
-
-wget https://ftp.igh.cnrs.fr/pub/gnu/gsl/gsl-2.5.tar.gz
-tar xvf gsl-2.5.tar.gz
-cd gsl-2.5/
-./configure --prefix=/usr
-make -j$(nproc)
-sudo make install
-
-cd
+sudo apt-get install git build-essential portaudio19-dev
 
 git clone https://github.com/project-spectra/glottal-inverse
 cd glottal-inverse/
-
-nano inc/constants.h
 
 make BUILD_TYPE=Release
 bin/gif

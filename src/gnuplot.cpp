@@ -3,7 +3,7 @@
 #include "gnuplot.h"
 
 
-void writePlotData(gsl_vector *f, const std::string& filename) {
+void writePlotData(const valarray& f, const std::string& filename) {
 
     // s : [0,1)
     // t : [0,winlen)
@@ -17,7 +17,7 @@ void writePlotData(gsl_vector *f, const std::string& filename) {
     for (i = 0; i < WINDOW_LENGTH; ++i) {
         t = i / static_cast<double>(SAMPLE_RATE);
 
-        out << t << "," << gsl_vector_get(f, i) << std::endl;
+        out << t << "," << f[i] << std::endl;
     }
 
     out.close();

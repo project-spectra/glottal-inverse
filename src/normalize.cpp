@@ -1,14 +1,13 @@
-#include <gsl/gsl_blas.h>
+#include <numeric>
 #include "normalize.h"
 
-void normalize(gsl_vector *x, double a) {
+void normalize(valarray& f) {
 
-    size_t i = gsl_blas_idamax(x);
-    double max = abs(gsl_vector_get(x, i));
+    double maxAmp = abs(f).max();
 
-    if (max >= 1e-10) {
-        gsl_vector_scale(x, a / max);
+    if (std::isfinite(maxAmp) && maxAmp > 1e-10) {
+        f /= maxAmp;
     }
-}
 
+}
 

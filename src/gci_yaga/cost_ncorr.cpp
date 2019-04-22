@@ -8,10 +8,10 @@ static constexpr size_t corrLen = 10. / 1000. * SAMPLE_RATE;
 // Speech segment offset
 static constexpr size_t corrOff = corrLen / 2;
 
-double cost_ncorr(const gsl_vector *u, const size_t r, const size_t p)
+double cost_ncorr(const valarray& u, const size_t r, const size_t p)
 {
-    valarray u_r(u->data + r - corrOff, corrLen);
-    valarray u_p(u->data + p - corrOff, corrLen);
+    valarray u_r(u[std::slice(r - corrOff, corrLen, 1)]);
+    valarray u_p(u[std::slice(p - corrOff, corrLen, 1)]);
 
     double mu_r(u_r.sum() / corrLen);
     double mu_p(u_p.sum() / corrLen);

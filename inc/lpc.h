@@ -2,12 +2,15 @@
 #define LPC_H
 
 
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_vector.h>
+#include <valarray>
 
-double lpcCoeffs(double *lpc, gsl_vector *x, size_t order);
+using valarray = std::valarray<double>;
+using valmatrix = std::valarray<valarray>;
 
-void lpcResidual(gsl_matrix *lpc, gsl_vector *res, gsl_vector *x, size_t L, size_t shift, size_t order);
+
+double lpcCoeffs(const valarray& x, size_t order, valarray& lpc);
+
+void lpcResidual(const valarray& x, size_t L, size_t shift, size_t order, valarray& res, valmatrix *lpc);
 
 
 #endif // LPC_H

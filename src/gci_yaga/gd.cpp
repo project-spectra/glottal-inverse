@@ -1,4 +1,5 @@
-#include <gsl/gsl_math.h>
+#include <cstdio>
+
 #include "window.h"
 #include "constants.h"
 #include "gci_yaga.h"
@@ -12,29 +13,29 @@ void computeGD(const valarray& pm, valarray& gamma)
 {
     const size_t N(pm.size());
 
-    valarray w;
+    valarray w(hanning(L));
 
     std::vector<valarray> x(N);
 
-    auto win = hanning(L);
-    w = valarray(win->data, L);
-    gsl_vector_free(win);
+    for (size_t n = 0; n < N; ++n) {
+        std::slice safeSlice(n, (n + L - 1 < N) ? L : (N - n + 1), 1);
+
+        x[n].resize(L);
+        x[n] = w;
+        x[n] *= pm[safeSlice];
+    }
     
     gamma.resize(N);
-
-    for (size_t n = 0; n < N - L; ++n) {
-        x[n] = w;
-        x[n] *= pm[std::slice(n, (L < N + 1 - n) ? (N + 1 - n) : L, 1)];
-    }
-
-    valarray range(L);
-    for (size_t l = 0; l < L; ++l)
-        range[l] = l;
-
     for (size_t n = 0; n < N; ++n)
     {
         valarray xn2 = x[n] * x[n];
 
-        gamma[n] = (range * xn2).sum() / xn2.sum() - (L-1)/2;
+        double lxn2sum(0.), xn2sum(0.);
+        for (size_t k = 0; k < L; ++k) {
+            lxn2sum += k * xn2[k];
+            xn2sum += xn2[k];
+        }
+
+        gamma[n] = lxn2sum / xn2sum - (L-1)/2;
     }
 }

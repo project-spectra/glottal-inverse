@@ -2,9 +2,11 @@
 #define PITCH_H
 
 
-#include <gsl/gsl_vector.h>
+#include <valarray>
 
-#define DECL_PITCH(name)  bool pitch_ ## name (gsl_vector *frame, double *f0res, double *T0res)
+using valarray = std::valarray<double>;
+
+#define DECL_PITCH(name)  bool pitch_ ## name (const valarray& frame, double *f0res, double *T0res)
 
 
 DECL_PITCH(AMDF);

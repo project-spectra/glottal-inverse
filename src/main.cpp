@@ -4,18 +4,15 @@
 #include <iostream>
 #include <iomanip>
 
-#include <experimental/iterator>
-
 #include <portaudio.h>
 
+#include "constants.h"
 #include "audio_in.h"
 #include "pitch.h"
 #include "iaif.h"
 #include "normalize.h"
 #include "gci_yaga.h"
-#include "glottal.h"
 #include "gnuplot.h"
-#include "gsl_util.h"
 #include "print_iter.h"
 
 
@@ -54,10 +51,10 @@ int main() {
     
     std::cout << " ==== Recording ====" << std::endl;
 
-    static_vector(md);
+    std::valarray<double> md(WINDOW_LENGTH);
 
-    static_vector(g);
-    static_vector(dg);
+    std::valarray<double> g(WINDOW_LENGTH);
+    std::valarray<double> dg(WINDOW_LENGTH);
 
     double f0est, T0est;
 
@@ -68,25 +65,22 @@ int main() {
 
         // convert to doubles
         for (size_t i = 0; i < WINDOW_LENGTH; ++i) {
-            gsl_vector_set(md, i, data->recordedSamples[i]);
+            md[i] = data->recordedSamples[i];
         }
         
         if (!pitch_AMDF(md, &f0est, &T0est)) {
             //std::cout << "  (/)  No voiced speech detected" << std::endl;
             continue;
         }
-        
+
         // estimate glottal source with IAIF
-        normalize(md, 1.);
-        computeIAIF(g, dg, md);
-        normalize(g, 1.);
-        normalize(dg, 1.);
+        normalize(md);
+        computeIAIF(md, g, dg);
+        normalize(g);
+        normalize(dg);
 
         // estimate GCIs
-        gci_yaga(md);
-
-        // estimate glottal parameters
-        //auto vp = estimateGlottal(g, dg, SAMPLE_RATE, gci);
+        gci_yaga(dg);
                
         // print results
         std::cout << "  (*) Estimated:" << std::endl
@@ -94,8 +88,8 @@ int main() {
 
         // write and plot
         writePlotData(md, GNUPLOT_FILE_SPEECH);
-        writePlotData(g, GNUPLOT_FILE_IAIF_SOURCE);
-        writePlotData(dg, GNUPLOT_FILE_IAIF_SOURCE_DERIV);
+        writePlotData(g, GNUPLOT_FILE_SOURCE);
+        writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
 
     }
 

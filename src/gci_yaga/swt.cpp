@@ -1,25 +1,23 @@
 #include <cmath>
-#include <gsl/gsl_math.h>
-
 #include "gci_yaga.h"
 
 
-void computeSWT(gsl_vector *u, valarray& p)
+void computeSWT(const valarray& u, valarray& p)
 {
-    const size_t N(u->size);
+    const size_t N(u.size());
     const size_t J(log2(N) - 1);
 
     constexpr int j0(1);
-    const int j1(GSL_MIN(3, J));
+    const int j1(std::min(3, (int) J));
 
     const valarray h = { 1.586134342, -.05298011854, -.8829110762, .4435068522, 1.149604398 };
     const size_t m(h.size() / 2);
 
-    std::vector<valarray> d(j1 + 1, valarray(u->data, N));
+    std::vector<valarray> d(j1 + 1, u);
     
     int j;
 
-    valarray xj(u->data, N);
+    valarray xj(u);
     valarray dj;
 
     p.resize(N, 1.);
@@ -56,15 +54,17 @@ void computeSWT(gsl_vector *u, valarray& p)
         }
 
         dj *= h[h.size()-1];
-        xj = dj;
+        xj /= h[h.size()-1];
 
         p *= pow(dj, 1. / (double) j1);
+        
+        xj = dj;
     }
 
     // half-wave rectifying
     for (size_t n = 0; n < N; ++n) {
-        if (p[n] < 0. || !isfinite(p[n]))
-            p[n] = 0.;
+        if (p[n] < 0. || !std::isfinite(p[n]))
+            p[n] = 0.; 
     }
 
 }

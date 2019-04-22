@@ -4,10 +4,12 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
-TIME_RANGE = (0, .08), (-1, 1)
-# TIME_PLOT = ('Speech signal', 'speech.dat')
-# TIME_PLOT = ('Glottal source', 'iaif_source_deriv.dat')
-TIME_PLOT = ('Glottal flow', 'iaif_source.dat')
+TIME_RANGE = (0, .0625), (-1, 1)
+
+#TIME_PLOT = ('Speech signal', 'speech.dat')
+#TIME_PLOT = ('Glottal source', 'glottal_source_deriv.dat')
+#TIME_PLOT = ('Glottal flow', 'glottal_source.dat')
+TIME_PLOT = ('Group delay function', 'yaga.dat')
 
 
 done = False
@@ -20,6 +22,8 @@ def press(event):
 plt.ion()
 
 fig, ax = plt.subplots()
+fig.patch.set_facecolor('white')
+ax.set_facecolor('white')
 
 plt.title(TIME_PLOT[0])
 
@@ -43,7 +47,7 @@ def load_file(points=None):
     try:
         t, y = np.genfromtxt(TIME_PLOT[1], delimiter=',').T
         if points is None:
-            points = ax.plot(t, y, linewidth=1, color='orange')[0]
+            points = ax.plot(t, y, linewidth=0.75, color='orange')[0]
         else:
             points.set_data(t, y)
 

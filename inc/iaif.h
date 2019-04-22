@@ -2,9 +2,11 @@
 #define IAIF_H
 
 
-#include <gsl/gsl_vector.h>
+#include <valarray>
 
-void computeIAIF(gsl_vector *g, gsl_vector *dg, gsl_vector *x);
+using valarray = std::valarray<double>;
+
+void computeIAIF(const valarray& x, valarray& g, valarray& dg);
 
 
 #endif // IAIF_H

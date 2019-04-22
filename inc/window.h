@@ -2,11 +2,13 @@
 #define WINDOW_H
 
 
-#include <gsl/gsl_vector.h>
+#include <valarray>
 
-gsl_vector *hanning(const size_t L);
+using valarray = std::valarray<double>;
 
-gsl_vector *blackman(const size_t L);
+valarray hanning(const size_t L);
+
+valarray blackman(const size_t L);
 
 
 #endif // WINDOW_H
