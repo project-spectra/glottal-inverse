@@ -1,5 +1,5 @@
 #include "constants.h"
-#include "gci_yaga.h"
+#include "gci_yaga_subroutines.h"
 
 // 10ms of correlated speech segments, centered at p and r
 static constexpr size_t corrLen = 10. / 1000. * SAMPLE_RATE;

@@ -1,6 +1,6 @@
 #include <cmath>
 #include <tuple>
-#include "gci_yaga.h"
+#include "gci_yaga_subroutines.h"
 
 // Parameters for Pitch deviation cost
 static constexpr double mu = 1.;

@@ -1,4 +1,5 @@
 #include "gci_yaga.h"
+#include "gci_yaga_subroutines.h"
 
 
 void cand_find_nzcr(const valarray& gamma, candvec& cands)

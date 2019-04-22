@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include "constants.h"
+#include "gci_yaga_subroutines.h"
 #include "gci_yaga.h"
 
  
@@ -14,7 +15,7 @@ static constexpr double xhi = 0.1;
 static constexpr size_t endSkip = (10. / 1000. * SAMPLE_RATE) / 2 + 2;
 
 // how many N-best to keep
-static constexpr size_t Nbest = 4;
+static constexpr size_t Nbest = 3;
 
 void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands, std::vector<size_t>& bestCands)
 {

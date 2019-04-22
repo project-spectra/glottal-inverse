@@ -1,5 +1,5 @@
 #include "constants.h"
-#include "gci_yaga.h"
+#include "gci_yaga_subroutines.h"
 
 // 0.85ms window for Sum-SQuare-Error calculation
 static constexpr size_t ssqeLen = 0.85 / 1000. * SAMPLE_RATE;

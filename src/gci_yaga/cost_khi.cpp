@@ -1,4 +1,4 @@
-#include "gci_yaga.h"
+#include "gci_yaga_subroutines.h"
 
 
 double cost_khi(const double mu, const double sigma, const double y)

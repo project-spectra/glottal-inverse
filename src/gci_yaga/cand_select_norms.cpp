@@ -1,4 +1,4 @@
-#include "gci_yaga.h"
+#include "gci_yaga_subroutines.h"
 
 void cand_select_precalc_norms(const gsl_vector *u, const candvec& cands, valarray& norms, double& maxNorm)
 {

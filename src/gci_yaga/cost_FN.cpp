@@ -1,5 +1,5 @@
 #include "constants.h"
-#include "gci_yaga.h"
+#include "gci_yaga_subroutines.h"
 
 // 3ms of normalized amplitude segment
 static constexpr size_t nrmLen = 3. / 1000. * SAMPLE_RATE;

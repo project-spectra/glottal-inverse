@@ -1,4 +1,4 @@
-#include "gci_yaga.h"
+#include "gci_yaga_subroutines.h"
 
 
 void cand_find_psp(const valarray& gamma, candvec& cands)
