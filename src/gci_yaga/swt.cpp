@@ -62,8 +62,9 @@ void computeSWT(gsl_vector *u, valarray& p)
     }
 
     // half-wave rectifying
-    for (size_t n = 0; n < N; ++n)
+    for (size_t n = 0; n < N; ++n) {
         if (p[n] < 0. || !isfinite(p[n]))
             p[n] = 0.;
+    }
 
 }

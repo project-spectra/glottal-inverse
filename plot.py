@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
 
+import time
 import matplotlib.pyplot as plt
 import numpy as np
 
 TIME_RANGE = (0, .08), (-1, 1)
-#TIME_PLOT = ('Speech signal', 'speech.dat')
-#TIME_PLOT = ('Glottal source', 'iaif_source_deriv.dat')
+# TIME_PLOT = ('Speech signal', 'speech.dat')
+# TIME_PLOT = ('Glottal source', 'iaif_source_deriv.dat')
 TIME_PLOT = ('Glottal flow', 'iaif_source.dat')
 
+
+done = False
+def press(event):
+    global done
+    if event.key.lower() in { 'd', 'q', 'escape' }:
+        print("Done.")
+        done = True
+
+plt.ion()
 
 fig, ax = plt.subplots()
 
@@ -42,13 +52,16 @@ def load_file(points=None):
         pass
 
     fig.canvas.blit(ax.bbox)
+    fig.canvas.draw_idle()
 
     return points
 
 points = load_file()
-while True:
+
+fig.canvas.mpl_connect('key_press_event', press)
+while not done:
     load_file(points)
-    plt.pause(0.1)
+    fig.canvas.start_event_loop(0.001)
 
 
 
