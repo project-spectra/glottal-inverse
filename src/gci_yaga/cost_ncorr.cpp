@@ -1,3 +1,4 @@
+#include "window.h"
 #include "constants.h"
 #include "gci_yaga_subroutines.h"
 

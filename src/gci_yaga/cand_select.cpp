@@ -9,10 +9,11 @@ static constexpr double constLambda[] = {
     0.8, 0.6, 0.4, 0.3, 0.1, 0.5
 };
 
-static constexpr double xhi = 0.1;
+// Threshold for voicing detection
+static constexpr double nu = -0.3;
 
-// longest centered windowed segment is 10ms
-static constexpr size_t endSkip = (10. / 1000. * SAMPLE_RATE) / 2 + 2;
+// longest centered windowed segment is 11ms
+static constexpr size_t endSkip = (11. / 1000. * SAMPLE_RATE) / 2 + 2;
 
 // how many N-best to keep
 static constexpr size_t Nbest = 3;
@@ -90,15 +91,19 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
                 // Time has to be strictly increasing
                 if (q < r) {
                     cost_calc(u, gamma, norms, maxNorm, cands[r], cands[q], cands[p], costVector);
-                    cost = cost_eval(lambda, costVector);
+                    
+                    // Pass the voicing detector
+                    if (costVector[0] < nu) {
+                        cost = cost_eval(lambda, costVector);
 
-                    // If this node is lesser than the last least one, replace it.
-                    if (cost < bestNode[n].cost) {
-                        bestNode[n] = { cands[r].first, r, q, cost, prevBest.cumCost };
+                        // If this node is lesser than the last least one, replace it.
+                        if (cost < bestNode[n].cost) {
+                            bestNode[n] = { cands[r].first, r, q, cost, prevBest.cumCost };
 
-                        // Update the bounds for r
-                        if (r < minR)
-                            minR = r;
+                            // Update the bounds for r
+                            if (r < minR)
+                                minR = r;
+                        }
                     }
                 }
             }
@@ -112,7 +117,7 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
             node best = bestNode[n];
             if (best.r != 0 && best.q != 0) {
                 // Postponed cumulative cost calculation here to save a bit of time
-                best.cumCost += + best.cost;
+                best.cumCost += best.cost;
                 paths[n].push_back(best);
             } else {
                 nbCompletePaths++;
@@ -122,9 +127,9 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
 
     // At the end, pick the path with the smallest cumulative cost
     std::vector<node> bestPath(*std::min_element(paths.begin(), paths.end(),
-                                    [](const auto& a, const auto& b) {
-                                        return a.back().cumCost < b.back().cumCost;
-                                    }));
+                [](const auto& a, const auto& b) {
+                    return a.back().cumCost < b.back().cumCost;
+                }));
 
     bestCands.resize(bestPath.size());
 

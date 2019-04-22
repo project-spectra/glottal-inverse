@@ -1,0 +1,111 @@
+#include <array>
+#include "gci_yaga.h"
+
+
+// Threshold for CQ distance
+static constexpr double xhi = 0.1;
+
+// Number of N-best to keep
+static constexpr size_t Nbest = 3;
+
+
+void selectOpenCandidates(const std::vector<size_t>& closed, const std::deque<size_t>& initialOpen, std::vector<size_t>& open)
+{
+    // Copy into bestOpen
+    std::copy(initialOpen.begin(), initialOpen.end(), std::back_inserter(open));
+
+    // Calculate the relative closed quotient for each GOI candidate
+    std::vector<double> Qc;
+    // as well as the first k_o for each k_c
+    std::vector<size_t> kc2ko(closed.size());
+    std::vector<size_t> kc2ko1(closed.size());
+
+    size_t k_c, k_o;
+    double CQ = 0.2;
+
+    k_o = 0;
+    for (k_c = 0; k_c < closed.size() - 1; ++k_c) {
+        double period = closed[k_c+1] - closed[k_c];
+
+        kc2ko[k_c] = k_o;
+
+        if (open[k_o] > closed[k_c]) {
+            // Create artificial candidate
+            Qc.push_back(CQ);
+            open.insert(open.begin() + k_o, closed[k_c] + (1 - CQ) * period);
+            k_o++;
+        }
+
+        while (open[k_o] < closed[k_c]) {
+            CQ = (double) (closed[k_c+1] - open[k_o]) / period;
+            Qc.push_back(CQ);
+
+            k_o++;
+        }
+
+        kc2ko1[k_c] = k_o;
+    }
+
+    const size_t Ncand(Qc.size());
+
+    size_t n;
+
+    struct node {
+        size_t t;
+        size_t ko;
+        double cost;
+        double cumCost;
+    };
+
+    std::array<std::vector<node>, Nbest> paths;
+    for (n = 0; n < Nbest; ++n) {
+        paths[n].push_back({ open[n], n, Qc[n], 0. });
+    }
+
+    for (k_c = 0; k_c < closed.size() - 1; ++k_c) { 
+
+        // Store the best node of each N
+        // Initialize the cost to +inf
+        std::array<node, Nbest> bestNode;
+        for (n = 0; n < Nbest; ++n) {
+            bestNode[n] = { 0, 0, 0.2, HUGE_VAL };
+        }
+
+        // For each valid GOI candidate 
+        for (k_o = 0; k_o < Ncand; ++k_o) {
+            // For each best path
+            for (n = 0; n < Nbest; ++n) {
+                node prevBest = paths[n].back();
+
+                // Time needs to be strictly increasing
+                if (prevBest.ko < k_o) {
+                    double cost = Qc[k_o];
+                    double dist = fabs(prevBest.cost - cost);
+
+                    // If the distance is small enough
+                    // and the cost is smaller than the best
+                    if (dist < xhi && cost < bestNode[n].cost) {
+                        bestNode[n] = { open[k_o], k_o, cost, prevBest.cost };
+                    }
+                }
+            }
+        }
+
+        for (n = 0; n < Nbest; ++n) {
+            node best = bestNode[n];
+
+            best.cumCost += best.cost;
+            paths[n].push_back(best);
+        }
+    }
+
+    std::vector<node> bestPath(*std::min_element(paths.begin(), paths.end(),
+                [](const auto& a, const auto& b) {
+                    return a.back().cumCost < b.back().cumCost;
+                }));
+
+    open.resize(0);
+    std::transform(bestPath.begin(), bestPath.end(), std::back_inserter(open),
+                    [&] (const auto& node) { return node.t; });
+    
+}
