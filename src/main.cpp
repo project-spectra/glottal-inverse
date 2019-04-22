@@ -12,7 +12,7 @@
 #include "pitch.h"
 #include "iaif.h"
 #include "normalize.h"
-#include "gci_sedreams.h"
+#include "gci_yaga.h"
 #include "glottal.h"
 #include "gnuplot.h"
 #include "gsl_util.h"
@@ -73,7 +73,7 @@ int main() {
         
         if (!pitch_AMDF(md, &f0est, &T0est)) {
             //std::cout << "  (/)  No voiced speech detected" << std::endl;
-            //continue;
+            continue;
         }
         
         // estimate glottal source with IAIF
@@ -83,14 +83,14 @@ int main() {
         normalize(dg, 1.);
 
         // estimate GCIs
-        //auto gci = gci_sedreams(md, SAMPLE_RATE, f0est);
+        gci_yaga(md);
 
         // estimate glottal parameters
         //auto vp = estimateGlottal(g, dg, SAMPLE_RATE, gci);
                
         // print results
-        //std::cout << "  (*) Estimated:" << std::endl
-        //          << "      - f0: " << (int) f0est << " Hz" << std::endl;
+        std::cout << "  (*) Estimated:" << std::endl
+                  << "      - f0: " << (int) f0est << " Hz" << std::endl;
 
         // write and plot
         writePlotData(md, GNUPLOT_FILE_SPEECH);

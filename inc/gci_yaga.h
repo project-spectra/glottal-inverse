@@ -23,8 +23,6 @@ void computeGD(const valarray& pm, valarray& gamma);
 void findCandidates(const valarray& gamma, candvec& cands);
 void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands, std::vector<size_t>& bestCands);
 
-void swt_app_det_init(const gsl_vector *u, const size_t J, const size_t j1, std::vector<valarray>& g, std::vector<valarray>& h);
-
 void cand_find_nzcr(const valarray& gamma, candvec& cands);
 void cand_find_psp(const valarray& gamma, candvec& cands);
 

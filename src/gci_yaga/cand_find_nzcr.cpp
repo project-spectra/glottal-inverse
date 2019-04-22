@@ -5,10 +5,10 @@ void cand_find_nzcr(const valarray& gamma, candvec& cands)
 {
     valarray sign(gamma * gamma.shift(1));
 
-    auto nzcr(sign < 0. && gamma >= 0.);
+    std::valarray<bool> zcr(sign < 0.); 
 
-    for (size_t n = 0; n < nzcr.size(); ++n) {
-        if (nzcr[n]) {
+    for (size_t n = 0; n < zcr.size(); ++n) {
+        if (zcr[n] && gamma[n] >= 0) { // negative-going
             cands.emplace_back(n, true);
         }
     } 

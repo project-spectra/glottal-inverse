@@ -28,9 +28,8 @@ void computeGD(const valarray& pm, valarray& gamma)
     }
 
     valarray range(L);
-    for (size_t l = 0; l < L; ++l) {
+    for (size_t l = 0; l < L; ++l)
         range[l] = l;
-    }
 
     for (size_t n = 0; n < N; ++n)
     {
