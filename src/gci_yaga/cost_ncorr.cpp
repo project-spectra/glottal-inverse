@@ -15,8 +15,8 @@ double cost_ncorr(const gsl_vector *u, const size_t r, const size_t p)
     double mu_r(u_r.sum() / corrLen);
     double mu_p(u_p.sum() / corrLen);
 
-    auto var_r(abs(u_r - mu_r));
-    auto var_p(abs(u_p - mu_p));
+    valarray var_r(abs(u_r - mu_r));
+    valarray var_p(abs(u_p - mu_p));
 
     double r_stdev(1 / (corrLen - 1) * (var_r * var_r).sum());
     double p_stdev(1 / (corrLen - 1) * (var_p * var_p).sum());

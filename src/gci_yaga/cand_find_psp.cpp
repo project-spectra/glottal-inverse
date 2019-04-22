@@ -17,14 +17,14 @@ void cand_find_psp(const valarray& gamma, candvec& cands)
         idx[k] = k;
 
     // find turning points
-    auto turning(dfSign < 0.);
+    std::valarray<bool> turning(dfSign < 0.);
 
     valarray turn_idx(idx[turning]);
     valarray turn_df2(df2[turning]);
     valarray turn_gamma(gamma[turning]);
     
     // find maxima which are < 0
-    auto negMaxima(turn_df2 < 0. && turn_gamma < 0.);
+    std::valarray<bool> negMaxima(turn_df2 < 0. && turn_gamma < 0.);
     
     // midpoint between preceding min and negative max
     valarray negIdx(idx[negMaxima]);
@@ -37,7 +37,7 @@ void cand_find_psp(const valarray& gamma, candvec& cands)
     }
 
     // find minima which are > 0
-    auto posMinima(turn_df2 > 0. && turn_gamma > 0.);
+    std::valarray<bool> posMinima(turn_df2 > 0. && turn_gamma > 0.);
 
     // midpoint between positive min and following max
     valarray posIdx(idx[posMinima]);

@@ -48,6 +48,7 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
     valarray lambda(constLambda, 6);
 
     struct node {
+        size_t t;
         size_t r, q;
         double cost;
         double cumCost;
@@ -55,25 +56,23 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
 
     std::array<std::vector<node>, Nbest> paths;
     for (n = 0; n < Nbest; ++n) {
-        paths[n].push_back({ 2, 1, 0., 0. });
+        paths[n].push_back({ cands[2].first, 2, 1, 0., 0. });
     }
 
     valarray costVector;
     double cost;
    
     size_t minR = 3;
-    size_t maxR = 3;
+    size_t nbCompletePaths = 0;
 
     // Until all paths are complete
-    while (maxR < Ncand) {
-
-        node lastBestNode = paths[n].back();
+    while (nbCompletePaths < Nbest) {
 
         // Store the best node of each N
         // Initialize the cost to +inf
         std::array<node, Nbest> bestNode;
         for (n = 0; n < Nbest; ++n) {
-            bestNode[n] = { 0, 0, HUGE_VAL, HUGE_VAL };
+            bestNode[n] = { 0, 0, 0, HUGE_VAL, HUGE_VAL };
         }
 
         // Loop through all subsequent candidates
@@ -82,8 +81,10 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
 
             // For each best path
             for (n = 0; n < Nbest; ++n) {
-                q = lastBestNode.r;
-                p = lastBestNode.q;
+                node prevBest = paths[n].back();
+
+                q = prevBest.r;
+                p = prevBest.q;
 
                 // Time has to be strictly increasing
                 if (q < r) {
@@ -92,17 +93,17 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
 
                     // If this node is lesser than the last least one, replace it.
                     if (cost < bestNode[n].cost) {
-                        bestNode[n] = { r, q, cost, lastBestNode.cumCost };
+                        bestNode[n] = { cands[r].first, r, q, cost, prevBest.cumCost };
 
                         // Update the bounds for r
                         if (r < minR)
                             minR = r;
-                        if (r > maxR)
-                            maxR = r;
                     }
                 }
             }
         }
+
+        nbCompletePaths = 0;
 
         // Once each new iteration is over, push the best node over on the path.
         // If r = q = 0, that means that path has reached completion.
@@ -112,6 +113,8 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
                 // Postponed cumulative cost calculation here to save a bit of time
                 best.cumCost += + best.cost;
                 paths[n].push_back(best);
+            } else {
+                nbCompletePaths++;
             }
         }
     }
@@ -125,5 +128,5 @@ void selectCandidates(const gsl_vector *u, const valarray& gamma, candvec& cands
     bestCands.resize(bestPath.size());
 
     std::transform(bestPath.begin(), bestPath.end(), bestCands.begin(),
-                        [](const auto& node) { return node.r; });
+                        [](const auto& node) { return node.t; });
 }

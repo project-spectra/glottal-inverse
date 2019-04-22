@@ -7,59 +7,63 @@
 void computeSWT(gsl_vector *u, valarray& p)
 {
     const size_t N(u->size);
-    const size_t J(log2(N));
+    const size_t J(log2(N) - 1);
 
-    const size_t j1(GSL_MIN(3, J));
+    constexpr int j0(1);
+    const int j1(GSL_MIN(3, J));
 
-    const valarray h = { M_SQRT2 / 2., M_SQRT2 / 2., 0. };
-    const valarray g = { 0., M_SQRT2 / 2., M_SQRT2 / 2. };
+    const valarray h = { 1.586134342, -.05298011854, -.8829110762, .4435068522, 1.149604398 };
+    const size_t m(h.size() / 2);
 
-    const size_t nh1(h.size() - 1);
-    const size_t ng1(g.size() - 1);
+    std::vector<valarray> d(j1 + 1, valarray(u->data, N));
+    
+    int j;
 
-    valarray hj;
-    valarray gj;
-
-    valarray dj(N);
-    valarray aj(N);    
-
-    // a_0 = u
-    valarray aj_1(u->data, N);
+    valarray xj(u->data, N);
+    valarray dj;
 
     p.resize(N, 1.);
 
-    size_t j, n, k;
-     
-    for (j = 1; j <= j1; ++j)
-    {
-        size_t nz = pow(2, j);
-        hj.resize(nz * nh1 + 1, 0.);
-        gj.resize(nz * ng1 + 1, 0.);
+    for (j = j1; j >= j0; --j) {
+        int dist = pow(2, j1 - j);
 
-        hj[std::slice(0, nz * nh1, nz)] = h;
-        gj[std::slice(0, nz * ng1, nz)] = g;
+        std::valarray<size_t> s1(N);
+        std::valarray<size_t> s2(N);
+        for (int n = 0; n < N; ++n) {
+            int sn;
 
-        for (n = 0; n < N; ++n) {
-            dj[n] = 0.;
-            aj[n] = 0.;
+            // Boundary conditions
+            sn = n + dist;
+            if (sn >= N)
+                sn = 2*N - sn - 1;
+            else if (sn < 0)
+                sn = 1 - sn;
+            s1[n] = sn;
 
-            for (k = 0; k < hj.size(); ++k) {
-                dj[n] = fma(gj[k], aj_1[n-k], dj[n]);
-                aj[n] = fma(hj[k], aj_1[n-k], aj[n]);
-            }
+            sn = n - dist;
+            if (sn >= N)
+                sn = 2*N - sn - 1;
+            else if (sn < 0)
+                sn = 1 - sn;
+            s2[n] = sn;
+        }
+        
+        dj = xj;
 
-            aj_1 = aj;
+        for (int i = 0; i < m; ++i) {
+            dj -= h[2*i] * (valarray(xj[s1]) + valarray(xj[s2]));
+            xj += h[2*i+1] * (valarray(dj[s1]) + valarray(dj[s2]));
         }
 
-        // j1-th root
+        dj *= h[h.size()-1];
+        xj = dj;
+
         p *= pow(dj, 1. / (double) j1);
     }
 
     // half-wave rectifying
-    p[p < 0.] = 0.;
-
     for (size_t n = 0; n < N; ++n)
-        if (p[n] != 0.)
-            printf("p[%zu] = %g\n", n, p[n]);
+        if (p[n] < 0. || !isfinite(p[n]))
+            p[n] = 0.;
 
 }
