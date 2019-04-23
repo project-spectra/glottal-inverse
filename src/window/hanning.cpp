@@ -9,10 +9,10 @@ valarray hanning(const size_t L)
 
     size_t n;
     for (n = 0; n <= N; ++n) {
-        win[n] = n;
+        win[n] = n / (double) N;
     }
 
-    win = .5 * (1. - cos(2. * M_PI * n / (double) N));
+    win = .5 * (1. - cos(2. * M_PI * win));
 
     return win;
 }

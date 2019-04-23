@@ -51,10 +51,10 @@ int main() {
     
     std::cout << " ==== Recording ====" << std::endl;
 
-    std::valarray<double> md(WINDOW_LENGTH);
+    valarray md(WINDOW_LENGTH);
 
-    std::valarray<double> g(WINDOW_LENGTH);
-    std::valarray<double> dg(WINDOW_LENGTH);
+    valarray g(WINDOW_LENGTH);
+    valarray dg(WINDOW_LENGTH);
 
     double f0est, T0est;
 

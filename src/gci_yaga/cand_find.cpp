@@ -13,4 +13,8 @@ void findCandidates(const valarray& gamma, candvec& cands)
 
     // Sort candidates per time
     std::sort(cands.begin(), cands.end());
+
+    // Remove duplicates
+    auto end = std::unique(cands.begin(), cands.end(), [](auto& a, auto& b) { return a.first == b.first; });
+    cands.erase(end, cands.end());    
 }

@@ -18,24 +18,21 @@ void computeGD(const valarray& pm, valarray& gamma)
     std::vector<valarray> x(N);
 
     for (size_t n = 0; n < N; ++n) {
-        std::slice safeSlice(n, (n + L - 1 < N) ? L : (N - n + 1), 1);
-
-        x[n].resize(L);
         x[n] = w;
-        x[n] *= pm[safeSlice];
+        x[n] *= pm[std::slice(n, (L < N + 1 - n) ? (N + 1 - n) : L, 1)];
     }
     
     gamma.resize(N);
+
+    valarray range(L);
+    for (size_t l = 0; l < L; ++l) {
+        range[l] = l;
+    }
+
     for (size_t n = 0; n < N; ++n)
     {
-        valarray xn2 = x[n] * x[n];
+        valarray xn2(x[n] * x[n]);
 
-        double lxn2sum(0.), xn2sum(0.);
-        for (size_t k = 0; k < L; ++k) {
-            lxn2sum += k * xn2[k];
-            xn2sum += xn2[k];
-        }
-
-        gamma[n] = lxn2sum / xn2sum - (L-1)/2;
+        gamma[n] = (range * xn2).sum() / xn2.sum() - (L-1)/2;
     }
 }

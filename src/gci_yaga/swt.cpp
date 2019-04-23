@@ -13,7 +13,7 @@ void computeSWT(const valarray& u, valarray& p)
     const valarray h = { 1.586134342, -.05298011854, -.8829110762, .4435068522, 1.149604398 };
     const size_t m(h.size() / 2);
 
-    std::vector<valarray> d(j1 + 1, u);
+    std::vector<valarray> d(j1 + 1, valarray(u));
     
     int j;
 
@@ -54,11 +54,9 @@ void computeSWT(const valarray& u, valarray& p)
         }
 
         dj *= h[h.size()-1];
-        xj /= h[h.size()-1];
+        xj = dj;
 
         p *= pow(dj, 1. / (double) j1);
-        
-        xj = dj;
     }
 
     // half-wave rectifying

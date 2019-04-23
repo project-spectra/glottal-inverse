@@ -15,7 +15,7 @@ static constexpr size_t p_gl = (2 * SAMPLE_RATE) / 4000;
 static constexpr double d = 0.99;
 
 // How many times to apply highpass filter
-static constexpr size_t hpfilt = 3;
+static constexpr size_t hpfilt = 1;
 
 // Highpass cutoff frequency
 static constexpr double fc = 70.;
@@ -38,7 +38,7 @@ void computeIAIF(const valarray& signal, valarray& g, valarray& dg) {
     }
 
     valarray x(signal);
-    valarray win = hanning(M);
+    valarray win(hanning(M));
 
     for (size_t it = 0; it < hpfilt; ++it) {
         filter_hpf(x, fc);

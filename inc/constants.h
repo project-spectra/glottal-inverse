@@ -6,7 +6,7 @@
 #define SAMPLE_RATE 44100
 #define FRAMES_PER_BUFFER 1024
 
-#define WINDOW_LENGTH 2048
+#define WINDOW_LENGTH 4096
 
 
 // GNUPlot data exporting
