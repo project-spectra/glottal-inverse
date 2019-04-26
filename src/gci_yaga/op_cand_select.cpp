@@ -29,7 +29,9 @@ void selectOpenCandidates(const vector<size_t>& closed, const deque<size_t>& ope
             Qc[nc][no] = (to - tc) / t0;
         }
     }
-    Qc[closed.size()-1] = Qc[closed.size()-2];
+    if (closed.size() >= 2) {
+        Qc[closed.size()-1] = Qc[closed.size()-2];
+    }
 
     // best path is lowest path of consistent CQ values
 

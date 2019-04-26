@@ -1,4 +1,4 @@
-#include "constants.h"
+#include "audio.h"
 #include "filter.h"
 
 
@@ -10,7 +10,7 @@ void filter_hpf(valarray& x, const double fc) {
     const double alpha = RC / (RC + dt);
 
     valarray y(N);
-    
+
     y[0] = x[0];
 
     for (size_t i = 1; i < N; ++i) {

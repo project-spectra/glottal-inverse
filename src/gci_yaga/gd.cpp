@@ -1,16 +1,15 @@
 #include <cstdio>
 
 #include "window.h"
-#include "constants.h"
+#include "audio.h"
 #include "gci_yaga.h"
-
-
-// 2ms window size
-static constexpr size_t L = 2. / 1000. * SAMPLE_RATE;
 
 
 void computeGD(const valarray& pm, valarray& gamma)
 {
+    // 2ms window size
+    static const size_t L(2. / 1000. * SAMPLE_RATE);
+
     const size_t N(pm.size());
 
     valarray w(hanning(L));

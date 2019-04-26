@@ -1,5 +1,5 @@
 #include <cmath>
-#include "constants.h"
+#include "audio.h"
 #include "pitch.h"
 
 
@@ -8,11 +8,11 @@ static constexpr double maxFrequency(500.);
 static constexpr double ratio(5.0);
 static constexpr double sensitivity(0.1);
 
-static const double minPeriod = round(SAMPLE_RATE / maxFrequency + .5);
-static const double maxPeriod = round(SAMPLE_RATE / minFrequency + .5);
 
 
 DECL_PITCH(AMDF) {
+    static const double minPeriod = round(SAMPLE_RATE / maxFrequency + .5);
+    static const double maxPeriod = round(SAMPLE_RATE / minFrequency + .5);
 
     double f0(-1);
     double minVal(HUGE_VAL);  // +inf

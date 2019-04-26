@@ -1,15 +1,13 @@
 #include "window.h"
-#include "constants.h"
+#include "audio.h"
 #include "gci_yaga_subroutines.h"
-
-// 10ms of correlated speech segments, centered at p and r
-static constexpr size_t corrLen = 10. / 1000. * SAMPLE_RATE;
-
-// Speech segment offset
-static constexpr size_t corrOff = corrLen / 2;
 
 double cost_ncorr(const valarray& u, const size_t r, const size_t p)
 {
+    // 10ms of correlated speech segments, centered at p and r
+    static const size_t corrLen(10. / 1000. * SAMPLE_RATE);
+    static const size_t corrOff(corrLen / 2);
+
     valarray u_r(u[std::slice(r - corrOff, corrLen, 1)]);
     valarray u_p(u[std::slice(p - corrOff, corrLen, 1)]);
 

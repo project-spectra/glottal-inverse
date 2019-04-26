@@ -27,8 +27,8 @@
 TARGET := gif
 
 # Modify as necessary
-CXXFLAGS += -fexceptions 
-LDFLAGS += -lportaudio
+CXXFLAGS += -pthread -fexceptions
+LDFLAGS += -pthread -Wl,-Bstatic -lsoundio -Wl,-Bdynamic -lasound -lpulse -ljack -lportaudio 
 
 SRC_DIR := src
 INC_DIR := inc
@@ -39,7 +39,7 @@ OBJ_DIR := .obj
 DEP_DIR := .dep
 
 ifndef BUILD_TYPE
-	BUILD_TYPE := Debug
+	BUILD_TYPE := Release
 endif
 
 main: $(BIN_DIR)/$(TARGET)
@@ -52,7 +52,7 @@ CXXFLAGS += -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaratio
 CXXFLAGS_Debug := -g3
 LDFLAGS_Debug := 
 
-CXXFLAGS_Release := -O3 -Ofast
+CXXFLAGS_Release := -O3 -Os -Ofast
 LDFLAGS_Release :=
 
 CXXFLAGS += $(CXXFLAGS_$(BUILD_TYPE))

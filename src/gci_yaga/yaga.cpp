@@ -25,13 +25,16 @@ void gci_yaga(const valarray& u)
     // Remove duplicate entries
     auto last = std::unique(cands.begin(), cands.end());
     cands.erase(last, cands.end());
+    
+    printIterable(cands, "GCIs");
 
+    /*
     std::deque<size_t> openCands;
     findOpenCandidates(cands, bestCands, openCands);
 
     std::vector<size_t> bestOpenCands;
     selectOpenCandidates(bestCands, openCands, bestOpenCands);
 
-    printIterable(bestCands, "GCIs");
     printIterable(bestOpenCands, "GOIs");
+    */
 }

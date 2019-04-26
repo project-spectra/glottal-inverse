@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <array>
-#include "constants.h"
+#include "audio.h"
 #include "gci_yaga_subroutines.h"
 #include "gci_yaga.h"
 
@@ -13,13 +13,15 @@ static constexpr double constLambda[] = {
 static constexpr double nu = -0.3;
 
 // longest centered windowed segment is 11ms
-static constexpr size_t endSkip = (11. / 1000. * SAMPLE_RATE) / 2 + 2;
+//static size_t endSkip;
 
 // how many N-best to keep
 static constexpr size_t Nbest = 3;
 
 void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, std::vector<size_t>& bestCands)
 {
+    const size_t endSkip = (11. / 1000. * SAMPLE_RATE) / 2 + 2;
+
     size_t t;
     
     // skip candidates at each end if necessary (for the cost function to compute properly)

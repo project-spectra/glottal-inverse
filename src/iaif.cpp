@@ -1,15 +1,15 @@
-#include "constants.h"
 #include "lpc.h"
 #include "filter.h"
 #include "window.h"
+#include "audio.h"
 #include "iaif.h"
 
 
 // LPC analysis order for vocal tract
-static constexpr size_t p_vt = (2 * SAMPLE_RATE) / 2000 + 4;
+//static size_t p_vt;
 
 // LPC analysis order for glottal source
-static constexpr size_t p_gl = (2 * SAMPLE_RATE) / 4000;
+//static size_t p_gl;
 
 // Leaky integration coefficient
 static constexpr double d = 0.99;
@@ -32,6 +32,9 @@ static void applyInt(const valarray& x, valarray& res) {
 void computeIAIF(const valarray& signal, valarray& g, valarray& dg) {
     const size_t M(signal.size());
     // const size_t preflt = p_vt + 1;  // unused
+
+    static const int p_vt = (2 * SAMPLE_RATE) / 2000 + 4;
+    static const int p_gl = (2 * SAMPLE_RATE) / 4000;
 
     if (M <= p_vt) {
         return;

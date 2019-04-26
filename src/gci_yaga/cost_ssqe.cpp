@@ -1,16 +1,16 @@
-#include "constants.h"
+#include "audio.h"
 #include "gci_yaga_subroutines.h"
-
-// 0.85ms window for Sum-SQuare-Error calculation
-static constexpr size_t ssqeLen = 0.85 / 1000. * SAMPLE_RATE;
-static constexpr size_t ssqeOff = ssqeLen / 2;
-
-// ideal negative-going zero crossing with unit slope
-static constexpr double step = 1. / SAMPLE_RATE;
 
 
 double cost_ssqe(const valarray& gamma, const size_t r)
 {
+    // 0.85ms window for Sum-SQuare-Error calculation
+    static const int ssqeLen(0.85 / 1000. * SAMPLE_RATE);
+    static const int ssqeOff(ssqeLen / 2);
+
+    // ideal negative-going zero crossing with unit slope
+    const double step(1. / SAMPLE_RATE);
+
     auto y_r(gamma[std::slice(r - ssqeOff, ssqeLen, 1)]);
     
     size_t n;

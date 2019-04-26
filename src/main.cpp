@@ -3,11 +3,11 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
-
-#include <portaudio.h>
+#include <thread>
+#include <chrono>
 
 #include "constants.h"
-#include "audio_in.h"
+#include "audio.h"
 #include "pitch.h"
 #include "iaif.h"
 #include "normalize.h"
@@ -16,39 +16,34 @@
 #include "print_iter.h"
 
 
-volatile std::atomic<bool> stop;
+static audio_s audio;
 
-void terminate();
-void inthand(int signum) {
+void sighand(int signum) {
     (void) signum;
-    stop = true;
+    audio.running = false;
 }
 
 int main() {
 
-    PaError err;
-    PaStream *stream;
-    window_data *data;
-  
-    data = static_cast<window_data *>(malloc(
-        sizeof(window_data) + WINDOW_LENGTH * sizeof(sample)
-    ));
-
-    err = Pa_Initialize();
-    if (err != paNoError) {
-        std::cerr << "PortAudio init failure: " << Pa_GetErrorText(err) << std::endl;
-        free(data);
-        return EXIT_FAILURE;
-    }
-
-    std::atexit(terminate);
-
-    if (!openStream(&stream, data)) {
-        std::cerr << "Exiting with error..." << std::endl;
-        free(data);
-        return EXIT_FAILURE;
-    }
+    audio.soundio = nullptr;
+    audio.device = nullptr;
+    audio.inStream = nullptr;
+    audio.buffer = nullptr;
     
+    if (initAudio(audio)) {
+        std::cout << " **** Unable to init audio input ****" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::atexit([]() { destroyAudio(audio); });
+    std::signal(SIGINT, sighand);
+    std::signal(SIGTERM, sighand);
+
+    if (startStream(audio)) {
+        std::cout << " **** Unable to start audio input ****" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     std::cout << " ==== Recording ====" << std::endl;
 
     valarray md(WINDOW_LENGTH);
@@ -58,15 +53,14 @@ int main() {
 
     double f0est, T0est;
 
-    while (!stop) {
-        // record a window
-        data->frameIndex = 0;
-        recordWindow(stream);
+    while (audio.running) {
+        if (!hasAtLeastOneWindow(audio)) {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            continue;
+        }
 
         // convert to doubles
-        for (size_t i = 0; i < WINDOW_LENGTH; ++i) {
-            md[i] = data->recordedSamples[i];
-        }
+        loadWindow(audio, md);
         
         if (!pitch_AMDF(md, &f0est, &T0est)) {
             //std::cout << "  (/)  No voiced speech detected" << std::endl;
@@ -80,7 +74,7 @@ int main() {
         normalize(dg);
 
         // estimate GCIs
-        gci_yaga(dg);
+        //gci_yaga(dg);
                
         // print results
         std::cout << "  (*) Estimated:" << std::endl
@@ -90,16 +84,9 @@ int main() {
         writePlotData(md, GNUPLOT_FILE_SPEECH);
         writePlotData(g, GNUPLOT_FILE_SOURCE);
         writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
-
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;
 
-    free(data);
-
     return EXIT_SUCCESS;
-}
-
-void terminate() {
-    Pa_Terminate();
 }
