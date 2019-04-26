@@ -3,7 +3,7 @@
 
 
 double median(std::vector<double>& x) {
-    const size_t len(x.size());
+    const int len(x.size());
 
     if (len == 0) {
         return 0.;

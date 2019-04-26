@@ -6,13 +6,14 @@
 #include <thread>
 #include <chrono>
 
-#include "constants.h"
 #include "audio.h"
-#include "pitch.h"
+#include "gci_yaga.h"
+#include "gci_sedreams.h"
+#include "glottal.h"
+#include "gnuplot.h"
 #include "iaif.h"
 #include "normalize.h"
-#include "gci_yaga.h"
-#include "gnuplot.h"
+#include "pitch.h"
 #include "print_iter.h"
 
 
@@ -53,9 +54,11 @@ int main() {
 
     double f0est, T0est;
 
+    std::vector<int> GCIs, GOIs;
+
     while (audio.running) {
         if (!hasAtLeastOneWindow(audio)) {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            std::this_thread::sleep_for(std::chrono::microseconds(50));
             continue;
         }
 
@@ -68,22 +71,32 @@ int main() {
         }
 
         // estimate glottal source with IAIF
-        normalize(md);
         computeIAIF(md, g, dg);
-        normalize(g);
-        normalize(dg);
 
         // estimate GCIs
-        //gci_yaga(dg);
+        //auto GCIsed = gci_sedreams(md, SAMPLE_RATE, f0est);
+        //printIterable(GCIsed, "GCIs (SEDREAMS) ");
+        
+        GCIs.resize(0);
+        GOIs.resize(0);
+        gci_yaga(dg, GCIs, GOIs);
+
+        printIterable(GCIs, "GCIs (YAGA) ");
+        printIterable(GOIs, "GOIs (YAGA) ");
+        
+        // estimate Open quotient
+        //double meanOq=-1;
+        double meanOq = estimateOq(GCIs, GOIs);
                
         // print results
         std::cout << "  (*) Estimated:" << std::endl
-                  << "      - f0: " << (int) f0est << " Hz" << std::endl;
+                  << "      - f0: " << (int) f0est << " Hz" << std::endl
+                  << "      - Oq: " << std::setprecision(2) << meanOq << std::endl;
 
         // write and plot
-        writePlotData(md, GNUPLOT_FILE_SPEECH);
-        writePlotData(g, GNUPLOT_FILE_SOURCE);
-        writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
+        //writePlotData(md, GNUPLOT_FILE_SPEECH);
+        //writePlotData(g, GNUPLOT_FILE_SOURCE);
+        //writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;

@@ -4,7 +4,7 @@
 
 
 template<typename T>
-static void fillArray(T arr[], int len, bool isForeign, valarray& md);
+static void fillArray(T arr[], int len, int numChannels, bool isForeign, valarray& md);
 
 template<typename T>
 static void swapEndian(T arr[], int len);
@@ -22,15 +22,17 @@ void loadWindow(audio_s& audio, valarray& md)
     bool formatIsForeign = (AUDIO_FORMAT == SoundIoFormatFloat64FE
                                 || AUDIO_FORMAT == SoundIoFormatFloat32FE);
 
-    size_t readLen = WINDOW_LENGTH * (formatIsDouble ? sizeof(double) : sizeof(float));
+    size_t readLen = WINDOW_LENGTH * audio.inStream->bytes_per_frame;
     void *targetBuf = malloc(readLen);
 
     memcpy(targetBuf, readPtr, readLen);
 
+    int numChannels = audio.inStream->layout.channel_count;
+
     if (formatIsDouble) {
-        fillArray((double *) targetBuf, WINDOW_LENGTH, formatIsForeign, md);
+        fillArray((double *) targetBuf, WINDOW_LENGTH, numChannels, formatIsForeign, md);
     } else {
-        fillArray((float *) targetBuf, WINDOW_LENGTH, formatIsForeign, md);
+        fillArray((float *) targetBuf, WINDOW_LENGTH, numChannels, formatIsForeign, md);
     }
 
     free(targetBuf);
@@ -38,7 +40,7 @@ void loadWindow(audio_s& audio, valarray& md)
 }
 
 template<typename T>
-static void fillArray(T arr[], int len, bool isForeign, valarray& md)
+static void fillArray(T arr[], int len, int numChannels, bool isForeign, valarray& md)
 {
     if (isForeign) {
         swapEndian(arr, len);
@@ -46,7 +48,7 @@ static void fillArray(T arr[], int len, bool isForeign, valarray& md)
 
     md.resize(len);
     for (int i = 0; i < len; ++i) {
-        md[i] = static_cast<double>(arr[i]);
+        md[i] = static_cast<double>(arr[i * numChannels]);
     }
 }
 

@@ -1,6 +1,10 @@
-.dep/
-.obj/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
 bin/
+
 persistedOperatorC/
 *.dat
 

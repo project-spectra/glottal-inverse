@@ -3,20 +3,20 @@
 import time
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
-TIME_RANGE = (0, .0625), (-1, 1)
+TIME_RANGE = (0, .0464172), (-1, 1)
 
-#TIME_PLOT = ('Speech signal', 'speech.dat')
-#TIME_PLOT = ('Glottal source', 'glottal_source_deriv.dat')
-#TIME_PLOT = ('Glottal flow', 'glottal_source.dat')
-TIME_PLOT = ('Group delay function', 'yaga.dat')
+TIME_PLOT = [
+    sys.argv[2] if len(sys.argv) > 2 else sys.argv[1],
+    sys.argv[1],
+]
 
 
 done = False
 def press(event):
     global done
     if event.key.lower() in { 'd', 'q', 'escape' }:
-        print("Done.")
         done = True
 
 plt.ion()
@@ -46,6 +46,7 @@ def load_file(points=None):
 
     try:
         t, y = np.genfromtxt(TIME_PLOT[1], delimiter=',').T
+        y /= np.max(np.abs(y))
         if points is None:
             points = ax.plot(t, y, linewidth=0.75, color='orange')[0]
         else:

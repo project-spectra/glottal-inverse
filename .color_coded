@@ -1,5 +1,6 @@
 -x
 c++
+-I/usr/include/eigen3
 -Iinc
 -Wall
 -Werror=implicit-function-declaration

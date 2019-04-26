@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <climits>
 #include "gci_yaga.h"
 
 
@@ -7,16 +8,16 @@ using std::vector;
 using std::deque;
 
 
-static constexpr size_t Nbest = 3;
+static constexpr int Nbest = 3;
 
 static constexpr double xi = 0.1;
 
-void selectOpenCandidates(const vector<size_t>& closed, const deque<size_t>& open, vector<size_t>& bestOpen) {
+void selectOpenCandidates(const vector<int>& closed, const deque<int>& open, vector<int>& bestOpen) {
 
     // row: nc, column: no
     std::valarray<valarray> Qc(closed.size());
 
-    size_t nc, no;
+    int nc, no;
 
     for (nc = 0; nc < closed.size() - 1; ++nc) {
         double tc = closed[nc];
@@ -29,14 +30,12 @@ void selectOpenCandidates(const vector<size_t>& closed, const deque<size_t>& ope
             Qc[nc][no] = (to - tc) / t0;
         }
     }
-    if (closed.size() >= 2) {
-        Qc[closed.size()-1] = Qc[closed.size()-2];
-    }
+    Qc[closed.size()-1] = Qc[closed.size()-2];
 
     // best path is lowest path of consistent CQ values
 
     auto costFun = [](double Qcp, double Qcq, double Qcr, double dpq, double dqr, double dpr) {
-        return (Qcp + Qcq + Qcr) * (dpq + dqr + dpr) / 6.;
+        return (Qcp + Qcq + Qcr + dpq + dqr + dpr) / 3.;
     };
 
     struct node {
@@ -50,34 +49,37 @@ void selectOpenCandidates(const vector<size_t>& closed, const deque<size_t>& ope
 
     std::array<node, Nbest> best, prev;
 
-    size_t n,p,q,r;
+    int n,p,q,r;
+    int t;
  
     for (n = 0; n < Nbest; ++n) {
         prev[n].t = -1;
         prev[n].cumCost = 0.;
     }
 
-    size_t minP = 0, nextMinP;
+    int minP = 0, nextMinP;
     double cost;
 
     double lastGoodQc = 0.2;
 
     // Each path needs to have one GOI per cycle
-    for (nc = 0; nc < closed.size(); ++nc) {
+    for (nc = 0; nc < closed.size() - 1; ++nc) {
 
         for (n = 0; n < Nbest; ++n) {
             best[n].found = false;
             best[n].cost = HUGE_VAL;
         }
       
-        nextMinP = SIZE_MAX;
+        nextMinP = INT_MAX;
 
         for (p = minP; p < open.size() - 2; ++p) {
+            t = open[p];
+
             q = p+1;
             r = p+2;
 
-            // Time is strictly increasing
-            if (prev[n].t < open[p]) {
+            // Time is between the two adjacent closing instants and strictly increasing
+            if (closed[n] < t && t < closed[n+1] && prev[n].t < t) {
                 double Qcp, Qcq, Qcr;
                 double dpq, dqr, dpr;
 
@@ -112,7 +114,7 @@ void selectOpenCandidates(const vector<size_t>& closed, const deque<size_t>& ope
             // If no candidate was found, create an "artificial" one
             // from the last good closed quotient
             if (!best[n].found) {
-                int tc = closed[n] + lastGoodQc * (closed[nc+1] - closed[n]);
+                int tc = closed[nc] + lastGoodQc * (closed[nc+1] - closed[nc]);
                 
                 best[n] = { tc, true, lastGoodQc, prev[n].cumCost };
             }
@@ -131,4 +133,6 @@ void selectOpenCandidates(const vector<size_t>& closed, const deque<size_t>& ope
 
     std::transform(bestPath.begin(), bestPath.end(), std::back_inserter(bestOpen),
                     [](const node& o) { return o.t; });
+
 }
+

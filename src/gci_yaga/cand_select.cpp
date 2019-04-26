@@ -2,6 +2,7 @@
 #include <array>
 #include "audio.h"
 #include "gci_yaga_subroutines.h"
+#include "print_iter.h"
 #include "gci_yaga.h"
 
  
@@ -13,16 +14,19 @@ static constexpr double constLambda[] = {
 static constexpr double nu = -0.3;
 
 // longest centered windowed segment is 11ms
-//static size_t endSkip;
+//static int endSkip;
 
 // how many N-best to keep
-static constexpr size_t Nbest = 3;
+static constexpr int Nbest = 3;
 
-void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, std::vector<size_t>& bestCands)
+// 
+
+
+void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, std::vector<int>& bestCands)
 {
-    const size_t endSkip = (11. / 1000. * SAMPLE_RATE) / 2 + 2;
+    static const int endSkip((11. / 1000. * SAMPLE_RATE) / 2 + 2);
 
-    size_t t;
+    int t;
     
     // skip candidates at each end if necessary (for the cost function to compute properly)
     t = cands.back().first;
@@ -36,24 +40,27 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
         cands.pop_front();
         t = cands.front().first;
     }
+    
+    if (cands.size() < 1) {
+        return;
+    }
 
     valarray norms(cands.size() - 1); 
     double maxNorm;
-
-    size_t start, n;
-    size_t r, q, p;
 
     // precalculate the norms of u between candidates and drop the unused candidate
     cand_select_precalc_norms(u, cands, norms, maxNorm);
     cands.pop_back();
 
-    const size_t Ncand(cands.size());
+    const int Ncand(cands.size());
 
     valarray lambda(constLambda, 6);
 
+    int start, r, q, p, n;
+
     struct node {
-        size_t t;
-        size_t r, q;
+        int t;
+        int r, q;
         double cost;
         double cumCost;
     };
@@ -66,8 +73,8 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
     valarray costVector;
     double cost;
    
-    size_t minR = 3;
-    size_t nbCompletePaths = 0;
+    int minR = 3;
+    int nbCompletePaths = 0;
 
     // Until all paths are complete
     while (nbCompletePaths < Nbest) {
@@ -136,5 +143,76 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
     bestCands.resize(bestPath.size());
 
     std::transform(bestPath.begin(), bestPath.end(), bestCands.begin(),
-                        [](const auto& node) { return node.t; });
+[](const auto& node) { return node.t; });
+
+    /*
+    struct node {
+        int m;
+        double cost;
+    };
+
+    std::array<valarray, Nbest> costs;
+    for (int n = 0; n < Nbest; ++n) {
+        costs[n].resize(Ncand + 1, HUGE_VAL);
+        costs[n][0] = 0.;
+    }
+
+    std::array<std::vector<int>, Nbest> paths;
+
+    for (int r = 0; r < Ncand; ++r) {
+
+        int start;
+        int m = 2;
+    
+        while (m < Ncand && cands[r].first >= cands[m].first) {
+            m++;
+        }
+        start = m;
+        
+        std::vector<node> exhSearch(Ncand);
+
+        for (m = start; m < Ncand; ++m) {
+            valarray costs;
+            cost_calc(u, gamma, norms, maxNorm, cands[m], cands[m-1], cands[m-2], costs);
+
+            double cost = cost_eval(lambda, costs);            
+
+            exhSearch[m] = { m, cost };
+        }
+
+        for (int n = 0; n < Nbest; ++n) {
+            // Sort by cumulative cost for each Nbest
+            std::sort(exhSearch.begin() + start, exhSearch.end(),
+                    [&](node& a, node& b) { return (costs[n][a.m] + a.cost)
+                                                    < (costs[n][b.m] + b.cost); });
+            
+            paths[n].push_back(exhSearch[n].m);
+
+            for (int k = start; k < Ncand; ++k) {
+                node node = exhSearch[m];
+                costs[n][node.m+1] = costs[n][node.m] + node.cost;
+            }
+        }
+    }
+
+    // At the end, pick the path with the smallest cumulative cost
+    int bestPathInd(0);
+    double bestCost(0.);
+
+    for (int n = 0; n < Nbest; ++n) {
+        double cost = costs[n][paths[n].back()];
+        
+        if (cost < bestCost) {
+            bestCost = cost;
+            bestPathInd = n;
+        }
+    }
+
+    std::vector<int> bestPathNcands = paths[bestPathInd];
+
+    bestCands.resize(bestPathNcands.size());
+
+    std::transform(bestPathNcands.begin(), bestPathNcands.end(), bestCands.begin(),
+                    [&](int m) { return cands[m].first; });
+    */
 }

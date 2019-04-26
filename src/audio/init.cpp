@@ -26,8 +26,8 @@ static const std::array<int, 5> prioSampleRates = {
 };
 
 // in s
-static const double targetWindowLength = 25. / 1000.;
-static const double targetBufferLength = 300. / 1000.;
+static const double targetWindowLength = 70. / 1000.;
+static const double targetBufferLength = 100. / 1000.;
 
 
 bool initAudio(audio_s& audio)
@@ -59,14 +59,15 @@ bool initAudio(audio_s& audio)
         std::cerr << "soundio: unable to probe device: " << soundio_strerror(audio.device->probe_error) << std::endl;
         return true;
     }
+    
+    soundio_device_sort_channel_layouts(audio.device);
 
     auto layout = soundio_best_matching_channel_layout(
             soundio_channel_layout_get_default(1), 1,
             audio.device->layouts, audio.device->layout_count
     );
     if (layout == nullptr) {
-        std::cerr << "soundio: unable to find mono channel input" << std::endl;
-        return true;
+        layout = &audio.device->layouts[0];
     }
 
     SAMPLE_RATE = 0;
@@ -99,7 +100,7 @@ bool initAudio(audio_s& audio)
     }
     audio.inStream->format = static_cast<enum SoundIoFormat>(AUDIO_FORMAT);
     audio.inStream->sample_rate = SAMPLE_RATE;
-    audio.inStream->layout = *soundio_channel_layout_get_default(1); layout;
+    audio.inStream->layout = *layout;
     audio.inStream->read_callback = &readCallback;
     audio.inStream->overflow_callback = &overflowCallback;
     audio.inStream->userdata = &audio;

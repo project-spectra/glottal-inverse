@@ -6,7 +6,6 @@ double lpcCoeffs(const valarray& x, size_t order, valarray& lpc) {
     const int m = static_cast<int>(order + 1);
 
     double aut[m + 1];
-
     lpc.resize(m);
 
     double err, eps;
@@ -21,6 +20,7 @@ double lpcCoeffs(const valarray& x, size_t order, valarray& lpc) {
         aut[j] = d;
     }
 
+    // noise floor to about -100dB:
     err = aut[0] * (1. + 1e-10);
     eps = 1e-9 * aut[0] + 1e-10;
 

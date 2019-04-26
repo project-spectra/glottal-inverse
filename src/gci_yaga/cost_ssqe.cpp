@@ -2,7 +2,7 @@
 #include "gci_yaga_subroutines.h"
 
 
-double cost_ssqe(const valarray& gamma, const size_t r)
+double cost_ssqe(const valarray& gamma, const int r)
 {
     // 0.85ms window for Sum-SQuare-Error calculation
     static const int ssqeLen(0.85 / 1000. * SAMPLE_RATE);
@@ -13,13 +13,13 @@ double cost_ssqe(const valarray& gamma, const size_t r)
 
     auto y_r(gamma[std::slice(r - ssqeOff, ssqeLen, 1)]);
     
-    size_t n;
+    int n;
     double val;
 
     double ssq(0.);
 
     for (n = 0; n < ssqeLen; ++n) {
-        val = y_r[n] - step * ((int) n - ssqeOff);
+        val = y_r[n] - step * ((double) n - (double) ssqeOff);
         
         ssq += val * val;
     }

@@ -1,11 +1,11 @@
 #include "gci_yaga.h"
 
 
-void findOpenCandidates(const std::vector<size_t>& cands, const std::vector<size_t>& bestCands, std::deque<size_t>& openCands)
+void findOpenCandidates(const std::vector<int>& cands, const std::vector<int>& bestCands, std::deque<int>& openCands)
 {
     // ~no = ~nco <symdiff> nc
 
-    std::vector<size_t> inter;
+    std::vector<int> inter;
 
     std::set_intersection(
             cands.begin(), cands.end(),

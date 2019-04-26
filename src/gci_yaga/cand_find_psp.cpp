@@ -3,8 +3,8 @@
 
 void cand_find_psp(const valarray& gamma, candvec& cands)
 {
-    const size_t N(gamma.size());
-    size_t k;
+    const int N(gamma.size());
+    int k;
 
     valarray df1(gamma.shift(1) - gamma);
     valarray df2(df1.shift(1) - df1);
@@ -30,7 +30,7 @@ void cand_find_psp(const valarray& gamma, candvec& cands)
     valarray negIdx(idx[negMaxima]);
     valarray negMid(negIdx.shift(-1) + .5 * (negIdx - negIdx.shift(-1)));
     for (double& x : negMid) {
-        size_t index = static_cast<size_t>(x);
+        int index = static_cast<int>(x);
         double value = turn_gamma[index];
         
         cands.emplace_back(index - round(value), false);
@@ -43,7 +43,7 @@ void cand_find_psp(const valarray& gamma, candvec& cands)
     valarray posIdx(idx[posMinima]);
     valarray posMid(posIdx + .5 * (posIdx.shift(1) - posIdx));
     for (double& x : posMid) {
-        size_t index = static_cast<size_t>(x);
+        int index = static_cast<int>(x);
         double value = turn_gamma[index];
         
         cands.emplace_back(index - round(value), false);

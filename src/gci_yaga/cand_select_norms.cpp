@@ -2,9 +2,9 @@
 
 void cand_select_precalc_norms(const valarray& u, const candvec& cands, valarray& norms, double& maxNorm)
 {
-    const size_t Ncand(cands.size());
+    const int Ncand(cands.size());
 
-    size_t k, p, q;
+    int k, p, q;
     double nrm;
 
     maxNorm = -HUGE_VAL;

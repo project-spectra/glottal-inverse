@@ -8,9 +8,9 @@
 
 using valarray = std::valarray<double>;
 
-std::vector<size_t> gci_sedreams(const valarray& signal, const double fs, const double f0mean);
+std::vector<int> gci_sedreams(const valarray& signal, const double fs, const double f0mean);
 
-std::deque<size_t> findPeaks(const valarray& signal, double sign);
+std::deque<int> findPeaks(const valarray& signal, double sign);
 
 double median(std::vector<double>& x);
 

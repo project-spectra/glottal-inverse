@@ -8,15 +8,15 @@
 void computeGD(const valarray& pm, valarray& gamma)
 {
     // 2ms window size
-    static const size_t L(2. / 1000. * SAMPLE_RATE);
+    static const int L(2. / 1000. * SAMPLE_RATE);
 
-    const size_t N(pm.size());
+    const int N(pm.size());
 
-    valarray w(hanning(L));
+    valarray w(hamming(L));
 
     std::vector<valarray> x(N);
 
-    for (size_t n = 0; n < N; ++n) {
+    for (int n = 0; n < N; ++n) {
         x[n] = w;
         x[n] *= pm[std::slice(n, (L < N + 1 - n) ? (N + 1 - n) : L, 1)];
     }
@@ -24,11 +24,11 @@ void computeGD(const valarray& pm, valarray& gamma)
     gamma.resize(N);
 
     valarray range(L);
-    for (size_t l = 0; l < L; ++l) {
+    for (int l = 0; l < L; ++l) {
         range[l] = l;
     }
 
-    for (size_t n = 0; n < N; ++n)
+    for (int n = 0; n < N; ++n)
     {
         valarray xn2(x[n] * x[n]);
 
