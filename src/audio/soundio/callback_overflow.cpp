@@ -1,8 +1,9 @@
 #include <iostream>
 #include "audio.h"
+#include "audio_be_soundio.h"
 
 
-void overflowCallback(struct SoundIoInStream *inStream)
+void SoundIoAudioBackend::overflowCallback(struct SoundIoInStream *inStream)
 {
     (void) inStream;
 

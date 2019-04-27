@@ -1,24 +1,26 @@
 #include <cstring>
 #include <iostream>
 #include "audio.h"
+#include "audio_be_soundio.h"
 
 
-void readCallback(struct SoundIoInStream *inStream, int frameCountMin, int frameCountMax)
+void SoundIoAudioBackend::readCallback(struct SoundIoInStream *inStream, int frameCountMin, int frameCountMax)
 {
-    audio_s *rc = static_cast<audio_s *>(inStream->userdata);
-    if (!rc->running)
+    auto self = static_cast<SoundIoAudioBackend *>(inStream->userdata);
+    
+    if (!self->m_running.load())
         return;
     
     struct SoundIoChannelArea *areas;
     int err;
 
-    char *writePtr = soundio_ring_buffer_write_ptr(rc->buffer);
-    int freeBytes = soundio_ring_buffer_free_count(rc->buffer);
+    char *writePtr = soundio_ring_buffer_write_ptr(self->m_buffer);
+    int freeBytes = soundio_ring_buffer_free_count(self->m_buffer);
     int freeCount = freeBytes / inStream->bytes_per_frame;
 
     if (freeCount < frameCountMin) {
         std::cerr << "soundio: ring buffer overflow" << std::endl;
-        rc->running = false;
+        self->m_running.store(false);
         return;
     }
 
@@ -31,7 +33,7 @@ void readCallback(struct SoundIoInStream *inStream, int frameCountMin, int frame
         err = soundio_instream_begin_read(inStream, &areas, &frameCount);
         if (err != 0) {
             std::cerr << "soundio: begin read error: " << soundio_strerror(err) << std::endl;
-            rc->running = false;
+            self->m_running.store(false);
             return;
         }
         
@@ -55,7 +57,7 @@ void readCallback(struct SoundIoInStream *inStream, int frameCountMin, int frame
         err = soundio_instream_end_read(inStream);
         if (err != 0) {
             std::cerr << "soundio: end read error: " << soundio_strerror(err) << std::endl;
-            rc->running = false;
+            self->m_running.store(false);
             return;
         }
 
@@ -65,5 +67,5 @@ void readCallback(struct SoundIoInStream *inStream, int frameCountMin, int frame
     }
 
     int advanceBytes = writeFrames * inStream->bytes_per_frame;
-    soundio_ring_buffer_advance_write_ptr(rc->buffer, advanceBytes);
+    soundio_ring_buffer_advance_write_ptr(self->m_buffer, advanceBytes);
 }

@@ -2,39 +2,32 @@
 #define AUDIO_IN_H
 
 
-#include <atomic>
 #include <valarray>
-
-#include <soundio/soundio.h>
 
 using valarray = std::valarray<double>;
 
-struct audio_s {
-    struct SoundIo *soundio;
-    struct SoundIoDevice *device;
-    struct SoundIoInStream *inStream;
-    struct SoundIoRingBuffer *buffer;
-    volatile std::atomic_bool running;
-};
-
 extern int SAMPLE_RATE;
-extern int AUDIO_FORMAT;
 extern int WINDOW_LENGTH;
 
-void readCallback(struct SoundIoInStream *inStream, int frame_count_min, int frame_count_max);
-void overflowCallback(struct SoundIoInStream *inStream);
+class AudioBackend
+{
+public:
+    virtual const char *getName() = 0;
+    virtual bool isRunning() = 0;
 
-bool initAudio(audio_s& audio);
-void destroyAudio(audio_s& audio);
+    virtual int getSampleRate() = 0;
+    virtual int getWindowLength() = 0;
 
-bool startStream(audio_s& audio);
-bool pauseStream(audio_s& audio, bool pause = true);
+    virtual bool hasAtLeastOneWindow() = 0;
+    virtual void loadWindow(valarray& md) = 0;
 
-inline bool resumeStream(audio_s& audio) {
-    return pauseStream(audio, false);
-}
+    virtual bool initAudio(double targetLength) = 0;
+    virtual void destroyAudio() = 0;
 
-bool hasAtLeastOneWindow(audio_s& audio);
-void loadWindow(audio_s& audio, valarray& md);
+    virtual bool startStream() = 0;
+    virtual void stopStream() = 0;
+
+};
+
 
 #endif // AUDIO_IN_H

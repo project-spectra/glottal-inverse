@@ -8,9 +8,11 @@
 
 using valarray = std::valarray<double>;
 
-std::vector<int> gci_sedreams(const valarray& signal, const double fs, const double f0mean);
+void gci_sedreams(const valarray& signal, const double T0mean, std::vector<int>& gci, std::vector<int>& goi);
 
 std::deque<int> findPeaks(const valarray& signal, double sign);
+
+void findZeroCrossings(const valarray& signal, std::vector<int>& pos, std::vector<int>& neg);
 
 double median(std::vector<double>& x);
 

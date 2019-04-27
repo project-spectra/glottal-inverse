@@ -19,10 +19,11 @@ file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/inc/*.h"
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
     "${PROJECT_SOURCE_DIR}/src/**/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/**/**/*.cpp"
 )
 
 add_executable(gif ${all_SRCS})
 set_property(TARGET gif PROPERTY OUTPUT_NAME "${PROJECT_SOURCE_DIR}/bin/gif" )
 
 set(CMAKE_EXE_LINKER_FLAGS "-pthread -Wl,-R . -Wl,--allow-shlib-undefined")
-target_link_libraries(gif soundio)
+target_link_libraries(gif soundio stdc++fs)

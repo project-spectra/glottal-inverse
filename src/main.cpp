@@ -5,8 +5,11 @@
 #include <iomanip>
 #include <thread>
 #include <chrono>
+#include <memory>
 
 #include "audio.h"
+#include "audio_be_soundio.h"
+#include "audio_be_file.h"
 #include "gci_yaga.h"
 #include "gci_sedreams.h"
 #include "glottal.h"
@@ -17,35 +20,50 @@
 #include "print_iter.h"
 
 
-static audio_s audio;
+static std::shared_ptr<AudioBackend> audio;
+
+int SAMPLE_RATE;
+int WINDOW_LENGTH;
+
 
 void sighand(int signum) {
     (void) signum;
-    audio.running = false;
+    audio->stopStream();
 }
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    audio.soundio = nullptr;
-    audio.device = nullptr;
-    audio.inStream = nullptr;
-    audio.buffer = nullptr;
-    
-    if (initAudio(audio)) {
+    // Target window length of 60ms
+    constexpr double targetWindowLength = 60. / 1000.;
+
+    AudioBackend *backend;
+
+    if (argc == 1) {
+        backend = new SoundIoAudioBackend;
+    } else {
+        backend = new FileAudioBackend(argv[1]);
+    }
+
+    audio.reset(backend);
+
+    if (audio->initAudio(targetWindowLength)) {
         std::cout << " **** Unable to init audio input ****" << std::endl;
         return EXIT_FAILURE;
     }
 
-    std::atexit([]() { destroyAudio(audio); });
+    std::atexit([]() { audio->destroyAudio(); });
     std::signal(SIGINT, sighand);
     std::signal(SIGTERM, sighand);
 
-    if (startStream(audio)) {
+    if (audio->startStream()) {
         std::cout << " **** Unable to start audio input ****" << std::endl;
         return EXIT_FAILURE;
     }
 
-    std::cout << " ==== Recording ====" << std::endl;
+    SAMPLE_RATE = audio->getSampleRate();
+    WINDOW_LENGTH = audio->getWindowLength();
+
+    std::cout << " ==== Starting ====" << std::endl;
 
     valarray md(WINDOW_LENGTH);
 
@@ -56,14 +74,14 @@ int main() {
 
     std::vector<int> GCIs, GOIs;
 
-    while (audio.running) {
-        if (!hasAtLeastOneWindow(audio)) {
+    while (audio->isRunning()) {
+        if (!audio->hasAtLeastOneWindow()) {
             std::this_thread::sleep_for(std::chrono::microseconds(50));
             continue;
         }
 
         // convert to doubles
-        loadWindow(audio, md);
+        audio->loadWindow(md);
         
         if (!pitch_AMDF(md, &f0est, &T0est)) {
             //std::cout << "  (/)  No voiced speech detected" << std::endl;
@@ -74,15 +92,14 @@ int main() {
         computeIAIF(md, g, dg);
 
         // estimate GCIs
-        //auto GCIsed = gci_sedreams(md, SAMPLE_RATE, f0est);
-        //printIterable(GCIsed, "GCIs (SEDREAMS) ");
-        
         GCIs.resize(0);
         GOIs.resize(0);
-        gci_yaga(dg, GCIs, GOIs);
 
-        printIterable(GCIs, "GCIs (YAGA) ");
-        printIterable(GOIs, "GOIs (YAGA) ");
+        gci_yaga(dg, GCIs, GOIs);
+        //gci_sedreams(md, T0est, GCIs, GOIs);
+
+        printIterable(GCIs, "GCIs ");
+        printIterable(GOIs, "GOIs ");
         
         // estimate Open quotient
         //double meanOq=-1;
@@ -94,12 +111,14 @@ int main() {
                   << "      - Oq: " << std::setprecision(2) << meanOq << std::endl;
 
         // write and plot
-        //writePlotData(md, GNUPLOT_FILE_SPEECH);
-        //writePlotData(g, GNUPLOT_FILE_SOURCE);
-        //writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
+        writePlotData(md, GNUPLOT_FILE_SPEECH);
+        writePlotData(g, GNUPLOT_FILE_SOURCE);
+        writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;
+
+    audio->destroyAudio();
 
     return EXIT_SUCCESS;
 }

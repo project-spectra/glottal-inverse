@@ -1,6 +1,7 @@
 #include <climits>
 #include <cstring>
 #include "audio.h"
+#include "audio_be_soundio.h"
 
 
 template<typename T>
@@ -10,33 +11,34 @@ template<typename T>
 static void swapEndian(T arr[], int len);
 
 
-void loadWindow(audio_s& audio, valarray& md)
+void SoundIoAudioBackend::loadWindow(valarray& md)
 {
     // again, assume it's mono channel
     // also assume that the buffer has enough frames
-    char *readPtr = soundio_ring_buffer_read_ptr(audio.buffer);
+    char *readPtr = soundio_ring_buffer_read_ptr(m_buffer);
 
-    bool formatIsDouble = (AUDIO_FORMAT == SoundIoFormatFloat64NE
-                                || AUDIO_FORMAT == SoundIoFormatFloat64FE);
+    SoundIoFormat fmt = m_inStream->format;
+    int numChannels = m_inStream->layout.channel_count;
+
+    bool formatIsDouble = (fmt == SoundIoFormatFloat64NE
+                                || fmt == SoundIoFormatFloat64FE);
     
-    bool formatIsForeign = (AUDIO_FORMAT == SoundIoFormatFloat64FE
-                                || AUDIO_FORMAT == SoundIoFormatFloat32FE);
+    bool formatIsForeign = (fmt == SoundIoFormatFloat64FE
+                                || fmt == SoundIoFormatFloat32FE);
 
-    size_t readLen = WINDOW_LENGTH * audio.inStream->bytes_per_frame;
+    size_t readLen = m_windowLength * m_inStream->bytes_per_frame;
     void *targetBuf = malloc(readLen);
 
     memcpy(targetBuf, readPtr, readLen);
 
-    int numChannels = audio.inStream->layout.channel_count;
-
     if (formatIsDouble) {
-        fillArray((double *) targetBuf, WINDOW_LENGTH, numChannels, formatIsForeign, md);
+        fillArray((double *) targetBuf, m_windowLength, numChannels, formatIsForeign, md);
     } else {
-        fillArray((float *) targetBuf, WINDOW_LENGTH, numChannels, formatIsForeign, md);
+        fillArray((float *) targetBuf, m_windowLength, numChannels, formatIsForeign, md);
     }
 
     free(targetBuf);
-    soundio_ring_buffer_advance_read_ptr(audio.buffer, readLen);
+    soundio_ring_buffer_advance_read_ptr(m_buffer, readLen);
 }
 
 template<typename T>

@@ -4,15 +4,23 @@
 
 double estimateOq(const std::vector<int>& gci, const std::vector<int>& goi)
 {
+    if (gci.empty() || goi.empty()) 
+        return -1.;
+
     double mean(0.), Oq;
 
-    for (int r = 0; r < goi.size(); ++r) {
+    int r;
+
+    // must have GCI > GCI
+    r = (gci[0] > goi[0] ? 1 : 0);
+
+    for (; r < goi.size() && r + 1 < gci.size(); ++r) {
         double t0 = gci[r+1] - gci[r];
-        double to = gci[r+1] - goi[r];
+        double to = gci[r] - goi[r];
 
         Oq = to / t0;
 
-        //printf("Oq[%zu] = %f\n", r, Oq);
+        printf("Oq[%d] = %f\n", r, Oq);
 
         mean += Oq;
     }
