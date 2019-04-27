@@ -12,13 +12,11 @@ void gci_yaga(const valarray& dg, std::vector<int>& gci, std::vector<int>& goi)
 
     valarray pm;
     computeSWT(u, pm);
-
     writePlotData(pm, "yaga_pm.dat");
 
     valarray gamma;
     computeGD(pm, gamma);
-
-    writePlotData(gamma, "yaga_gamma.dat");
+    writePlotData(gamma, "yaga_gd.dat");
     
     candvec candPairs;
     findCandidates(gamma, candPairs);

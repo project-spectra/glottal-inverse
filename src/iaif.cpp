@@ -56,7 +56,7 @@ void computeIAIF(const valarray& s, valarray& g, valarray& dg) {
     valarray win(hanning(M));
 
     for (size_t k = 0; k < hpfilt; ++k) {
-        //applyHpf(x);
+        applyHpf(x);
     }
 
     // add the ramp
