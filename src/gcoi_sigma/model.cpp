@@ -1,3 +1,4 @@
+#include <cmath>
 #include "audio.h"
 #include "gcoi_sigma_subs.h"
 
@@ -16,8 +17,8 @@ void gcoi_sigma_model(const arma::ivec& gic, const valarray& crmp, const valarra
 
     for (int i = 0; i < gic.size(); ++i) 
     {
-        int lo = round(gic[i] - mgrdelMax);
-        int hi = std::min(lo + mgrdelLen, (int) crmp.size()) - 1;
+        int lo = std::max(gic[i] - (R - 1) / 2, static_cast<arma::sword>(0));
+        int hi = std::min(gic[i] + (R - 1) / 2, static_cast<arma::sword>(crmp.size() - 1));
 
         if (lo >= 0 && hi < grdel.size()) {
             valarray crmpSeg = crmp[std::slice(lo, hi - lo + 1, 1)];
