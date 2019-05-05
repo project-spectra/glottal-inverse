@@ -10,15 +10,15 @@
 #include "audio.h"
 #include "audio_be_soundio.h"
 #include "audio_be_file.h"
+#include "gcoi_sigma.h"
 #include "gci_yaga.h"
-#include "gci_sedreams.h"
 #include "glottal.h"
 #include "gnuplot.h"
 #include "iaif.h"
+#include "vtl.h"
 #include "normalize.h"
 #include "pitch.h"
 #include "print_iter.h"
-
 
 static std::shared_ptr<AudioBackend> audio;
 
@@ -72,51 +72,63 @@ int main(int argc, char *argv[]) {
 
     double f0est, T0est;
 
-    std::vector<int> GCIs, GOIs;
+    double meanVTL = -1;
 
     while (audio->isRunning()) {
         if (!audio->hasAtLeastOneWindow()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             continue;
         }
 
         // convert to doubles
         audio->loadWindow(md);
-        
+
         if (!pitch_AMDF(md, &f0est, &T0est)) {
             //std::cout << "  (/)  No voiced speech detected" << std::endl;
             continue;
         }
 
+        // estimate vocal tract length
+        //double vtl = estimateVTL(md);
+        double vtl = -1;
+
+        meanVTL = meanVTL > 0 ? (meanVTL + vtl) / 2. : vtl;
+
         // estimate glottal source with IAIF
         computeIAIF(md, g, dg);
 
         // estimate GCIs
-        GCIs.resize(0);
-        GOIs.resize(0);
+        std::vector<int> GCIs;
+        std::vector<int> GOIs;
 
-        gci_yaga(dg, GCIs, GOIs);
-        //gci_sedreams(md, T0est, GCIs, GOIs);
-
-        printIterable(GCIs, "GCIs ");
-        printIterable(GOIs, "GOIs ");
+        gcoi_sigma(g, GCIs, GOIs);
+        //gci_yaga(dg, T0est, GCIs, GOIs);
         
+        printIterable(GCIs, "GCIs");
+        printIterable(GOIs, "GOIs");
+
         // estimate Open quotient
-        //double meanOq=-1;
-        double meanOq = estimateOq(GCIs, GOIs);
+        //double meanOq = estimateOq(GCIs, GOIs);
+        double meanOq = -1;
                
         // print results
-        std::cout << "  (*) Estimated:" << std::endl
-                  << "      - f0: " << (int) f0est << " Hz" << std::endl
-                  << "      - Oq: " << std::setprecision(2) << meanOq << std::endl;
+        std::cout << std::endl;
+        std::cout << "  (*) Estimated:" << std::endl;
+        std::cout << "      - f0: " << (int) f0est << " Hz" << std::endl;
+        std::cout << "      - VTL: " << std::fixed << std::setprecision(1) << vtl << " cm" << std::endl;
+        std::cout << "      - Oq: " << std::setprecision(2) << meanOq << std::endl;
 
         // write and plot
-        writePlotData(md, GNUPLOT_FILE_SPEECH);
-        writePlotData(g, GNUPLOT_FILE_SOURCE);
-        writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
+        //writePlotData(md, GNUPLOT_FILE_SPEECH);
+        //writePlotData(g, GNUPLOT_FILE_SOURCE);
+        //writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;
+
+    std::cout << std::endl;
+    std::cout << "  (*) Final estimations:" << std::endl;
+    std::cout << "      - Mean VTL: " << std::fixed << std::setprecision(1) << meanVTL << " cm " << std::endl;
 
     audio->destroyAudio();
 

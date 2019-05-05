@@ -2,10 +2,9 @@
 #define POLY_H
 
 
-#include <complex>
-#include <eigen3/Eigen/Core>
+#include <armadillo>
 
-Eigen::VectorXcd poly(const Eigen::VectorXcd& zeros);
+arma::cx_vec poly(const arma::cx_vec& zeros);
 
 
 #endif // POLY_H

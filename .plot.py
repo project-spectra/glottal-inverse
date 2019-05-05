@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-TIME_RANGE = (0, .0464172), (-1, 1)
+TIME_RANGE = (0, .06), (-1, 1)
 
 TIME_PLOT = [
     sys.argv[2] if len(sys.argv) > 2 else sys.argv[1],
@@ -46,7 +46,8 @@ def load_file(points=None):
 
     try:
         t, y = np.genfromtxt(TIME_PLOT[1], delimiter=',').T
-        y /= np.max(np.abs(y))
+        if np.max(np.abs(y)) >= 1e-10:
+            y /= np.max(np.abs(y))
         if points is None:
             points = ax.plot(t, y, linewidth=0.75, color='orange')[0]
         else:

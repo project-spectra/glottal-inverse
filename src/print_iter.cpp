@@ -1,6 +1,7 @@
 #include <experimental/iterator>
 #include <iostream>
 #include <utility>
+#include <valarray>
 #include <vector>
 #include <deque>
 #include "print_iter.h"

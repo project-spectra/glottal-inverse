@@ -10,7 +10,7 @@ void findCandidates(const valarray& gamma, candvec& cands)
 
     // Phase slope projection technique candidates
     cand_find_psp(gamma, cands);
-
+    
     // Sort candidates per time
     std::sort(cands.begin(), cands.end());
 

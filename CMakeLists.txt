@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.10)
 project(glottal-inverse)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "-pthread -fexceptions -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaration -pipe -fPIC -fstack-protector-strong")
+set(CMAKE_CXX_FLAGS "-pthread -fexceptions -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaration -pipe -fPIC -fstack-protector-strong -fopenmp -DARMA_DONT_USE_WRAPPER")
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g3")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Os -Ofast -march=native")
 endif()
@@ -26,4 +26,4 @@ add_executable(gif ${all_SRCS})
 set_property(TARGET gif PROPERTY OUTPUT_NAME "${PROJECT_SOURCE_DIR}/bin/gif" )
 
 set(CMAKE_EXE_LINKER_FLAGS "-pthread -Wl,-R . -Wl,--allow-shlib-undefined")
-target_link_libraries(gif soundio stdc++fs)
+target_link_libraries(gif soundio stdc++fs openblas lapack)

@@ -7,7 +7,7 @@ static constexpr double mu = 1.;
 static constexpr double sigma = 0.2;
 
 
-void cost_calc(const valarray& u, const valarray& gamma, const valarray& norms, const double maxNorm, const cand& r_cand, const cand& q_cand, const cand& p_cand, valarray& cost)
+void cost_calc(const valarray& u, const valarray& gamma, const valarray& norms, const double maxNorm, const valarray& FNs, const double maxFN, const cand& r_cand, const cand& q_cand, const cand& p_cand, valarray& cost)
 {
     int r(r_cand.first);
     bool is_zcr(r_cand.second);
@@ -31,8 +31,8 @@ void cost_calc(const valarray& u, const valarray& gamma, const valarray& norms, 
     cost[2] = is_zcr ? -0.5 : 0.5;
 
     // Normalized energy (Frobenius norm)
-    FN_r = cost_FN(u, r);
-    FN_q = cost_FN(u, q);
+    FN_r = FNs[r] / maxFN;
+    FN_q = FNs[q] / maxFN;
     cost[3] = 0.5 - fmin(FN_r, FN_q) / fmax(FN_r, FN_q);
     
     // Ideal phase-slope function deviation

@@ -15,10 +15,11 @@ void cand_find_nzcr(const valarray& gamma, candvec& cands);
 void cand_find_psp(const valarray& gamma, candvec& cands);
 
 void cand_select_precalc_norms(const valarray& u, const candvec& cands, valarray& norms, double& maxNorm);
+void cand_select_precalc_frobs(const valarray& u, valarray& norms, double& maxNorm);
 
 double cost_eval(const valarray& lambda, const valarray& costs);
 
-void cost_calc(const valarray& u, const valarray& gamma, const valarray& norms, const double maxNorm, const cand& r_cand, const cand& q_cand, const cand& p_cand, valarray& cost);
+void cost_calc(const valarray& u, const valarray& gamma, const valarray& norms, const double maxNorm, const valarray& FNs, const double maxFN, const cand& r_cand, const cand& q_cand, const cand& p_cand, valarray& cost);
 
 double cost_khi(const double mu, const double sigma, const double y);
 double cost_ncorr(const valarray& u, const int r, const int p);

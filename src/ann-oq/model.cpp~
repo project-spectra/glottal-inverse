@@ -1,0 +1,28 @@
+#include "ann_oq.h"
+#include "audio.h"
+
+using namespace tiny_dnn;
+
+
+AnnOq::AnnOq()
+{
+    net = make_mlp<activation::tanh>({
+            (unsigned long) WINDOW_LENGTH, // input layer: signal window
+            100, // hidden layer
+            1 // output layer: estimated open quotient
+    });
+}
+
+void AnnOq::trainDataset(const std::string& dirPath)
+{
+    adagrad opt;
+
+    std::vector<vec_t> inputData;
+    std::vector<vec_t> desiredOut;
+
+    size_t batchSize = 10;
+    size_t epochs = 20;
+
+    net.fit<mse>(opt, inputData, desiredOut, batchSize, epochs);
+
+}

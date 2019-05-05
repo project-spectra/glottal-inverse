@@ -1,6 +1,5 @@
 #include <climits>
 #include <cmath>
-#include <tuple>
 #include "audio.h"
 #include "filter.h"
 #include "window.h"
@@ -14,15 +13,10 @@ using std::vector;
 static constexpr int hpfilt = 3;
 
 
-void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci, vector<int>& goi) {
+void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci) {
 
-    // 0.15ms margin on the GCI interval
-    const int gciMargin = 0.15 / 1000. * SAMPLE_RATE;
-    
-    // 0.25ms margin on the GOI interval
-    const int goiMargin = 0.25 / 1000. * SAMPLE_RATE;
-    
     const int N(signal.size());
+    int n, k;
 
     valarray res;
 
@@ -35,8 +29,8 @@ void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci,
     );
 
     // filter out any NaNs
-    for (int n = 0; n < N; ++n) {
-        if (!std::isfinite(res[N])) {
+    for (n = 0; n < N; ++n) {
+        if (!std::isnormal(res[N])) {
             res[n] = 0.;
         }
     }
@@ -51,101 +45,105 @@ void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci,
     filter_iir(blackwin, { static_cast<double>(blackwin.size()) }, signal, meanBasedSignal);
 
     // Remove low frequency contents  TODO:ellipsis IIR fiter
-    for (int n = 0; n < hpfilt; ++n) {
+    for (n = 0; n < hpfilt; ++n) {
         filter_hpf(meanBasedSignal, 50. / (SAMPLE_RATE / 2.));
     }
     normalize(meanBasedSignal);
 
     // Detect minima and maxima of the mean-based signal
-    auto maxima = findPeaks(meanBasedSignal, 1.);
-    auto minima = findPeaks(meanBasedSignal, -1.);
+    auto maxInd = findPeaks(meanBasedSignal, 1.);
+    auto minInd = findPeaks(meanBasedSignal, -1.);
+
+    while (maxInd.front() < minInd.front()) {
+        maxInd.pop_front();
+    }
+    while (minInd.back() > maxInd.back()) {
+        minInd.pop_back();
+    }
     
-    while (maxima.front() < minima.front()) {
-        maxima.pop_front();
-    }
-    while (minima.back() > maxima.back()) {
-        minima.pop_back();
-    }
+    // Determine the median position of GCIs within the cycle
+    normalize(res);
 
-    maxima.shrink_to_fit();
-    minima.shrink_to_fit();
+    // find points of res > threshold
+    vector<int> gciCandInd;
+    constexpr double resThresholdGci(0.4);
 
-    std::vector<int> posZcrs, negZcrs;
-    findZeroCrossings(meanBasedSignal, posZcrs, negZcrs);
-
-    // Find GCI and GOI intervals
-    std::vector<std::pair<int, int>> gciInterv, goiInterv;
-
-    for (int nc = 0; nc < minima.size(); ++nc) {
-        std::pair<int, int> gci, goi;
-
-        gci.first = minima[nc];
-        // the first following positive zero-crossing
-        for (int t : posZcrs) {
-            if (t > gci.first) {
-                gci.second = t;
-                break;
-            }
+    for (n = 0; n < N; ++n) {
+        if (res[n] > resThresholdGci) {
+            gciCandInd.push_back(n);
         }
-        
-        // Pad the GOI interval with a 0.25ms margin
-        /*gci.first = std::max(0, gci.first - gciMargin);
-        gci.second = std::min(N, gci.second + gciMargin);*/
+    }
 
-        goi.first = maxima[nc];
-        // the first following negative zero-crossing
-        for (int t : negZcrs) {
-            if (t > goi.first) {
-                goi.second = t;
+    // relative positive indices
+    const int gciCandLen(gciCandInd.size());
+    vector<double> relGciInd(gciCandLen, 0);
+
+    for (n = 0; n < gciCandLen; ++n) {
+        // pos = min_k { abs(minInd[k] - posInd[n]) }
+     
+        int pos(-1);
+        int val, minVal(INT_MAX);
+
+        for (k = 0; k < minInd.size(); ++k) {
+            val = abs((int) minInd[k] - (int) gciCandInd[n]);
+            if (val < minVal) {
+                pos = k;
+                minVal = val;
             }
         }
 
-        // Pad the GOI interval with a 0.25ms margin
-        /*goi.first = std::max(0, goi.first - goiMargin);
-        goi.second = std::min(N, goi.second + goiMargin);*/
+        double num = (double) gciCandInd[n] - (double) minInd[pos];
+        double den = (double) maxInd[pos] - (double) minInd[pos];
 
-        printf("GOI interv %d :  %d - %d \n", nc, goi.first, goi.second);
-
-        gciInterv.push_back(gci);
-        goiInterv.push_back(goi);
+        relGciInd[n] = num / den;
     }
+    
+    double ratioGCI = median(relGciInd);
 
-    // Detect GCIs and GOIs from the residual signal using the presence intervals derived from the mean signal
-    const int nbCand(minima.size());
+    // Detect GCIs from the residual signal using the presence intervals derived from the mean signal
+    const int minLen(minInd.size());
     gci.resize(0);
-    goi.resize(0);
 
-    for (int nc = 0; nc < nbCand; ++nc) {
-        int start, stop;
-        int maxi;
-        double maxr;
+    int maxVal, minVal;
+    int interv;
+    double alpha;
 
-        // Get the GCI
-        std::tie(start, stop) = gciInterv[nc];
+    int start, stop;
 
-        maxi = start;
-        maxr = -HUGE_VAL;
-        for (int i = start; i <= stop; ++i) {
-            if (res[i] > maxr) {
-                maxr = res[i];
-                maxi = i;
-            }
+    for (n = 0; n < minLen; ++n) {
+        maxVal = maxInd[n];
+        minVal = minInd[n];
+        interv = maxVal - minVal;
+
+        // Get GCI
+    
+        alpha = ratioGCI - 0.35;
+        start = minVal + round(alpha * interv);
+
+        alpha = ratioGCI + 0.35;
+        stop = minVal + round(alpha * interv);
+      
+        if (start < 1) {
+            start = 1;
+        } else if (start > N) {
+            break;
+        }
+        if (stop > N) {
+            stop = N;
         }
 
-        gci.push_back(maxi);
-
-        // Get the GOI
-        std::tie(start, stop) = goiInterv[nc];
-
-        maxi = start;
-        maxr = -HUGE_VAL;
-        for (int i = start; i <= stop; ++i) {
-            if (res[i] > maxr) {
-                maxr = res[i];
-                maxi = i;
+        if (stop > 1) {
+            int maxi(start);
+            double maxr(-HUGE_VAL);
+            for (int i = start; i <= stop; ++i) {
+                if (res[i] > maxr) {
+                    maxr = res[i];
+                    maxi = i;
+                }
             }
+
+            gci.push_back(maxi);
         }
 
-        goi.push_back(maxi);
     }
 }

@@ -16,11 +16,11 @@ double estimateOq(const std::vector<int>& gci, const std::vector<int>& goi)
 
     for (; r < goi.size() && r + 1 < gci.size(); ++r) {
         double t0 = gci[r+1] - gci[r];
-        double to = gci[r] - goi[r];
+        double to = gci[r+1] - goi[r];
 
         Oq = to / t0;
 
-        printf("Oq[%d] = %f\n", r, Oq);
+        //printf("Oq[%d] = %f\n", r, Oq);
 
         mean += Oq;
     }

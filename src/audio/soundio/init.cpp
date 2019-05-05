@@ -106,7 +106,7 @@ bool SoundIoAudioBackend::initAudio(double targetWindowLength)
     }
 
     std::cout << "soundio: " << m_inStream->layout.name << " "
-              << SAMPLE_RATE << " Hz "
+              << selectedSampleRate << " Hz "
               << soundio_format_string(selectedFmt) << std::endl;
 
     if (targetWindowLength > targetBufferLength) {

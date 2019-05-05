@@ -22,9 +22,11 @@ static constexpr int Nbest = 3;
 // 
 
 
-void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, std::vector<int>& bestCands)
+void selectCandidates(const valarray& u, const valarray& gamma, double T0mean, candvec& cands, std::vector<int>& bestCands)
 {
     static const int endSkip((11. / 1000. * SAMPLE_RATE) / 2 + 2);
+  
+    static const int searchLength = 1.1 * T0mean * SAMPLE_RATE;
 
     int t;
     
@@ -45,18 +47,23 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
         return;
     }
 
+    // precalculate the norms of u between candidates and drop the unused candidate
     valarray norms(cands.size() - 1); 
     double maxNorm;
 
-    // precalculate the norms of u between candidates and drop the unused candidate
     cand_select_precalc_norms(u, cands, norms, maxNorm);
     cands.pop_back();
+
+    // precalculate the FN of each sample
+    valarray FNs(u.size());
+    double maxFN;
+    cand_select_precalc_frobs(u, FNs, maxFN);
 
     const int Ncand(cands.size());
 
     valarray lambda(constLambda, 6);
 
-    int r, k, n;
+    /*int r, k, n;
 
     struct node {
         int t;
@@ -80,33 +87,44 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
         int q(r >= 1 ? r - 1 : r);
         int p(q >= 1 ? q - 1 : q);
 
-        cost_calc(u, gamma, norms, maxNorm, cands[r], cands[q], cands[p], costVector);
+        cost_calc(
+                u, gamma,
+                norms, maxNorm,
+                FNs, maxFN,
+                cands[r], cands[q], cands[p],
+                costVector
+        );
         double cost = cost_eval(lambda, costVector);
 
         costs[r+1] = { cands[r].first, r, cost, 0. };
     }
-    
+
     // Search for Nbest paths
     for (k = 0; k < Ncand; ++k) {
         for (n = 0; n < Nbest; ++n) {
             node lastNode = paths[n].back();
 
-            std::vector<node> sortedCosts;
-            std::copy(std::begin(costs) + lastNode.r + 1, std::end(costs), std::back_inserter(sortedCosts));
+            std::vector<node> sortedCosts(costs);
 
             // Calculate cumulative costs
-            for (auto& node : sortedCosts) {  
-                node.cumCost = lastNode.cumCost + node.cost;
+            for (auto& node : sortedCosts) {
+                if (node.r <= lastNode.r) {
+                    node.cumCost = HUGE_VAL;
+                } else {
+                    node.cumCost = lastNode.cumCost + node.cost;
+                }
             }
 
             // Find the Nbest nodes
-            std::partial_sort(sortedCosts.begin(), std::min(sortedCosts.begin() + Nbest, sortedCosts.end()),
-                                sortedCosts.end(), [] (auto& a, auto& b) { return a.cumCost >= b.cumCost; });
+            if (lastNode.r + n < Ncand) {
+                std::partial_sort(sortedCosts.begin(), sortedCosts.begin() + Nbest, sortedCosts.end(),
+                                  [] (auto& a, auto& b) { return a.cumCost < b.cumCost; });
            
-            // Push the N-th best on to the path
-            node bestNode = sortedCosts[std::min(n, (int) sortedCosts.size())]; 
-            if (sortedCosts.size() >= Nbest) {
-                paths[n].push_back(bestNode);
+                // Push the N-th best on to the path
+                node bestNode = sortedCosts[lastNode.r + n];
+                if (sortedCosts.size() >= Nbest) {
+                    paths[n].push_back(bestNode);
+                }
             }
         }
     }
@@ -116,15 +134,32 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
                                         return a.back().cumCost < b.back().cumCost;
                                     }));
 
-    bestCands.resize(bestPath.size() - 1);
-
-    std::transform(bestPath.begin() + 1, bestPath.end(), bestCands.begin(),
+    std::transform(bestPath.begin(), bestPath.end(), std::back_inserter(bestCands),
                         [](const auto& node) { return node.t; });
+*/
 
+    int nbCompletePaths = 0;
     
+    struct node {
+        int t;
+        int r, q;
+        double cost;
+        double cumCost;
+    };
 
+    int start, minR;
+    int n, r, q, p;
 
-    /*
+    std::array<std::vector<node>, Nbest> paths;
+    for (n = 0; n < Nbest; ++n) {
+        paths[n].push_back({ cands[0].first, 0, 0, 0.0, 0.0 });
+    }
+
+    valarray costVector;
+    double cost(HUGE_VAL);
+
+    minR = 2;
+
     // Until all paths are complete
     while (nbCompletePaths < Nbest) {
 
@@ -136,7 +171,7 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
         }
 
         // Loop through all subsequent candidates
-        for (start = minR; start < Ncand; ++start) {
+        for (start = minR; start < minR + searchLength && start < Ncand; ++start) {
             r = start;
 
             // For each best path
@@ -148,11 +183,11 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
 
                 // Time has to be strictly increasing
                 if (q < r) {
-                    cost_calc(u, gamma, norms, maxNorm, cands[r], cands[q], cands[p], costVector);
+                    cost_calc(u, gamma, norms, maxNorm, FNs, maxFN, cands[r], cands[q], cands[p], costVector);
                     
                     // Pass the voicing detector
                     if (costVector[0] < nu) {
-                        cost_eval(lambda, costVector);
+                        cost = cost_eval(lambda, costVector);
 
                         // If this node is lesser than the last least one, replace it.
                         if (cost < bestNode[n].cost) {
@@ -193,7 +228,7 @@ void selectCandidates(const valarray& u, const valarray& gamma, candvec& cands, 
 
     std::transform(bestPath.begin(), bestPath.end(), bestCands.begin(),
 [](const auto& node) { return node.t; });
-    */
+    
 
     /*
     struct node {

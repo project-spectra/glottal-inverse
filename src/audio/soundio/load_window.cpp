@@ -52,6 +52,7 @@ static void fillArray(T arr[], int len, int numChannels, bool isForeign, valarra
     for (int i = 0; i < len; ++i) {
         md[i] = static_cast<double>(arr[i * numChannels]);
     }
+
 }
 
 template<typename T>

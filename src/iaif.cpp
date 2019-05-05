@@ -15,10 +15,10 @@
 static constexpr double d = 0.98;
 
 // How many times to apply highpass filter
-static constexpr size_t hpfilt = 1;
+static constexpr size_t hpfilt = 3;
 
-static constexpr double fc = 70.;  // Cutoff frequency for the high-pass filter
-static constexpr size_t Nord = 6; // Butterworth order for the HPF 
+static constexpr double fc = 50.;  // Cutoff frequency for the high-pass filter
+static constexpr size_t Nord = 5; // Butterworth order for the HPF 
 
 
 static void applyInt(const valarray& x, valarray& res) {
@@ -90,5 +90,5 @@ void computeIAIF(const valarray& s, valarray& g, valarray& dg) {
     applyInt(g2, g);
 
     dg = g.shift(1) - g;
-    dg[0] = g[0];
+    dg[0] = dg[1];
 }

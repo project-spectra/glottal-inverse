@@ -1,44 +1,49 @@
-# (Attempt) Implementation of a glottal inverse filtering algorithm
+# Voice analysis software - tailored for trans voice analysis
 
-Written by Chloé (Rika) Ichinose, under MIT License
+Written by Clo (Rika) Ichinose, under MIT License
 
 ---
 
 ## Dependencies
 
-* GNU Scientific Library 2.5 with CBLAS
-* PortAudio v19
+* soundio 1.1.0
+* cereal `51cbda5` (build only)
+* tiny-dnn `c0f576f` (build only)
 
 ---
 
 ## How to use
 
 ```sh
-make BUILD_TYPE=Release
+mkdir build && cd build
+cmake ..
+make
 ```
 Builds release variant binaries.
 
 ```sh
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
 make
-# or
-make BUILD_TYPE=Debug
 ```
-Builds ddebug variant binaries.
+Builds debug variant binaries.
 
-See `Makefile` for more make targets.
+To run, go to the project's root directory and run `bin/gif`.
+You can also call the program with an argument to load an audio file instead of line-in.
 
 ---
 
 ## Sources and references
 
-* Alternating minimisation for glottal inverse filtering - [Ismael Rodrigo Bleyer et al 2017 Inverse Problems 33 065005](https://doi.org/10.1088/1361-6420/aa6eb8)
-* COVAREP's implementation of the IAIF algorithm - [COVAREP's GitHub repository](https://github.com/covarep/covarep/blob/master/glottalsource/)
-* The algebra of harmonic functions for a matrix-valued transfer operator - [arXiv:math/0611539v3 (math.FA) 7 Jun 2007](https://arxiv.org/pdf/math/0611539.pdf)
-* MATLAB's explanation of their LPC analysis algorithm - [Mathworks MATLAB Documentation lpc](https://www.mathworks.com/help/signal/ref/lpc.html)
-* Time-domain digital filter representations - [DSPRELATED.com Introduction to Digital Filters](https://www.dsprelated.com/freebooks/filters/Time_Domain_Digital_Filter.html)
-
-**TODO: List all references**
+* [COVAREP's GitHub repository](https://github.com/covarep/covarep)
+* [Mathworks MATLAB Documentation](https://www.mathworks.com/help)
+* Drugman, Thomas & Dutoit, Thierry. (2009). Glottal closure and opening instant detection from speech signals. [INTERSPEECH. 2891-2894.](https://www.semanticscholar.org/paper/Glottal-closure-and-opening-instant-detection-from-Drugman-Dutoit/d47245d0d5bc57f36a51ac82abe99582046ea518)
+* P. A. Naylor, A. Kounoudes, J. Gudnason and M. Brookes, "Estimation of Glottal Closure Instants in Voiced Speech Using the DYPSA Algorithm," in IEEE Transactions on Audio, Speech, and Language Processing, vol. 15, no. 1, pp. 34-43, Jan. 2007.
+* M. R. P. Thomas, J. Gudnason and P. A. Naylor, "Estimation of Glottal Closing and Opening Instants in Voiced Speech Using the YAGA Algorithm," in IEEE Transactions on Audio, Speech, and Language Processing, vol. 20, no. 1, pp. 82-91, Jan. 2012. [doi: 10.1109/TASL.2011.2157684](https://doi.org/10.1109/TASL.2011.2157684)
+[doi: 10.1109/TASL.2006.876878](https://doi.org/10.1109/TASL.2006.876878)
+* Kane, John & Scherer, Stefan & P Morency, L & Gobl, C. (2013). A comparative study of glottal open quotient estimation techniques. [Proceedings of the Annual Conference of the International Speech Communication Association, INTERSPEECH. 1658-1662.](https://www.isca-speech.org/archive/archive_papers/interspeech_2013/i13_1658.pdf)
+* Conrad Sanderson and Ryan Curtin. An Open Source C++ Implementation of Multi-Threaded Gaussian Mixture Models, k-Means and Expectation Maximisation. [International Conference on Signal Processing and Communication Systems, 2017.](http://arma.sourceforge.net/arma_gmm_spcs_2017.pdf)
 
 ---
 
-Readme was last updated on Jan 23., 2019
+Readme was last updated on Apr.29, 2019

@@ -1,43 +1,43 @@
 #include <algorithm>
+#include <climits>
 #include "gnuplot.h"
 #include "normalize.h"
 #include "print_iter.h"
 #include "gci_yaga.h"
+#include "gci_sedreams.h"
 
 
-void gci_yaga(const valarray& dg, std::vector<int>& gci, std::vector<int>& goi)
+void gci_yaga(const valarray& u, const double T0mean, std::vector<int>& gci, std::vector<int>& goi)
 {
-    // pre-emphasize u by computing its Teager operator
-    valarray u = dg;// * (dg * dg - dg.cshift(1) * dg.cshift(-1));
-
-    valarray pm;
-    computeSWT(u, pm);
-    writePlotData(pm, "yaga_pm.dat");
+    valarray p;
+    computeSWT(u, p);
 
     valarray gamma;
-    computeGD(pm, gamma);
-    writePlotData(gamma, "yaga_gd.dat");
-    
+    computeGD(p, gamma);
+   
+    writePlotData(p, "p.dat");
+    writePlotData(gamma, "g.dat");
+
     candvec candPairs;
     findCandidates(gamma, candPairs);
+
+    printIterable(candPairs, "GCI cands");
 
     if (candPairs.empty()) {
         return;
     }
 
-    selectCandidates(u, gamma, candPairs, gci);
+    selectCandidates(u, gamma, T0mean, candPairs, gci);
 
-    // Transform the pairs to their time in samples
-    std::vector<int> cands(candPairs.size());
-    std::transform(candPairs.begin(), candPairs.end(), cands.begin(),
-                    [] (const auto& c) { return c.first; });
+    printIterable(candPairs, "GCI selec");
 
-    // Remove duplicate entries
-    auto last = std::unique(cands.begin(), cands.end());
-    cands.erase(last, cands.end());
-
+    // Transform the pairs to their time in sample
     std::deque<int> openCands;
-    findOpenCandidates(cands, gci, openCands);
+    findOpenCandidates(candPairs, gci, openCands);
+
+    printIterable(openCands, "GOI cands");
 
     selectOpenCandidates(gci, openCands, goi);
+
+    printIterable(goi, "GOI selec");
 }

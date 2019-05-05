@@ -3,7 +3,7 @@
 #include "gci_yaga_subroutines.h"
 
 
-void cand_select_frobs(const valarray& u, double& maxFN, valarray& FNs)
+void cand_select_precalc_frobs(const valarray& u, valarray& FNs, double& maxFN)
 {
     // Prediction order
     static const int p(1. / 1000. * SAMPLE_RATE);
@@ -24,8 +24,7 @@ void cand_select_frobs(const valarray& u, double& maxFN, valarray& FNs)
     
     w /= (p + 1.);
 
-    filter_fir(w, u, FNs);
+    filter_fir(w, u * u, FNs);
 
     maxFN = FNs.max();
-
 }
