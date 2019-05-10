@@ -1,3 +1,5 @@
+#ifndef __ANDROID__
+
 #include <array>
 #include <iostream>
 #include "audio.h"
@@ -126,3 +128,4 @@ bool SoundIoAudioBackend::initAudio(double targetWindowLength)
     return false;
 }
 
+#endif

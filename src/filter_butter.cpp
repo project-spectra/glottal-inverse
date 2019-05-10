@@ -12,7 +12,7 @@ std::array<valarray, 2> hpf_butter(size_t n, double fc, double fs) {
     double Wn = fc / (fs / 2.);
 
     cx_vec z = {};
-    cx_vec p = exp(1.j * (M_PI * regspace<cx_vec>(1, 2, 2*n-1) / (2. * n) + M_PI / 2.));
+    cx_vec p = exp(cx_double(0., 1.)  * (M_PI * regspace<cx_vec>(1, 2, 2*n-1) / (2. * n) + M_PI / 2.));
     cx_double k = real(prod(-p));
    
     // Convert the zero pole gain to transfer function representation

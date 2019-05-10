@@ -9,6 +9,7 @@
 
 #include "audio.h"
 #include "audio_be_soundio.h"
+#include "audio_be_oboe.h"
 #include "audio_be_file.h"
 #include "gcoi_sigma.h"
 #include "gci_yaga.h"
@@ -39,7 +40,11 @@ int main(int argc, char *argv[]) {
     AudioBackend *backend;
 
     if (argc == 1) {
+#ifdef __ANDROID__
+        backend = new OboeAudioBackend;
+#else
         backend = new SoundIoAudioBackend;
+#endif
     } else {
         backend = new FileAudioBackend(argv[1]);
     }
@@ -101,8 +106,8 @@ int main(int argc, char *argv[]) {
         std::vector<int> GCIs;
         std::vector<int> GOIs;
 
-        gcoi_sigma(g, GCIs, GOIs);
-        //gci_yaga(dg, T0est, GCIs, GOIs);
+        //gcoi_sigma(g, GCIs, GOIs);
+        gci_yaga(dg, T0est, GCIs, GOIs);
         
         printIterable(GCIs, "GCIs");
         printIterable(GOIs, "GOIs");

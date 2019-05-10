@@ -1,3 +1,5 @@
+#ifndef __ANDROID__
+
 #include "audio.h"
 #include "audio_be_soundio.h"
 
@@ -8,3 +10,5 @@ bool SoundIoAudioBackend::hasAtLeastOneWindow() {
 
     return (fillCount >= windowCount);
 }
+
+#endif

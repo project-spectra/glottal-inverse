@@ -1,3 +1,5 @@
+#ifndef __ANDROID__
+
 #include <cstring>
 #include <iostream>
 #include "audio.h"
@@ -69,3 +71,5 @@ void SoundIoAudioBackend::readCallback(struct SoundIoInStream *inStream, int fra
     int advanceBytes = writeFrames * inStream->bytes_per_frame;
     soundio_ring_buffer_advance_write_ptr(self->m_buffer, advanceBytes);
 }
+
+#endif

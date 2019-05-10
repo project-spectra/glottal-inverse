@@ -31,7 +31,7 @@ void computeGD(const valarray& u, valarray& y)
    
     y.resize(yn.size() - gw);
     y = yn[std::slice(gw, yn.size() - gw, 1)];
-    y /= yd[std::slice(gw, yd.size() - gw, 1)];
+    y /= valarray(yd[std::slice(gw, yd.size() - gw, 1)]);
 
     int toff = (gw - 1) / 2;
 

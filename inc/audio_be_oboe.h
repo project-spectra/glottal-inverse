@@ -1,17 +1,17 @@
-#ifndef AUDIO_BE_SOUNDIO_H
-#define AUDIO_BE_SOUNDIO_H
+#ifndef AUDIO_BE_OBOE_H
+#define AUDIO_BE_OBOE_H
 
-#ifndef __ANDROID__
+#ifdef __ANDROID__
 
 #include <atomic>
-#include <soundio/soundio.h>
+#include <oboe/Oboe.h>
 
 #include "audio.h"
 
-class SoundIoAudioBackend : public AudioBackend
+class OboeAudioBackend : public AudioBackend
 {
 public:
-    ~SoundIoAudioBackend();
+    ~OboeAudioBackend();
 
     virtual const char *getName();
     virtual bool isRunning();
@@ -29,19 +29,11 @@ public:
     virtual void stopStream();
 
 private:
-    static void readCallback(struct SoundIoInStream *inStream, int frame_count_min, int frame_count_max);
-    static void overflowCallback(struct SoundIoInStream *inStream);
-
     int m_windowLength;
-
-    SoundIo *m_soundio;
-    SoundIoDevice *m_device;
-    SoundIoInStream *m_inStream;
-    SoundIoRingBuffer *m_buffer;
 
     volatile std::atomic_bool m_running;
 };
 
 #endif // __ANDROID__
 
-#endif // AUDIO_BE_SOUNDIO_H
+#endif // AUDIO_BE_OBOE_H

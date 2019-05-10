@@ -1,30 +1,24 @@
-#if __cplusplus < 201703L
-    #include <experimental/filesystem>
-    namespace fs = std::experimental::filesystem;
-#else
-    #include <filesystem>
-    namespace fs = std::filesystem;
-#endif
-
 #include <iostream>
 
 #include "audio_be_file.h"
 
+static bool endsWith(const std::string &filename, const std::string &ext)
+{
+  return ext.length() <= filename.length() &&
+         std::equal(ext.rbegin(), ext.rend(), filename.rbegin());
+}
+
 FileAudioBackend::FileAudioBackend(const char *filename)
     : m_filename(filename), m_running(false)
 {
-    
-    fs::path filepath(m_filename);
+    std::string upFname(filename);
+    std::transform(upFname.begin(), upFname.end(), upFname.begin(), ::toupper);
 
-    std::string ext(filepath.has_extension() ? filepath.extension() : "");
-    
-    std::transform(ext.begin(), ext.end(), ext.begin(), ::toupper);
-
-    if (ext.compare(".WAV") == 0) {
+    if (endsWith(upFname, ".WAV")) {
         m_filetype = WAV;
-    } else if (ext.compare(".MP3") == 0) {
+    } else if (endsWith(upFname, ".MP3")) {
         m_filetype = MP3;
-    } else if (ext.compare(".FLAC") == 0) {
+    } else if (endsWith(upFname, ".FLAC")) {
         m_filetype = FLAC;
     } else {
         m_filetype = UNKNOWN;

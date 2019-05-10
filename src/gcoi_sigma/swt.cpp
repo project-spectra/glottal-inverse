@@ -67,7 +67,7 @@ void gcoi_sigma_swt(const valarray& u, valarray& p)
 
         data = cA;
 
-        p *= cD[std::slice(0, Nu, 1)];
+        p *= valarray(cD[std::slice(0, Nu, 1)]);
     }
 
     // get rid of potential NaNs and infinities

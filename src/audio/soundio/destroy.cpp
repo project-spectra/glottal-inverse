@@ -1,3 +1,5 @@
+#ifndef __ANDROID__
+
 #include "audio.h"
 #include "audio_be_soundio.h"
 
@@ -20,3 +22,5 @@ SoundIoAudioBackend::~SoundIoAudioBackend()
 {
     destroyAudio();
 }
+
+#endif

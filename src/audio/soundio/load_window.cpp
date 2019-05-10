@@ -1,3 +1,5 @@
+#ifndef __ANDROID__
+
 #include <climits>
 #include <cstring>
 #include "audio.h"
@@ -77,4 +79,4 @@ static void swapEndian(T arr[], int len)
     }
 }
 
-
+#endif

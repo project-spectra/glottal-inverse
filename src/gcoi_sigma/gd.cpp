@@ -28,7 +28,7 @@ int gcoi_sigma_gd(const valarray& u, valarray& y)
 
     y.resize(yn.size() - gw);
     y = yn[std::slice(gw, yn.size() - gw, 1)];
-    y /= yd[std::slice(gw, yd.size() - gw, 1)];
+    y /= valarray(yd[std::slice(gw, yd.size() - gw, 1)]);
 
     return (gw - 1) / 2;
 }

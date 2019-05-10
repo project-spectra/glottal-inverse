@@ -1,3 +1,5 @@
+#ifndef __ANDROID__
+
 #include "audio_be_soundio.h"
 
 const char *SoundIoAudioBackend::getName()
@@ -19,3 +21,5 @@ int SoundIoAudioBackend::getWindowLength()
 {
     return m_windowLength;
 }
+
+#endif

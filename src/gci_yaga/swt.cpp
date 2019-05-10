@@ -48,7 +48,7 @@ void computeSWT(const valarray& u, valarray& p)
 
         data = cA;
 
-        p *= cD[std::slice(0, Nu, 1)];
+        p *= valarray(cD[std::slice(0, Nu, 1)]);
     }
 
     for (int i = 0; i < Nu; ++i) {

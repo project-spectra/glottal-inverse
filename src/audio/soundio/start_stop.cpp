@@ -1,3 +1,5 @@
+#ifndef __ANDROID__
+
 #include <iostream>
 #include "audio.h"
 #include "audio_be_soundio.h"
@@ -27,3 +29,5 @@ void SoundIoAudioBackend::stopStream()
     // Stop running either way.
     m_running.store(false);
 }
+
+#endif
