@@ -10,6 +10,10 @@ else()
     add_definitions("-O3 -Os -Ofast")
 endif()
 
+if(NOT TARGET_ARCH)
+    set(TARGET_ARCH Linux)
+endif()
+
 include_directories(
     ${PROJECT_SOURCE_DIR}/inc
     ${PROJECT_SOURCE_DIR}/src
@@ -23,7 +27,7 @@ file(GLOB all_SRCS
 )
 
 add_executable(gif ${all_SRCS})
-set_property(TARGET gif PROPERTY OUTPUT_NAME "${PROJECT_SOURCE_DIR}/bin/gif" )
+set_property(TARGET gif PROPERTY OUTPUT_NAME "${PROJECT_SOURCE_DIR}/bin/gif.${TARGET_ARCH}" )
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -pthread -Wl,-R .")
 
@@ -31,7 +35,7 @@ target_link_libraries(gif
     :libopenblas.a :liblapack.a
 )
 
-if(TARGET_ARCH MATCHES Android)
+if(TARGET_ARCH MATCHES "^Android")
     add_definitions("-D__ANDROID__")
 
     target_link_libraries(gif
