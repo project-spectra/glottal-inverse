@@ -11,6 +11,7 @@ class FileAudioBackend : public AudioBackend
 {
 public:
     FileAudioBackend(const char *filename);
+    virtual ~FileAudioBackend() {}
 
     virtual const char *getName();
     virtual bool isRunning();

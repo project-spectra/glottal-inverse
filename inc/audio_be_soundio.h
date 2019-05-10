@@ -11,7 +11,7 @@
 class SoundIoAudioBackend : public AudioBackend
 {
 public:
-    ~SoundIoAudioBackend();
+    virtual ~SoundIoAudioBackend();
 
     virtual const char *getName();
     virtual bool isRunning();

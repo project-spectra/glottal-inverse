@@ -12,6 +12,8 @@ extern int WINDOW_LENGTH;
 class AudioBackend
 {
 public:
+    virtual ~AudioBackend() {}
+
     virtual const char *getName() = 0;
     virtual bool isRunning() = 0;
 
