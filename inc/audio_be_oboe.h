@@ -4,13 +4,17 @@
 #ifdef __ANDROID__
 
 #include <atomic>
+#include <iostream>
+
 #include <oboe/Oboe.h>
 
 #include "audio.h"
+#include "ringbuf.h"
 
-class OboeAudioBackend : public AudioBackend
+class OboeAudioBackend : public AudioBackend, public oboe::AudioStreamCallback 
 {
 public:
+    explicit OboeAudioBackend();
     ~OboeAudioBackend();
 
     virtual const char *getName();
@@ -28,8 +32,15 @@ public:
     virtual bool startStream();
     virtual void stopStream();
 
+    oboe::DataCallbackResult onAudioReady(oboe::AudioStream *oboeStream, void *autoData, int32_t numFrames);
+
 private:
+    void setStreamParameters(oboe::AudioStreamBuilder *builder);
+    
     int m_windowLength;
+
+    oboe::AudioStream *m_stream;
+    ringbuf_t m_buffer;
 
     volatile std::atomic_bool m_running;
 };

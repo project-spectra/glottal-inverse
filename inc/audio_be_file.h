@@ -10,7 +10,7 @@
 class FileAudioBackend : public AudioBackend
 {
 public:
-    FileAudioBackend(const char *filename);
+    explicit FileAudioBackend(const char *filename);
     virtual ~FileAudioBackend() {}
 
     virtual const char *getName();

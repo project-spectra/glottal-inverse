@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(glottal-inverse)
 
 set(CMAKE_CXX_STANDARD 17)
-add_definitions("-pthread -fexceptions -Wall -Wextra -Wno-sign-compare -Werror=implicit-function-declaration -pipe -fPIC -fstack-protector-strong -DARMA_DONT_USE_WRAPPER")
+add_definitions("-pthread -fexceptions -Wall -Wextra -Wno-sign-compare -Wno-unused-parameter -Werror=implicit-function-declaration -pipe -fPIC -fstack-protector-strong -DARMA_DONT_USE_WRAPPER")
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_definitions("-O2 -Ofast -g")
