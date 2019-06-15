@@ -1,6 +1,8 @@
 #ifndef INCLUDED_RINGBUF_H
 #define INCLUDED_RINGBUF_H
 
+#ifdef __ANDROID__
+
 /*
  * ringbuf.h - C ring buffer (FIFO) interface.
  *
@@ -170,7 +172,7 @@ ringbuf_memcpy_into(ringbuf_t dst, const void *src, size_t count);
  * results in an overflow, the value of the ring buffer's tail pointer
  * may be different than it was before the function was called.
  */
-ssize_t
+size_t
 ringbuf_read(int fd, ringbuf_t rb, size_t count);
 
 /*
@@ -211,7 +213,7 @@ ringbuf_memcpy_from(void *dst, ringbuf_t src, size_t count);
  * no bytes are written to the file descriptor, and the function will
  * return 0.
  */
-ssize_t
+size_t
 ringbuf_write(int fd, ringbuf_t rb, size_t count);
 
 /*
@@ -239,5 +241,7 @@ ringbuf_write(int fd, ringbuf_t rb, size_t count);
  */
 void *
 ringbuf_copy(ringbuf_t dst, ringbuf_t src, size_t count);
+
+#endif // __ANDROID__
 
 #endif /* INCLUDED_RINGBUF_H */

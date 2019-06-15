@@ -1,4 +1,5 @@
 #include <cmath>
+#include <algorithm>
 #include <climits>
 #include <vector>
 #include "audio.h"

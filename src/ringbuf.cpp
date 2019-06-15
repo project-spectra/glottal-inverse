@@ -1,3 +1,5 @@
+#ifdef __ANDROID__
+
 /*
  * ringbuf.c - C ring buffer (FIFO) implementation.
  *
@@ -344,3 +346,5 @@ ringbuf_copy(ringbuf_t dst, ringbuf_t src, size_t count)
 
     return dst->head;
 }
+
+#endif // __ANDROID__

@@ -5,6 +5,8 @@
 #include <armadillo>
 #include <valarray>
 
+#define M_PI 3.14159265358979323846
+
 using valarray = std::valarray<double>;
 
 void gci_pd(const valarray& md, std::vector<int>& GCIs);

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 
 #include "audio_be_file.h"

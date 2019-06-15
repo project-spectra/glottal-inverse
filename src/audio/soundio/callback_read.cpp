@@ -1,6 +1,7 @@
 #ifndef __ANDROID__
 
 #include <cstring>
+#include <algorithm>
 #include <iostream>
 #include "audio.h"
 #include "audio_be_soundio.h"
