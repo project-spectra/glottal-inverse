@@ -18,9 +18,8 @@ static constexpr double d = 0.98;
 // How many times to apply highpass filter
 static constexpr size_t hpfilt = 1;
 
-static constexpr double fc = 50.;  // Cutoff frequency for the high-pass filter
-static constexpr size_t Nord = 6; // Butterworth order for the HPF 
-
+static constexpr double fc = 200.;  // Cutoff frequency for the high-pass filter
+static constexpr size_t Nord = 3; // Butterworth order for the HPF 
 
 static void applyInt(const valarray& x, valarray& res) {
     // The coefficients for the IIR integration filter
@@ -31,7 +30,6 @@ static void applyInt(const valarray& x, valarray& res) {
 }
 
 static void applyHpf(valarray& x) {
-    // The coefficients for the Butterworth HPF filter
     static auto coeffs = filter_butter(Nord, fc, HIGHPASS);
 
     valarray y;
@@ -40,7 +38,6 @@ static void applyHpf(valarray& x) {
 
     x = y;
 }
-
 
 void computeIAIF(const valarray& s, valarray& g, valarray& dg) {
     static const int p_vt = (2 * SAMPLE_RATE) / 2000 + 4;
@@ -89,4 +86,5 @@ void computeIAIF(const valarray& s, valarray& g, valarray& dg) {
     filter_fir(Hvt2, signal, dg);
     dg = dg[std::slice(preflt, M, 1)];
     applyInt(dg, g);
+    
 }

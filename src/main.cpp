@@ -32,7 +32,7 @@ void sighand(int signum) {
 int main(int argc, char *argv[]) {
 
     // Target window length of 50ms
-    constexpr double targetWindowLength = 25. / 1000.;
+    constexpr double targetWindowLength = 60. / 1000.;
 
     AudioBackend *backend;
 
