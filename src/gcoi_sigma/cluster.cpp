@@ -9,11 +9,11 @@ int gcoi_sigma_cluster(const arma::dmat& fv, arma::ivec& in)
     arma::gmm_diag model;
 
     bool status = model.learn(
-            fv, SIGMA_nclust,
+            fv.t(), SIGMA_nclust,
             arma::maha_dist, arma::random_subset,
-            20,    // km_iter
-            15,    // em_iter
-            10. * std::numeric_limits<double>::epsilon(), 
+            100,    // km_iter
+            100,    // em_iter
+            arma::var(fv.col(0)) / 100.,
             false
     );
 
@@ -30,25 +30,24 @@ int gcoi_sigma_cluster(const arma::dmat& fv, arma::ivec& in)
     int I;
 
     if (dir < 0) {
-        I = arma::index_min(mm.col(0));
+        I = arma::index_min(mm.row(0));
     }
     else {
-        I = arma::index_max(mm.col(0));
+        I = arma::index_max(mm.row(0));
     }
 
     // Find log likelihoods for each cluster
-    arma::dmat ll = arma::zeros<arma::dmat>(SIGMA_nclust, fv.n_cols); // k x n
+    arma::dmat ll = arma::zeros<arma::dmat>(fv.n_rows, SIGMA_nclust); // k x n
 
     for (int i = 0; i < SIGMA_nclust; ++i) {
-        model.reset(3, 1);
         model.set_params(mm.row(i), vv.row(i), ww);
 
         bool status = model.learn(
-            fv.row(i), 1,
+            fv.col(i).t(), 1,
             arma::maha_dist, arma::keep_existing,
             0,
             1,
-            10. * std::numeric_limits<double>::epsilon(), 
+            1. / (double) (fv.n_rows * fv.n_rows),
             false
         );
 
@@ -57,17 +56,14 @@ int gcoi_sigma_cluster(const arma::dmat& fv, arma::ivec& in)
             exit(EXIT_FAILURE);
         }
 
-        ll.row(i) = model.log_p(fv.row(i));
-        
-        std::cout << "cluster " << i << std::endl;
-        std::cout << ll.row(i) << std::endl;
+        ll.col(i) = model.log_p(fv.col(i).t()).t();
     }
 
     // Find which cluster each feature vector belongs to
-    in.resize(fv.n_cols);
+    in.resize(fv.n_rows);
 
-    for (int n = 0; n < fv.n_cols; ++n) {
-        in(n) = arma::index_max(ll.col(n));
+    for (int n = 0; n < fv.n_rows; ++n) {
+        in(n) = arma::index_max(ll.row(n));
     }
 
     return I;

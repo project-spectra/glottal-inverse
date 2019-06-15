@@ -22,8 +22,11 @@ include_directories(
 file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/inc/*.h"
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
-    "${PROJECT_SOURCE_DIR}/src/**/*.cpp"
-    "${PROJECT_SOURCE_DIR}/src/**/**/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/audio/**/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/filter/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/window/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/pitch/*.cpp"
+    "${PROJECT_SOURCE_DIR}/src/gci_pd/*.cpp"
 )
 
 add_executable(gif ${all_SRCS})

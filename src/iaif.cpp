@@ -1,4 +1,5 @@
 #include "lpc.h"
+#include "filter_design.h"
 #include "filter.h"
 #include "window.h"
 #include "audio.h"
@@ -15,10 +16,10 @@
 static constexpr double d = 0.98;
 
 // How many times to apply highpass filter
-static constexpr size_t hpfilt = 3;
+static constexpr size_t hpfilt = 1;
 
 static constexpr double fc = 50.;  // Cutoff frequency for the high-pass filter
-static constexpr size_t Nord = 5; // Butterworth order for the HPF 
+static constexpr size_t Nord = 6; // Butterworth order for the HPF 
 
 
 static void applyInt(const valarray& x, valarray& res) {
@@ -31,11 +32,11 @@ static void applyInt(const valarray& x, valarray& res) {
 
 static void applyHpf(valarray& x) {
     // The coefficients for the Butterworth HPF filter
-    static auto coefs = hpf_butter(Nord, fc, SAMPLE_RATE);
+    static auto coeffs = filter_butter(Nord, fc, HIGHPASS);
 
     valarray y;
 
-    filter_iir(coefs[0], coefs[1], x, y);
+    filter_iir(coeffs[0], coeffs[1], x, y);
 
     x = y;
 }
@@ -69,7 +70,7 @@ void computeIAIF(const valarray& s, valarray& g, valarray& dg) {
     valarray Hg1, Hg2, Hvt1, Hvt2;
 
     valarray y1(M), y2(M);
-    valarray g1(M), g1int(M), g2(M);
+    valarray g1(M), g1int(M);
 
     lpcCoeffs(x * win, 1, Hg1);
     filter_fir(Hg1, signal, y1);
@@ -85,10 +86,7 @@ void computeIAIF(const valarray& s, valarray& g, valarray& dg) {
     y2 = y2[std::slice(preflt, M, 1)];
 
     lpcCoeffs(y2 * win, p_vt, Hvt2);
-    filter_fir(Hvt2, signal, g2);
-    g2 = g2[std::slice(preflt, M, 1)];
-    applyInt(g2, g);
-
-    dg = g.shift(1) - g;
-    dg[0] = dg[1];
+    filter_fir(Hvt2, signal, dg);
+    dg = dg[std::slice(preflt, M, 1)];
+    applyInt(dg, g);
 }

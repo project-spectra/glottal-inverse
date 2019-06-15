@@ -67,7 +67,7 @@ points = load_file()
 fig.canvas.mpl_connect('key_press_event', press)
 while not done:
     load_file(points)
-    fig.canvas.start_event_loop(0.001)
+    fig.canvas.start_event_loop(0.02)
 
 
 

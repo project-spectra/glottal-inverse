@@ -13,7 +13,7 @@ using std::vector;
 static constexpr int hpfilt = 3;
 
 
-void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci) {
+void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci, vector<int>& goi) {
 
     const int N(signal.size());
     int n, k;
@@ -53,97 +53,102 @@ void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci)
     // Detect minima and maxima of the mean-based signal
     auto maxInd = findPeaks(meanBasedSignal, 1.);
     auto minInd = findPeaks(meanBasedSignal, -1.);
-
     while (maxInd.front() < minInd.front()) {
         maxInd.pop_front();
     }
     while (minInd.back() > maxInd.back()) {
         minInd.pop_back();
+    } 
+   
+    vector<int> pzcr, nzcr;
+    findZeroCrossings(meanBasedSignal, pzcr, nzcr);
+
+    vector<std::pair<int, int>> gciInter, goiInter;
+
+    // Make the first interval estimates
+    int posi(0), negi(0);
+
+    for (int i = 0; i < maxInd.size() - 1; ++i) {
+        
+        // Find the first positive zero-crossing following the current minimum.
+        while (minInd[i] <= pzcr[posi++]);
+        // It has to preceed the next minimum.
+        if (pzcr[posi] < minInd[i + 1]) {
+            gciInter.emplace_back(minInd[i], pzcr[posi]);
+        }
+        else {
+            gciInter.emplace_back(0, -1);
+            posi--;
+        }
+
+        // Find the first negative zero-crossing following the current maximum.
+        while (maxInd[i] <= nzcr[negi++]);
+        // It has to preceed the next maximum.
+        if (nzcr[negi] < maxInd[i + 1]) {
+            goiInter.emplace_back(maxInd[i], nzcr[negi]);
+        }
+        else {
+            goiInter.emplace_back(0, -1);
+            negi--;
+        }
+        
     }
-    
-    // Determine the median position of GCIs within the cycle
+
     normalize(res);
+  
+    constexpr double gciThreshold(0.4);
+    constexpr double goiThreshold(0.2);
 
-    // find points of res > threshold
-    vector<int> gciCandInd;
-    constexpr double resThresholdGci(0.4);
-
-    for (n = 0; n < N; ++n) {
-        if (res[n] > resThresholdGci) {
-            gciCandInd.push_back(n);
+    // Refine GCIs
+    for (auto [start, end] : gciInter) {
+       
+        if (start > end) {
+            gci.push_back(-1);
+            continue;
         }
-    }
 
-    // relative positive indices
-    const int gciCandLen(gciCandInd.size());
-    vector<double> relGciInd(gciCandLen, 0);
-
-    for (n = 0; n < gciCandLen; ++n) {
-        // pos = min_k { abs(minInd[k] - posInd[n]) }
-     
-        int pos(-1);
-        int val, minVal(INT_MAX);
-
-        for (k = 0; k < minInd.size(); ++k) {
-            val = abs((int) minInd[k] - (int) gciCandInd[n]);
-            if (val < minVal) {
-                pos = k;
-                minVal = val;
+        // Pad the interval with 0.15ms.
+        start = std::max((int) (start - (0.15 / 1000. * SAMPLE_RATE)), 0);
+        end = std::min((int) (end + (0.15 / 1000. * SAMPLE_RATE)), (int) res.size() - 1);
+        
+        // Find the local maximum in the LP residual
+            
+        int maxi(start);
+        double maxr(-HUGE_VAL);
+        for (int i = start; i <= end; ++i) {
+            if (res[i] > gciThreshold && res[i] > maxr) {
+                maxr = res[i];
+                maxi = i;
             }
         }
 
-        double num = (double) gciCandInd[n] - (double) minInd[pos];
-        double den = (double) maxInd[pos] - (double) minInd[pos];
-
-        relGciInd[n] = num / den;
+        gci.push_back(maxi);
     }
     
-    double ratioGCI = median(relGciInd);
-
-    // Detect GCIs from the residual signal using the presence intervals derived from the mean signal
-    const int minLen(minInd.size());
-    gci.resize(0);
-
-    int maxVal, minVal;
-    int interv;
-    double alpha;
-
-    int start, stop;
-
-    for (n = 0; n < minLen; ++n) {
-        maxVal = maxInd[n];
-        minVal = minInd[n];
-        interv = maxVal - minVal;
-
-        // Get GCI
-    
-        alpha = ratioGCI - 0.35;
-        start = minVal + round(alpha * interv);
-
-        alpha = ratioGCI + 0.35;
-        stop = minVal + round(alpha * interv);
-      
-        if (start < 1) {
-            start = 1;
-        } else if (start > N) {
-            break;
-        }
-        if (stop > N) {
-            stop = N;
+    // Refine GOIs
+    for (auto [start, end] : goiInter) {
+        
+        if (start > end) {
+            goi.push_back(-1);
+            continue;
         }
 
-        if (stop > 1) {
-            int maxi(start);
-            double maxr(-HUGE_VAL);
-            for (int i = start; i <= stop; ++i) {
-                if (res[i] > maxr) {
-                    maxr = res[i];
-                    maxi = i;
-                }
+        // Pad the interval with 0.15ms.
+        start = std::max((int) (start - (0.15 / 1000. * SAMPLE_RATE)), 0);
+        end = std::min((int) (end + (0.15 / 1000. * SAMPLE_RATE)), (int) res.size() - 1);
+
+        // Find the local maximum in the LP residual
+            
+        int maxi(start);
+        double maxr(-HUGE_VAL);
+        for (int i = start; i <= end; ++i) {
+            if (res[i] > goiThreshold && res[i] > maxr) {
+                maxr = res[i];
+                maxi = i;
             }
-
-            gci.push_back(maxi);
         }
 
+        goi.push_back(maxi);
     }
+
 }

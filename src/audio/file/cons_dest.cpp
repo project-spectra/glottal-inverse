@@ -14,7 +14,8 @@ FileAudioBackend::FileAudioBackend(const char *filename)
     std::string upFname(filename);
     std::transform(upFname.begin(), upFname.end(), upFname.begin(), ::toupper);
 
-    if (endsWith(upFname, ".WAV")) {
+    if (endsWith(upFname, ".WAV")
+            || endsWith(upFname, ".EGG")) {
         m_filetype = WAV;
     } else if (endsWith(upFname, ".MP3")) {
         m_filetype = MP3;

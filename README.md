@@ -42,6 +42,7 @@ You can also call the program with an argument to load an audio file instead of 
 * M. R. P. Thomas, J. Gudnason and P. A. Naylor, "Estimation of Glottal Closing and Opening Instants in Voiced Speech Using the YAGA Algorithm," in IEEE Transactions on Audio, Speech, and Language Processing, vol. 20, no. 1, pp. 82-91, Jan. 2012. [doi: 10.1109/TASL.2011.2157684](https://doi.org/10.1109/TASL.2011.2157684)
 [doi: 10.1109/TASL.2006.876878](https://doi.org/10.1109/TASL.2006.876878)
 * Kane, John & Scherer, Stefan & P Morency, L & Gobl, C. (2013). A comparative study of glottal open quotient estimation techniques. [Proceedings of the Annual Conference of the International Speech Communication Association, INTERSPEECH. 1658-1662.](https://www.isca-speech.org/archive/archive_papers/interspeech_2013/i13_1658.pdf)
+* H. Li, R. Scaife and D. O'Brien, "Automatic LF-model fitting to the glottal source waveform by extended Kalman filtering," 2012 Proceedings of the 20th European Signal Processing Conference (EUSIPCO), Bucharest, 2012, pp. 2772-2776.
 * Conrad Sanderson and Ryan Curtin. An Open Source C++ Implementation of Multi-Threaded Gaussian Mixture Models, k-Means and Expectation Maximisation. [International Conference on Signal Processing and Communication Systems, 2017.](http://arma.sourceforge.net/arma_gmm_spcs_2017.pdf)
 * Conrad Sanderson and Ryan Curtin. Armadillo: a template-based C++ library for linear algebra. [Journal of Open Source Software, Vol. 1, pp. 26, 2016.](http://arma.sourceforge.net/armadillo_joss_2016.pdf)
 

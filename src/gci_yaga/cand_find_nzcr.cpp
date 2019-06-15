@@ -4,9 +4,17 @@
 
 void cand_find_nzcr(const valarray& gamma, candvec& cands)
 {
-    for (int n = 0; n < gamma.size() - 1; ++n) {
-        if (gamma[n] > 0 && gamma[n] * gamma[n+1] < 0.) { // negative-going
-            cands.emplace_back(n, true);
+    double cur, next;
+    
+    next = gamma[0];
+
+    for (int t = 0; t < gamma.size() - 1; ++t) {
+        cur = next;
+        next = gamma[t + 1];
+
+        // sign change, negative going
+        if (cur * next <= 0 && next <= 0) {
+            cands.emplace_back(t, true);
         }
-    } 
+    }
 }

@@ -36,9 +36,13 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
     ngrdel = -ngrdel.shift(ntoff);
     pgrdel = -pgrdel.shift(ptoff);
 
+    writePlotData(ngrdel, "ngrdel.dat");
+    writePlotData(pgrdel, "pgrdel.dat");
+
     // GCI detection
-    arma::ivec gcic;
-    gcoi_sigma_nzcr(ngrdel, gcic, ntoff);
+    arma::dvec gcic;
+    gcoi_sigma_nzcr(ngrdel, gcic);
+    gcic += ntoff;
    
     std::ofstream("gcic.dat") << gcic << std::endl;
 
@@ -49,7 +53,7 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
     
     arma::ivec ingci;
     int Igci = gcoi_sigma_cluster<-1>(nfv, ingci);
-  
+
     std::ofstream("ingci.dat") << ingci << std::endl;
 
     arma::dvec gci = arma::zeros<arma::dvec>(u.size());
@@ -60,47 +64,50 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
     }
 
     // Post-filter swallows (GCIs only)
-    if (gci.n_elem > 2) {
-        std::deque<int> fgci;
-        for (int i = 0; i < gci.n_elem; ++i) {
-            if (gci(i) > 0.) {
-                fgci.push_back(i);
-            }
+    std::deque<int> fgci;
+    for (int i = 0; i < gci.n_elem; ++i) {
+        if (gci(i) > 0.) {
+            fgci.push_back(i);
         }
-        
-        // If a GCI is separated from all others by more than Tmax, delete
-        
-        // Check the first one
-        if (fgci[1] - fgci[0] > SIGMA_Tmax * SAMPLE_RATE) {
-            fgci.pop_front();
-        }
-        // Check the middle
-        int i = 1;
-        while (i < fgci.size() - 2) {
-            if ((fgci[i] - fgci[i - 1] > SIGMA_Tmax * SAMPLE_RATE)
-                    && (fgci[i + 1] - fgci[i] > SIGMA_Tmax * SAMPLE_RATE)) {
-                fgci.erase(fgci.begin() + i);
-            }
-            i++;
-        }
-        // Check last one
-        if (fgci[fgci.size() - 1] - fgci[fgci.size() - 2] > SIGMA_Tmax * SAMPLE_RATE) {
-            fgci.pop_back();
-        }
+    }
 
-        for (int i = 0; i < gci.n_elem; ++i) {
-            if (fgci.front() == i) {
-                gci(i) = 0.5;
-                fgci.pop_front();
-            } else {
-                gci(i) = 0.0;
-            }
+    if (fgci.size() < 2) {
+        return;
+    }
+
+    // If a GCI is separated from all others by more than Tmax, delete
+    
+    // Check the first one
+    if (fgci[1] - fgci[0] > SIGMA_Tmax * SAMPLE_RATE) {
+        fgci.pop_front();
+    }
+    // Check the middle
+    int i = 1;
+    while (i < fgci.size() - 2) {
+        if ((fgci[i] - fgci[i - 1] > SIGMA_Tmax * SAMPLE_RATE)
+                && (fgci[i + 1] - fgci[i] > SIGMA_Tmax * SAMPLE_RATE)) {
+            fgci.erase(fgci.begin() + i);
+        }
+        i++;
+    }
+    // Check last one
+    if (fgci[fgci.size() - 1] - fgci[fgci.size() - 2] > SIGMA_Tmax * SAMPLE_RATE) {
+        fgci.pop_back();
+    }
+
+    for (int i = 0; i < gci.n_elem; ++i) {
+        if (fgci.front() == i) {
+            gci(i) = 0.5;
+            fgci.pop_front();
+        } else {
+            gci(i) = 0.0;
         }
     }
 
     // GOI detection
-    arma::ivec goic;
-    gcoi_sigma_nzcr(pgrdel, goic, ptoff);
+    arma::dvec goic;
+    gcoi_sigma_nzcr(pgrdel, goic);
+    goic += ptoff;
     
     arma::dmat pfv;
     gcoi_sigma_model<1>(goic, crpmp, pgrdel, pfv);
@@ -108,21 +115,21 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
     arma::ivec ingoi;
     int Igoi = gcoi_sigma_cluster<1>(pfv, ingoi);
     
-    arma::dvec goi = arma::zeros<arma::dvec>(pfv.n_cols);
+    arma::dvec goi = arma::zeros<arma::dvec>(u.size());
     for (int i = 0; i < pfv.n_cols; ++i) {
-        if (ingoi[i] == Igoi) {
-            goi[goic[i]] = 0.75;
+        if (ingoi(i) == Igoi) {
+            goi(goic(i)) = 0.75;
         }
     }
 
     // GOI post-fitering
     
     // For all GCIs, find GOIs which are within OQ limits
-    std::vector<double> goifilt(goi.size(), 0.0);
+    arma::dvec goifilt = arma::zeros<arma::dvec>(u.size());
 
     std::vector<int> gciind;
     for (int i = 0; i < gci.n_elem; ++i) {
-        if (gci[i] > 0.) {
+        if (gci(i) > 0.) {
             gciind.push_back(i);
         }
     }
@@ -144,7 +151,7 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
         // Find first eventual GOI in the period (with margins for minmax Oq)
         int I = -1;
         for (int k = round(lo + (1. - SIGMA_oqmax) * T); k <= round(lo + (1. - SIGMA_oqmin) * T); ++k) {
-            if (goi[k] > 0.) {
+            if (goi(k) > 0.) {
                 I = k;
                 break;
             }
@@ -153,16 +160,16 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
         // If we have a GOI
         if (I != -1) {
             prev = round(I + (1 - SIGMA_oqmax) * T - 1);
-            goifilt[round(I + lo + (1 - SIGMA_oqmax) * T - 1)] = 0.5;
+            goifilt(round(I + lo + (1 - SIGMA_oqmax) * T - 1)) = 0.5;
         }
         // If not, insert at last OQ
         else {
             if (prev > 0) {
                 // Protect against GOI occuring after next GCI
                 if (lo + prev < hi) {
-                    goifilt[lo + prev - 1] = 0.5;
+                    goifilt(lo + prev - 1) = 0.5;
                 } else {
-                    goifilt[hi - 1] = 0.5;
+                    goifilt(hi - 1) = 0.5;
                 }
             }
             if (i == 1) {
@@ -172,7 +179,7 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
 
         // If no GOI occurs after GOI, no previous peroid exists, so add after a period has been found.
         if (noFirst && prev > 0) {
-            goifilt[gciind[0] + prev - 1] = 0.5;
+            goifilt(gciind[0] + prev - 1) = 0.5;
             noFirst = false;
         }
         
@@ -182,21 +189,21 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
     // Final period
     int lo = gciind[gciind.size()-1];
     int I = -1;
-    for (int k = round(lo + (1. - SIGMA_oqmax) * Tprev); k < goi.n_elem
-                                                    && k <= round(lo + (1. - SIGMA_oqmin) * Tprev); ++k) {
-        if (goi[k] > 0.) {
+    for (int k = round(lo + (1. - SIGMA_oqmax) * Tprev);
+                k < goi.n_elem && k <= round(lo + (1. - SIGMA_oqmin) * Tprev); ++k) {
+        if (goi(k) > 0.) {
             I = k;
             break;
         }
     }
 
     if (I != -1) {
-        goifilt[round(I + lo + (1. - SIGMA_oqmax) * Tprev - 1)] = 0.5;
+        goifilt(fmin(round(I + lo + (1. - SIGMA_oqmax) * Tprev), u.size()-1)) = 0.5;
     }
     // If not insert at last OQ.
     else {
         if (prev > 0) {
-            goifilt[lo + prev] = 0.5;
+            goifilt(lo + prev) = 0.5;
         }
     }
 
@@ -206,10 +213,10 @@ void gcoi_sigma(const valarray& signal, std::vector<int>& rGci, std::vector<int>
     rGoi.resize(0);
 
     for (int i = 0; i < u.size(); ++i) {
-        if (gci[i] > 0.) {
+        if (gci(i) > 0.) {
             rGci.push_back(i);
         }
-        if (goi[i] > 0.) {
+        if (goi(i) > 0.) {
             rGoi.push_back(i);
         }
     }

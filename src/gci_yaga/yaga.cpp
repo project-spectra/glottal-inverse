@@ -21,7 +21,9 @@ void gci_yaga(const valarray& u, const double T0mean, std::vector<int>& gci, std
     candvec candPairs;
     findCandidates(gamma, candPairs);
 
-    printIterable(candPairs, "GCI cands");
+    std::vector<int> cands;
+    std::transform(candPairs.begin(), candPairs.end(), std::back_inserter(cands), [](auto& c) { return c.first; });
+    std::cout << "GCI cands: " << cands << std::endl;
 
     if (candPairs.empty()) {
         return;
@@ -29,15 +31,15 @@ void gci_yaga(const valarray& u, const double T0mean, std::vector<int>& gci, std
 
     selectCandidates(u, gamma, T0mean, candPairs, gci);
 
-    printIterable(candPairs, "GCI selec");
+    std::cout << "GCI selected: " << gci << std::endl;
 
     // Transform the pairs to their time in sample
     std::deque<int> openCands;
     findOpenCandidates(candPairs, gci, openCands);
 
-    printIterable(openCands, "GOI cands");
+    std::cout << "GOI cands: " << openCands << std::endl;
 
     selectOpenCandidates(gci, openCands, goi);
 
-    printIterable(goi, "GOI selec");
+    std::cout << "GOI selected: " << goi << std::endl;
 }

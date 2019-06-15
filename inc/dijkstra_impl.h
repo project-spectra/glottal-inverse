@@ -13,7 +13,7 @@ void dijkstra(const graph& G, const CostFun_t& costFun, int source, int target, 
 
     // Min-priority queue
     std::vector<node> Q;  // Container
-    std::greater<node> C; // Comparator
+    auto C = [](auto& a, auto& b) { return a.second < b.second; }; // Comparator
 
     dist[source] = 0.0;
 
@@ -21,10 +21,10 @@ void dijkstra(const graph& G, const CostFun_t& costFun, int source, int target, 
         if (v != source) {
             dist[v] = HUGE_VAL;
         }
-
+       
         prev[v] = -1;
 
-        Q.emplace_back(v, dist[v]);
+        Q[v] = std::make_pair(v, dist[v]);
     }
 
     std::make_heap(Q.begin(), Q.end(), C);

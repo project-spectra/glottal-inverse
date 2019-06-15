@@ -2,6 +2,7 @@
 #include <array>
 #include <map>
 #include <tuple>
+#include <iterator>
 #include "audio.h"
 #include "gci_yaga_subroutines.h"
 #include "print_iter.h"
@@ -28,11 +29,10 @@ static constexpr int Nbest = 1;
 void selectCandidates(const valarray& u, const valarray& gamma, double T0mean, candvec& cands, std::vector<int>& bestCands)
 {
     static const int endSkip((11. / 1000. * SAMPLE_RATE) / 2 + 2);
-  
-    static const int searchLength = 1.3 * T0mean * SAMPLE_RATE;
+    static const int searchLength = 1.1 * T0mean * SAMPLE_RATE;
 
-    int i, t;
-    
+    int t;
+
     // skip candidates at each end if necessary (for the cost function to compute properly)
     t = cands.back().first;
     while (t > u.size() - endSkip) {
@@ -53,10 +53,10 @@ void selectCandidates(const valarray& u, const valarray& gamma, double T0mean, c
     // precalculate the norms of u between candidates and drop the unused candidate
     valarray norms(cands.size() - 1); 
     double maxNorm;
-
+   
     cand_select_precalc_norms(u, cands, norms, maxNorm);
     cands.pop_back();
-
+    
     // precalculate the FN of each sample
     valarray FNs(u.size());
     double maxFN;
@@ -87,35 +87,68 @@ void selectCandidates(const valarray& u, const valarray& gamma, double T0mean, c
             cost = cost_eval(lambda, costVector);
             
             costs[t] = cost;
-            return cost;
+            return cost; 
         }
     };
 
     graph G;
 
-    for (i = 0; i < Ncand; ++i) {
+    for (int i = 0; i < Ncand; ++i) {
         G.vertices.emplace(i);
+
+        for (int j = i + 1; j < Ncand; ++j) {
+            if (cands[j].first - cands[i].first > searchLength)
+                break;
+
+            G.edges.emplace(i, j);
+        }
     }
 
-    std::map<int, std::list<int>> paths; // start -> bestPath
-    std::map<int, double> dists;         // start -> cost
+    std::list<int> bestPath;
+    double bestCost = -HUGE_VAL;
 
-    // For each expected cycle (with some margin), find the best path from the previous to the current cycles.
-    int t1, ts;
-        
-    // We have to initialize the first 3 cycles blindly, so we'll do an exhaustive search.
-    i = 0;
-    t1 = cands[i].first;
-    ts = cands[i + 1].first;
-
-    while (ts - t1 < 3 * searchLength) {
-        G.edges.erase(G.edges.begin(), G.edges.end());
-
-        G.edges.emplace(ts, t1);
-
-    }
-
-    //dijkstra(G, costFun, 2, Ncand - 1, paths);
+    std::list<int> path;
+    std::map<int, double> dist;
     
+    int source, target;
+
+    source = 2;
+
+    while (source < Ncand && cands[source].first - cands[2].first <= searchLength)
+    {
+        target = Ncand - 1;
+
+        while (source < target && cands[Ncand - 1].first - cands[target].first <= searchLength)
+        { 
+            path.clear();
+            dist.clear();
+
+            dijkstra(G, costFun, source, target, path, dist);
+
+            std::cout << "path(" << source << " -> " << target << ") = [";
+            std::copy(path.begin(), path.end(), std::ostream_iterator<int>(std::cout, " -> "));
+            std::cout << "]" << std::endl;
+
+            double cost = dist[target];
+
+            if (cost > bestCost) {
+                bestPath = path;
+                bestCost = cost;
+            }
+
+            target--;
+        }
+
+        source++;
+    }
+
+    bestCands.resize(bestPath.size());
+
+    std::transform(
+        bestPath.begin(),
+        bestPath.end(),
+        bestCands.begin(),
+        [&cands](auto i) { return cands[i].first; }
+    );
 
 }

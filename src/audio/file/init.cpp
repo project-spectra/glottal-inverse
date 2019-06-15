@@ -77,7 +77,7 @@ bool FileAudioBackend::initAudio(double targetLength)
 
     if (totalPCMFrameCount < m_windowLength)
     {
-        std::cerr << "fileio: audio file is too short (must be at least " << targetLength << " ms long)" << std::endl;
+        std::cerr << "fileio: audio file is too short (must be at least " << targetLength * 1000 << " ms long)" << std::endl;
         return true;
     }
 

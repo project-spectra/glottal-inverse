@@ -11,12 +11,9 @@
 #include "audio_be_soundio.h"
 #include "audio_be_oboe.h"
 #include "audio_be_file.h"
-#include "gcoi_sigma.h"
-#include "gci_yaga.h"
-#include "glottal.h"
+#include "gci_pd.h"
 #include "gnuplot.h"
 #include "iaif.h"
-#include "vtl.h"
 #include "normalize.h"
 #include "pitch.h"
 #include "print_iter.h"
@@ -34,8 +31,8 @@ void sighand(int signum) {
 
 int main(int argc, char *argv[]) {
 
-    // Target window length of 60ms
-    constexpr double targetWindowLength = 60. / 1000.;
+    // Target window length of 50ms
+    constexpr double targetWindowLength = 25. / 1000.;
 
     AudioBackend *backend;
 
@@ -76,8 +73,9 @@ int main(int argc, char *argv[]) {
     valarray dg(WINDOW_LENGTH);
 
     double f0est, T0est;
-
     double meanVTL = -1;
+
+    std::vector<int> GCIs;
 
     while (audio->isRunning()) {
         if (!audio->hasAtLeastOneWindow()) {
@@ -103,19 +101,19 @@ int main(int argc, char *argv[]) {
         computeIAIF(md, g, dg);
 
         // estimate GCIs
-        std::vector<int> GCIs;
-        std::vector<int> GOIs;
+        gci_pd(md, GCIs);
 
-        //gcoi_sigma(g, GCIs, GOIs);
-        gci_yaga(dg, T0est, GCIs, GOIs);
+        // fit LF model
+        /*LFs.resize(0);
+        lf_fit(dg, GCIs, T0est, LFs);*/
+ 
+        // get open quotient
+        double meanOq = 0;
+        /*for (const auto& lf : LFs) {
+            meanOq += lf.Te;
+        }
+        meanOq /= (double) LFs.size();*/
         
-        printIterable(GCIs, "GCIs");
-        printIterable(GOIs, "GOIs");
-
-        // estimate Open quotient
-        //double meanOq = estimateOq(GCIs, GOIs);
-        double meanOq = -1;
-               
         // print results
         std::cout << std::endl;
         std::cout << "  (*) Estimated:" << std::endl;
@@ -125,8 +123,8 @@ int main(int argc, char *argv[]) {
 
         // write and plot
         //writePlotData(md, GNUPLOT_FILE_SPEECH);
-        //writePlotData(g, GNUPLOT_FILE_SOURCE);
-        //writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
+        writePlotData(g, GNUPLOT_FILE_SOURCE);
+        writePlotData(dg, GNUPLOT_FILE_SOURCE_DERIV);
     }
 
     std::cout << " ==== Exiting safely ====" << std::endl;

@@ -13,8 +13,12 @@ void findCandidates(const valarray& gamma, candvec& cands)
     
     // Sort candidates per time
     std::sort(cands.begin(), cands.end());
-
+    
     // Remove duplicates
     auto end = std::unique(cands.begin(), cands.end(), [](auto& a, auto& b) { return a.first == b.first; });
-    cands.erase(end, cands.end());    
+    cands.erase(end, cands.end());
+
+    // Remove out of bound candidates
+    auto toRemove = std::remove_if(cands.begin(), cands.end(), [&gamma](auto& a) { return a.first < 0 || a.first >= gamma.size(); });
+    cands.erase(toRemove, cands.end());
 }

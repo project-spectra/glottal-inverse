@@ -1,4 +1,7 @@
 #include <cstdio>
+#include <cmath>
+#include <numeric>
+#include "print_iter.h"
 #include "glottal.h"
 
 
@@ -7,25 +10,24 @@ double estimateOq(const std::vector<int>& gci, const std::vector<int>& goi)
     if (gci.empty() || goi.empty()) 
         return -1.;
 
-    double mean(0.), Oq;
+    std::vector<double> Oq;
 
-    int r;
 
-    // must have GCI > GCI
-    r = (gci[0] > goi[0] ? 1 : 0);
+    for (int r = 0; r < gci.size() - 1; ++r) {
 
-    for (; r < goi.size() && r + 1 < gci.size(); ++r) {
-        double t0 = gci[r+1] - gci[r];
-        double to = gci[r+1] - goi[r];
+        // If any of the estimates used are unknown, skip.
+        if (gci[r+1] < 0 || gci[r] < 0 || goi[r] < 0)
+        {
+            continue;
+        }
 
-        Oq = to / t0;
+        double t0 = std::abs(gci[r+1] - gci[r]);
+        double to = std::abs(gci[r+1] - goi[r]);
 
-        //printf("Oq[%d] = %f\n", r, Oq);
-
-        mean += Oq;
+        Oq.push_back(to / t0);
     }
 
-    mean /= (double) goi.size();
+    std::cout << "Oq: " << Oq;
 
-    return mean;
+    return std::accumulate(Oq.begin(), Oq.end(), 0.0) / (double) Oq.size();
 }

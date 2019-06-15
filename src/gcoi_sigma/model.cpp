@@ -4,35 +4,35 @@
 
 
 template<int dir>
-void gcoi_sigma_model(const arma::ivec& gic, const valarray& crmp, const valarray& grdel, arma::dmat& fv)
+void gcoi_sigma_model(const arma::dvec& gic, const valarray& crmp, const valarray& grdel, arma::dmat& fv)
 {
-    const int R = SIGMA_gwlen * SAMPLE_RATE;
+    const int R = (SIGMA_gwlen * SAMPLE_RATE) / 2 - 1;  
 
-    valarray mgrdel;
-    for (int i = 0; i < 2 * R; ++i) {
-        mgrdel[i] = i - (R - 1) / 2;
+    valarray mgrdel(2 * R + 1);
+    for (int i = 0; i < 2 * R + 1; ++i) {
+        mgrdel[i] = i - R;
     }
 
-    fv.resize(3, gic.n_elem);
+    fv.resize(gic.n_elem, 3);
 
     for (int i = 0; i < gic.size(); ++i) 
     {
-        int lo = std::max(gic[i] - (R - 1) / 2, static_cast<arma::sword>(0));
-        int hi = std::min(gic[i] + (R - 1) / 2, static_cast<arma::sword>(crmp.size() - 1));
+        int lo = std::round(gic[i] - R);
+        int hi = std::min<int>(lo + 2 * R, crmp.size() - 1);
 
-        if (lo >= 0 && hi < grdel.size()) {
+        if (lo >= 0 && hi <= grdel.size()) {
             valarray crmpSeg = crmp[std::slice(lo, hi - lo + 1, 1)];
+            valarray grdelSeg = grdel[std::slice(lo, hi - lo + 1, 1)];
             
-            fv(0, i) = crmpSeg.sum();                           // Sum of crmp over GD window
-            fv(1, i) = dir < 0 ? crmpSeg.min() : crmpSeg.max(); // Peak value of crmp
+            fv(i, 0) = crmpSeg.sum();                           // Sum of crmp over GD window
+            fv(i, 1) = dir < 0 ? crmpSeg.min() : crmpSeg.max(); // Peak value of crmp
             
-            valarray seg(mgrdel);
-            seg -= grdel[std::slice(lo, hi - lo, 1)];
+            valarray meanSeg(mgrdel - grdelSeg);
             
-            fv(2, i) = sqrt( (seg * seg).sum() / (double) seg.size() ); // Phase slope deviation
+            fv(i, 2) = sqrt( (meanSeg * meanSeg).sum() / (double) meanSeg.size() ); // Phase slope deviation
         }
     }
 }
 
-template void gcoi_sigma_model<-1>(const arma::ivec&, const valarray&, const valarray&, arma::dmat&);
-template void gcoi_sigma_model<1>(const arma::ivec&, const valarray&, const valarray&, arma::dmat&);
+template void gcoi_sigma_model<-1>(const arma::dvec&, const valarray&, const valarray&, arma::dmat&);
+template void gcoi_sigma_model<1>(const arma::dvec&, const valarray&, const valarray&, arma::dmat&);

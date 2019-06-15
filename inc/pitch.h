@@ -10,6 +10,7 @@ using valarray = std::valarray<double>;
 
 
 DECL_PITCH(AMDF);
+DECL_PITCH(DynWav);
 
 
 #endif // PITCH_H
