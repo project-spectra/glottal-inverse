@@ -25,4 +25,6 @@ valarray lpcar2rf(const valarray& ar) {
         }
             
     }
+
+	return rf;
 }

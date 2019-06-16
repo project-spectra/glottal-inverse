@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <ProjectGuid>{C465312A-4DA1-4660-8A57-FF23CFA698B7}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;__WINDOWS__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\inc</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <FloatingPointExceptions>true</FloatingPointExceptions>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <EnableModules>true</EnableModules>
+      <ConformanceMode>true</ConformanceMode>
+      <OpenMPSupport>false</OpenMPSupport>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;/D__WINDOWS__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\inc</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <OmitFramePointers>false</OmitFramePointers>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <FloatingPointExceptions>true</FloatingPointExceptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <OpenMPSupport>false</OpenMPSupport>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <EnableModules>true</EnableModules>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\audio\decoders\flac.cpp" />
+    <ClCompile Include="src\audio\decoders\mp3.cpp" />
+    <ClCompile Include="src\audio\decoders\wav.cpp" />
+    <ClCompile Include="src\audio\file\cons_dest.cpp" />
+    <ClCompile Include="src\audio\file\destroy.cpp" />
+    <ClCompile Include="src\audio\file\getters.cpp" />
+    <ClCompile Include="src\audio\file\has_window.cpp" />
+    <ClCompile Include="src\audio\file\init.cpp" />
+    <ClCompile Include="src\audio\file\load_window.cpp" />
+    <ClCompile Include="src\audio\file\start_stop.cpp" />
+    <ClCompile Include="src\audio\oboe\callback.cpp" />
+    <ClCompile Include="src\audio\oboe\consdest.cpp" />
+    <ClCompile Include="src\audio\oboe\destroy.cpp" />
+    <ClCompile Include="src\audio\oboe\getters.cpp" />
+    <ClCompile Include="src\audio\oboe\has_window.cpp" />
+    <ClCompile Include="src\audio\oboe\init.cpp" />
+    <ClCompile Include="src\audio\oboe\load_window.cpp" />
+    <ClCompile Include="src\audio\oboe\start.cpp" />
+    <ClCompile Include="src\audio\oboe\stop.cpp" />
+    <ClCompile Include="src\audio\soundio\callback_overflow.cpp" />
+    <ClCompile Include="src\audio\soundio\callback_read.cpp" />
+    <ClCompile Include="src\audio\soundio\destroy.cpp" />
+    <ClCompile Include="src\audio\soundio\getters.cpp" />
+    <ClCompile Include="src\audio\soundio\has_window.cpp" />
+    <ClCompile Include="src\audio\soundio\init.cpp" />
+    <ClCompile Include="src\audio\soundio\load_window.cpp" />
+    <ClCompile Include="src\audio\soundio\start_stop.cpp" />
+    <ClCompile Include="src\dyprog_lf\correct_gci_glot.cpp" />
+    <ClCompile Include="src\dyprog_lf\distitar.cpp" />
+    <ClCompile Include="src\dyprog_lf\dyprog_lf.cpp" />
+    <ClCompile Include="src\dyprog_lf\get_spec_stat.cpp" />
+    <ClCompile Include="src\filter\apply.cpp" />
+    <ClCompile Include="src\filter\butter_ap.cpp" />
+    <ClCompile Include="src\filter\design_bilinear.cpp" />
+    <ClCompile Include="src\filter\design_ss2tf.cpp" />
+    <ClCompile Include="src\filter\design_tf2ss.cpp" />
+    <ClCompile Include="src\filter\design_transforms.cpp" />
+    <ClCompile Include="src\filter\design_zpk2ss.cpp" />
+    <ClCompile Include="src\filter\design_zpk2tf.cpp" />
+    <ClCompile Include="src\formants.cpp" />
+    <ClCompile Include="src\gci_pd\fft.cpp" />
+    <ClCompile Include="src\gci_pd\gci_pd.cpp" />
+    <ClCompile Include="src\gci_pd\phase_diff.cpp" />
+    <ClCompile Include="src\gci_pd\reduce_vti.cpp" />
+    <ClCompile Include="src\gci_pd\remove_dc.cpp" />
+    <ClCompile Include="src\gci_pd\select_peaks.cpp" />
+    <ClCompile Include="src\gci_pd\sym_signal.cpp" />
+    <ClCompile Include="src\gci_pd\teager.cpp" />
+    <ClCompile Include="src\gci_sedreams\findpeaks.cpp" />
+    <ClCompile Include="src\gci_sedreams\median.cpp" />
+    <ClCompile Include="src\gci_sedreams\sedreams.cpp" />
+    <ClCompile Include="src\gci_sedreams\zerocrossings.cpp" />
+    <ClCompile Include="src\gci_yaga\cand_find.cpp" />
+    <ClCompile Include="src\gci_yaga\cand_find_nzcr.cpp" />
+    <ClCompile Include="src\gci_yaga\cand_find_psp.cpp" />
+    <ClCompile Include="src\gci_yaga\cand_select.cpp" />
+    <ClCompile Include="src\gci_yaga\cand_select_frobs.cpp" />
+    <ClCompile Include="src\gci_yaga\cand_select_norms.cpp" />
+    <ClCompile Include="src\gci_yaga\cand_smoothed_wfs.cpp" />
+    <ClCompile Include="src\gci_yaga\cost_calc.cpp" />
+    <ClCompile Include="src\gci_yaga\cost_CP.cpp" />
+    <ClCompile Include="src\gci_yaga\cost_eval.cpp" />
+    <ClCompile Include="src\gci_yaga\cost_FN.cpp" />
+    <ClCompile Include="src\gci_yaga\cost_khi.cpp" />
+    <ClCompile Include="src\gci_yaga\cost_ncorr.cpp" />
+    <ClCompile Include="src\gci_yaga\cost_ssqe.cpp" />
+    <ClCompile Include="src\gci_yaga\gd.cpp" />
+    <ClCompile Include="src\gci_yaga\op_cand_find.cpp" />
+    <ClCompile Include="src\gci_yaga\op_cand_select.cpp" />
+    <ClCompile Include="src\gci_yaga\swt.cpp" />
+    <ClCompile Include="src\gci_yaga\yaga.cpp" />
+    <ClCompile Include="src\gcoi_sigma\cbrt.cpp" />
+    <ClCompile Include="src\gcoi_sigma\cluster.cpp" />
+    <ClCompile Include="src\gcoi_sigma\gcoi_sigma.cpp" />
+    <ClCompile Include="src\gcoi_sigma\gd.cpp" />
+    <ClCompile Include="src\gcoi_sigma\model.cpp" />
+    <ClCompile Include="src\gcoi_sigma\swt.cpp" />
+    <ClCompile Include="src\gcoi_sigma\zerocros.cpp" />
+    <ClCompile Include="src\glottal\open_quotient.cpp" />
+    <ClCompile Include="src\gnuplot.cpp" />
+    <ClCompile Include="src\iaif.cpp" />
+    <ClCompile Include="src\lf_fitting\fit.cpp" />
+    <ClCompile Include="src\lf_fitting\fit_alpha.cpp" />
+    <ClCompile Include="src\lf_fitting\fit_epsilon.cpp" />
+    <ClCompile Include="src\lf_fitting\fit_period.cpp" />
+    <ClCompile Include="src\lf_fitting\mmse.cpp" />
+    <ClCompile Include="src\lf_fitting\model.cpp" />
+    <ClCompile Include="src\lpc_coeffs.cpp" />
+    <ClCompile Include="src\lpc_conv.cpp" />
+    <ClCompile Include="src\lpc_residual.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\normalize.cpp" />
+    <ClCompile Include="src\pitch\pitch_amdf.cpp" />
+    <ClCompile Include="src\pitch\pitch_dynwav.cpp" />
+    <ClCompile Include="src\poly.cpp" />
+    <ClCompile Include="src\print_iter.cpp" />
+    <ClCompile Include="src\ringbuf.cpp" />
+    <ClCompile Include="src\roots.cpp" />
+    <ClCompile Include="src\vtl.cpp" />
+    <ClCompile Include="src\window\blackman.cpp" />
+    <ClCompile Include="src\window\hamming.cpp" />
+    <ClCompile Include="src\window\hanning.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="inc\ann_oq.h" />
+    <ClInclude Include="inc\audio.h" />
+    <ClInclude Include="inc\audio_be_file.h" />
+    <ClInclude Include="inc\audio_be_oboe.h" />
+    <ClInclude Include="inc\audio_be_soundio.h" />
+    <ClInclude Include="inc\dijkstra.h" />
+    <ClInclude Include="inc\dijkstra_impl.h" />
+    <ClInclude Include="inc\dr_flac.h" />
+    <ClInclude Include="inc\dr_mp3.h" />
+    <ClInclude Include="inc\dr_wav.h" />
+    <ClInclude Include="inc\dyprog_lf.h" />
+    <ClInclude Include="inc\ekf.h" />
+    <ClInclude Include="inc\filter.h" />
+    <ClInclude Include="inc\filter_design.h" />
+    <ClInclude Include="inc\formants.h" />
+    <ClInclude Include="inc\gci_pd.h" />
+    <ClInclude Include="inc\gci_sedreams.h" />
+    <ClInclude Include="inc\gci_yaga.h" />
+    <ClInclude Include="inc\gci_yaga_subroutines.h" />
+    <ClInclude Include="inc\gcoi_sigma.h" />
+    <ClInclude Include="inc\gcoi_sigma_subs.h" />
+    <ClInclude Include="inc\glottal.h" />
+    <ClInclude Include="inc\gnuplot.h" />
+    <ClInclude Include="inc\iaif.h" />
+    <ClInclude Include="inc\k_shortest.h" />
+    <ClInclude Include="inc\k_shortest_impl.h" />
+    <ClInclude Include="inc\lf_fitting.h" />
+    <ClInclude Include="inc\lpc.h" />
+    <ClInclude Include="inc\normalize.h" />
+    <ClInclude Include="inc\pitch.h" />
+    <ClInclude Include="inc\poly.h" />
+    <ClInclude Include="inc\print_iter.h" />
+    <ClInclude Include="inc\ringbuf.h" />
+    <ClInclude Include="inc\roots.h" />
+    <ClInclude Include="inc\timer.h" />
+    <ClInclude Include="inc\vtl.h" />
+    <ClInclude Include="inc\window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\ann-oq\model.cpp~" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

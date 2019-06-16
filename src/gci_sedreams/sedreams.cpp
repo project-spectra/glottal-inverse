@@ -2,6 +2,7 @@
 #include <cmath>
 #include "audio.h"
 #include "filter.h"
+#include "filter_design.h"
 #include "window.h"
 #include "lpc.h"
 #include "normalize.h"
@@ -10,10 +11,14 @@
 using std::vector;
 
 
-static constexpr int hpfilt = 3;
 
 
 void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci, vector<int>& goi) {
+
+	static constexpr int Nord = 5;
+	static const double fc = 50. / (SAMPLE_RATE / 2.);
+
+	static const auto coeffsHpf = filter_butter(Nord, fc, HIGHPASS);
 
     const int N(signal.size());
     int n, k;
@@ -40,14 +45,13 @@ void gci_sedreams(const valarray& signal, const double T0mean, vector<int>& gci,
     valarray blackwin(blackman(2 * halfL + 1));
     
     // Filter wave with blackwin and take mean
-    valarray meanBasedSignal;
+    valarray sigWin;
 
-    filter_iir(blackwin, { static_cast<double>(blackwin.size()) }, signal, meanBasedSignal);
+    filter_iir(blackwin, { static_cast<double>(blackwin.size()) }, signal, sigWin);
 
     // Remove low frequency contents  TODO:ellipsis IIR fiter
-    for (n = 0; n < hpfilt; ++n) {
-        filter_hpf(meanBasedSignal, 50. / (SAMPLE_RATE / 2.));
-    }
+	valarray meanBasedSignal;
+	filter_iir(coeffsHpf[0], coeffsHpf[1], sigWin, meanBasedSignal);
     normalize(meanBasedSignal);
 
     // Detect minima and maxima of the mean-based signal

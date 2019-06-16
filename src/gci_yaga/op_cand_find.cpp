@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "print_iter.h"
 #include "gci_yaga.h"
 

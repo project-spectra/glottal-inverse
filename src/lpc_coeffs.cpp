@@ -5,7 +5,7 @@ double lpcCoeffs(const valarray& x, size_t order, valarray& lpc) {
     const int n = x.size();
     const int m = static_cast<int>(order + 1);
 
-    double aut[m + 1];
+    valarray aut(m + 1);
     lpc.resize(m);
 
     double err, eps;
