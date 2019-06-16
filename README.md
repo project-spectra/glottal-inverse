@@ -7,8 +7,8 @@ Written by Clo (Rika) Ichinose, under MIT License
 ## Dependencies
 
 * soundio 1.1.0
-* cereal `51cbda5` (build only)
-* tiny-dnn `c0f576f` (build only)
+* ~~cereal `51cbda5` (build only)~~
+* ~~tiny-dnn `c0f576f` (build only)~~
 
 ---
 

@@ -5,6 +5,7 @@ Makefile
 
 build*/
 bin/
+Win_libs/
 
 persistedOperatorC/
 *.dat

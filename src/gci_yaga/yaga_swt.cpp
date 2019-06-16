@@ -1,37 +1,19 @@
 #include <cmath>
-#include <iostream>
-#include "filter.h"
-#include "normalize.h"
-#include "gcoi_sigma.h"
+#include <algorithm>
+#include "gci_yaga.h"
 #include "gnuplot.h"
 
 
-// bior1.5 decomposition low-pass filter
+// bior1.1 decomposition low-pass filter
 static const valarray Lo_D = {    
-    0.01657281518405971,
-    -0.01657281518405971,
-    -0.12153397801643787,
-    0.12153397801643787,
     0.7071067811865476,
     0.7071067811865476,
-    0.12153397801643787,
-    -0.12153397801643787,
-    -0.01657281518405971,
-    0.01657281518405971,
 };
 
-// bior1.5 decomposition high-pass filter
+// bior1.1 decomposition high-pass filter
 static const valarray Hi_D = {
-    0.0,
-    0.0,
-    0.0,
-    0.0,
     -0.7071067811865476,
     0.7071067811865476,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
 };
 
 static void swt_conv_per(const valarray& input, const valarray& filter, valarray& output, const int fstep);
@@ -40,7 +22,7 @@ static void swt_step(const valarray& input, const valarray& filter, const int le
 #define swt_step_a(in, lv, out) swt_step(in, Lo_D, lv, out)
 #define swt_step_d(in, lv, out) swt_step(in, Hi_D, lv, out)
 
-void gcoi_sigma_swt(const valarray& u, valarray& p)
+void computeSWT(const valarray& u, valarray& p)
 {
     const int Nu(u.size());
     const int J(std::floor(log2(Nu)));
@@ -70,10 +52,9 @@ void gcoi_sigma_swt(const valarray& u, valarray& p)
         p *= valarray(cD[std::slice(0, Nu, 1)]);
     }
 
-    // get rid of potential NaNs and infinities
     for (int i = 0; i < Nu; ++i) {
-        if (!std::isnormal(p[i])) {
-            p[i] = 0.0;
+        if (!std::isnormal(p[i]) || p[i] < 0.) {
+            p[i] = 0.;
         }
     }
 }

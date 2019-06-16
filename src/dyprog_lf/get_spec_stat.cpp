@@ -50,4 +50,6 @@ arma::dvec get_spec_stat(const valarray& x, std::vector<int>& GCIs) {
         // Calculate spectral stationarity
         ss(cnt) = 0.2 / (distitar(lpcCur, lpcPrev) - 0.8);
     }
+
+	return ss;
 }

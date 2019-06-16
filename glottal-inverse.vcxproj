@@ -64,9 +64,21 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>Win_libs\include;$(IncludePath)</IncludePath>
+    <LibraryPath>Win_libs\lib\i686;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>Win_libs\include;$(IncludePath)</IncludePath>
+    <LibraryPath>Win_libs\lib\i686;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>Win_libs\include;$(IncludePath)</IncludePath>
+    <LibraryPath>Win_libs\lib\x86_64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>Win_libs\include;$(IncludePath)</IncludePath>
+    <LibraryPath>Win_libs\lib\x86_64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -181,30 +193,30 @@
     <ClCompile Include="src\audio\decoders\flac.cpp" />
     <ClCompile Include="src\audio\decoders\mp3.cpp" />
     <ClCompile Include="src\audio\decoders\wav.cpp" />
-    <ClCompile Include="src\audio\file\cons_dest.cpp" />
-    <ClCompile Include="src\audio\file\destroy.cpp" />
-    <ClCompile Include="src\audio\file\getters.cpp" />
-    <ClCompile Include="src\audio\file\has_window.cpp" />
-    <ClCompile Include="src\audio\file\init.cpp" />
-    <ClCompile Include="src\audio\file\load_window.cpp" />
+    <ClCompile Include="src\audio\file\file_cons_dest.cpp" />
+    <ClCompile Include="src\audio\file\file_destroy.cpp" />
+    <ClCompile Include="src\audio\file\file_getters.cpp" />
+    <ClCompile Include="src\audio\file\file_has_window.cpp" />
+    <ClCompile Include="src\audio\file\file_init.cpp" />
+    <ClCompile Include="src\audio\file\file_load_window.cpp" />
     <ClCompile Include="src\audio\file\start_stop.cpp" />
-    <ClCompile Include="src\audio\oboe\callback.cpp" />
-    <ClCompile Include="src\audio\oboe\consdest.cpp" />
-    <ClCompile Include="src\audio\oboe\destroy.cpp" />
-    <ClCompile Include="src\audio\oboe\getters.cpp" />
-    <ClCompile Include="src\audio\oboe\has_window.cpp" />
-    <ClCompile Include="src\audio\oboe\init.cpp" />
-    <ClCompile Include="src\audio\oboe\load_window.cpp" />
-    <ClCompile Include="src\audio\oboe\start.cpp" />
-    <ClCompile Include="src\audio\oboe\stop.cpp" />
-    <ClCompile Include="src\audio\soundio\callback_overflow.cpp" />
-    <ClCompile Include="src\audio\soundio\callback_read.cpp" />
-    <ClCompile Include="src\audio\soundio\destroy.cpp" />
-    <ClCompile Include="src\audio\soundio\getters.cpp" />
-    <ClCompile Include="src\audio\soundio\has_window.cpp" />
-    <ClCompile Include="src\audio\soundio\init.cpp" />
-    <ClCompile Include="src\audio\soundio\load_window.cpp" />
-    <ClCompile Include="src\audio\soundio\start_stop.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_callback.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_consdest.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_destroy.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_getters.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_has_window.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_init.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_load_window.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_start.cpp" />
+    <ClCompile Include="src\audio\oboe\oboe_stop.cpp" />
+    <ClCompile Include="src\audio\soundio\soundio_callback_overflow.cpp" />
+    <ClCompile Include="src\audio\soundio\soundio_callback_read.cpp" />
+    <ClCompile Include="src\audio\soundio\soundio_destroy.cpp" />
+    <ClCompile Include="src\audio\soundio\soundio_getters.cpp" />
+    <ClCompile Include="src\audio\soundio\soundio_has_window.cpp" />
+    <ClCompile Include="src\audio\soundio\soundio_init.cpp" />
+    <ClCompile Include="src\audio\soundio\soundio_load_window.cpp" />
+    <ClCompile Include="src\audio\soundio\soundio_start_stop.cpp" />
     <ClCompile Include="src\dyprog_lf\correct_gci_glot.cpp" />
     <ClCompile Include="src\dyprog_lf\distitar.cpp" />
     <ClCompile Include="src\dyprog_lf\dyprog_lf.cpp" />
@@ -244,17 +256,17 @@
     <ClCompile Include="src\gci_yaga\cost_khi.cpp" />
     <ClCompile Include="src\gci_yaga\cost_ncorr.cpp" />
     <ClCompile Include="src\gci_yaga\cost_ssqe.cpp" />
-    <ClCompile Include="src\gci_yaga\gd.cpp" />
+    <ClCompile Include="src\gci_yaga\yaga_gd.cpp" />
     <ClCompile Include="src\gci_yaga\op_cand_find.cpp" />
     <ClCompile Include="src\gci_yaga\op_cand_select.cpp" />
-    <ClCompile Include="src\gci_yaga\swt.cpp" />
+    <ClCompile Include="src\gci_yaga\yaga_swt.cpp" />
     <ClCompile Include="src\gci_yaga\yaga.cpp" />
     <ClCompile Include="src\gcoi_sigma\cbrt.cpp" />
     <ClCompile Include="src\gcoi_sigma\cluster.cpp" />
     <ClCompile Include="src\gcoi_sigma\gcoi_sigma.cpp" />
-    <ClCompile Include="src\gcoi_sigma\gd.cpp" />
+    <ClCompile Include="src\gcoi_sigma\sigma_gd.cpp" />
     <ClCompile Include="src\gcoi_sigma\model.cpp" />
-    <ClCompile Include="src\gcoi_sigma\swt.cpp" />
+    <ClCompile Include="src\gcoi_sigma\sigma_swt.cpp" />
     <ClCompile Include="src\gcoi_sigma\zerocros.cpp" />
     <ClCompile Include="src\glottal\open_quotient.cpp" />
     <ClCompile Include="src\gnuplot.cpp" />
@@ -264,7 +276,7 @@
     <ClCompile Include="src\lf_fitting\fit_epsilon.cpp" />
     <ClCompile Include="src\lf_fitting\fit_period.cpp" />
     <ClCompile Include="src\lf_fitting\mmse.cpp" />
-    <ClCompile Include="src\lf_fitting\model.cpp" />
+    <ClCompile Include="src\lf_fitting\lf_model.cpp" />
     <ClCompile Include="src\lpc_coeffs.cpp" />
     <ClCompile Include="src\lpc_conv.cpp" />
     <ClCompile Include="src\lpc_residual.cpp" />
