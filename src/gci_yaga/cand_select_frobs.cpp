@@ -20,7 +20,7 @@ void cand_select_precalc_frobs(const valarray& u, valarray& FNs, double& maxFN)
 
     valarray w(m + p, p + 1);
     w[std::slice(0, p, 1)] = range;
-    w[std::slice(m+1, p+1, 1)] = range[std::slice(p-1, p, -1)];
+	w[std::slice(m + 1, p + 1, 1)] = valarray(range[std::slice(p - 1, p, -1)]);
     
     w /= (p + 1.);
 

@@ -39,8 +39,8 @@ private:
     
     int m_windowLength;
 
-    oboe::AudioStream *m_stream;
-    ringbuf_t m_buffer;
+    oboe::AudioStream *m_stream = nullptr;
+    ringbuf_t m_buffer = nullptr;
 
     volatile std::atomic_bool m_running;
 };

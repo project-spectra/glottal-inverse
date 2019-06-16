@@ -34,10 +34,10 @@ private:
 
     int m_windowLength;
 
-    SoundIo *m_soundio;
-    SoundIoDevice *m_device;
-    SoundIoInStream *m_inStream;
-    SoundIoRingBuffer *m_buffer;
+    SoundIo *m_soundio = nullptr;
+    SoundIoDevice *m_device = nullptr;
+    SoundIoInStream *m_inStream = nullptr;
+    SoundIoRingBuffer *m_buffer = nullptr;
 
     volatile std::atomic_bool m_running;
 };
